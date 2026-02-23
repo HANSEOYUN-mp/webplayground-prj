@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Header, type NavTab } from "@/components/header"
 import { PostCard } from "@/components/post-card"
 import { SidebarPanel } from "@/components/sidebar-panel"
@@ -8,6 +8,15 @@ import { CreatePostModal } from "@/components/create-post-modal"
 import { PostDetail } from "@/components/post-detail"
 import { AuthModal } from "@/components/auth-modal"
 import { useAuth } from "@/contexts/auth-context"
+import {
+  fetchPosts,
+  createPost,
+  updatePost,
+  deletePost as deletePostDb,
+  toggleLike as toggleLikeDb,
+  toggleBookmark as toggleBookmarkDb,
+  toggleFavorite as toggleFavoriteDb,
+} from "@/lib/supabase/posts"
 import type { Post } from "@/lib/types"
 import { Filter, PenLine, LogIn } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -18,12 +27,26 @@ export default function Home() {
   const [authModalTab, setAuthModalTab] = useState<"login" | "signup">("login")
 
   const [posts, setPosts] = useState<Post[]>([])
+  const [postsLoading, setPostsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedPost, setSelectedPost] = useState<Post | null>(null)
   const [sortBy, setSortBy] = useState<"latest" | "popular">("latest")
   const [activeTab, setActiveTab] = useState<NavTab>("feed")
+
+  // 로그인한 사용자가 바뀌면 Supabase에서 글 목록 불러오기
+  useEffect(() => {
+    if (!user?.id) {
+      setPosts([])
+      setPostsLoading(false)
+      return
+    }
+    setPostsLoading(true)
+    fetchPosts(user.id)
+      .then(setPosts)
+      .finally(() => setPostsLoading(false))
+  }, [user?.id])
 
   const openAuthModal = (tab?: "login" | "signup") => {
     setAuthModalTab(tab ?? "login")
@@ -60,52 +83,84 @@ export default function Home() {
     return result
   }, [posts, activeTab, searchQuery, selectedTag, sortBy])
 
-  const handleLike = (id: string) => {
-    setPosts((prev) =>
-      prev.map((post) =>
-        post.id === id
-          ? {
-              ...post,
-              liked: !post.liked,
-              likes: post.liked ? post.likes - 1 : post.likes + 1,
-            }
-          : post
+  const handleLike = async (id: string) => {
+    const post = posts.find((p) => p.id === id)
+    if (!post || !user?.id) return
+    const ok = await toggleLikeDb(id, user.id, post.liked)
+    if (ok)
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === id
+            ? {
+                ...p,
+                liked: !p.liked,
+                likes: p.liked ? p.likes - 1 : p.likes + 1,
+              }
+            : p
+        )
       )
-    )
   }
 
-  const handleBookmark = (id: string) => {
-    setPosts((prev) =>
-      prev.map((post) =>
-        post.id === id ? { ...post, bookmarked: !post.bookmarked } : post
+  const handleBookmark = async (id: string) => {
+    const post = posts.find((p) => p.id === id)
+    if (!post || !user?.id) return
+    const ok = await toggleBookmarkDb(id, user.id, post.bookmarked)
+    if (ok)
+      setPosts((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, bookmarked: !p.bookmarked } : p))
       )
-    )
   }
 
-  const handleFavorite = (id: string) => {
-    setPosts((prev) =>
-      prev.map((post) =>
-        post.id === id ? { ...post, favorited: !post.favorited } : post
+  const handleFavorite = async (id: string) => {
+    const post = posts.find((p) => p.id === id)
+    if (!post || !user?.id) return
+    const ok = await toggleFavoriteDb(id, user.id, post.favorited)
+    if (ok)
+      setPosts((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, favorited: !p.favorited } : p))
       )
+  }
+
+  const handleCreatePost = async (newPost: Post) => {
+    if (!user?.id) return
+    const created = await createPost(
+      {
+        title: newPost.title,
+        content: newPost.content,
+        code: newPost.code,
+        language: newPost.language,
+        filename: newPost.filename,
+        tags: newPost.tags,
+        author: newPost.author,
+      },
+      user.id
     )
-  }
-
-  const handleCreatePost = (newPost: Post) => {
-    setPosts([newPost, ...posts])
-    setShowCreateModal(false)
-  }
-
-  const handleDeletePost = (id: string) => {
-    setPosts((prev) => prev.filter((post) => post.id !== id))
-    if (selectedPost?.id === id) {
-      setSelectedPost(null)
+    if (created) {
+      setPosts((prev) => [created, ...prev])
+      setShowCreateModal(false)
     }
   }
 
-  const handleEditPost = (updatedPost: Post) => {
-    setPosts((prev) =>
-      prev.map((post) => (post.id === updatedPost.id ? updatedPost : post))
+  const handleDeletePost = async (id: string) => {
+    if (!user?.id) return
+    const ok = await deletePostDb(id, user.id)
+    if (ok) {
+      setPosts((prev) => prev.filter((p) => p.id !== id))
+      if (selectedPost?.id === id) setSelectedPost(null)
+    }
+  }
+
+  const handleEditPost = async (updatedPost: Post) => {
+    if (!user?.id) return
+    const ok = await updatePost(
+      updatedPost.id,
+      { title: updatedPost.title, content: updatedPost.content },
+      user.id
     )
+    if (ok)
+      setPosts((prev) =>
+        prev.map((p) => (p.id === updatedPost.id ? updatedPost : p))
+      )
   }
 
   // Get the up-to-date version of selectedPost from posts state
@@ -262,7 +317,11 @@ export default function Home() {
               )}
 
               {/* Posts */}
-              {filteredPosts.length > 0 ? (
+              {postsLoading ? (
+                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card/50 py-16">
+                  <p className="text-sm text-muted-foreground">글 불러오는 중...</p>
+                </div>
+              ) : filteredPosts.length > 0 ? (
                 <div className="flex flex-col gap-6">
                   {filteredPosts.map((post) => (
                     <PostCard
