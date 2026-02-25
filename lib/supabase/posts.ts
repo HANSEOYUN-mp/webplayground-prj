@@ -27,6 +27,7 @@ function rowToPost(
     language?: string | null
     filename?: string | null
     tags: unknown
+    author_id?: string | null
     author_name: string
     author_initial: string
     created_at: string
@@ -46,6 +47,7 @@ function rowToPost(
     filename: row.filename ?? undefined,
     tags: Array.isArray(row.tags) ? (row.tags as string[]) : [],
     author: { name: row.author_name, initial: row.author_initial },
+    authorId: row.author_id ?? undefined,
     createdAt: formatCreatedAt(row.created_at),
     likes: row.likes ?? 0,
     comments: row.comments ?? 0,
@@ -61,7 +63,7 @@ export async function fetchPosts(userId: string): Promise<Post[]> {
 
   const { data: rows, error: e1 } = await supabase
     .from("posts")
-    .select("id, title, content, code, language, filename, tags, author_name, author_initial, created_at, likes, comments")
+    .select("id, title, content, code, language, filename, tags, author_id, author_name, author_initial, created_at, likes, comments")
     .order("created_at", { ascending: false })
 
   if (e1 || !rows?.length) {
@@ -112,7 +114,7 @@ export async function createPost(
       likes: 0,
       comments: 0,
     })
-    .select("id, title, content, code, language, filename, tags, author_name, author_initial, created_at, likes, comments")
+    .select("id, title, content, code, language, filename, tags, author_id, author_name, author_initial, created_at, likes, comments")
     .single()
 
   if (error) {
@@ -122,26 +124,49 @@ export async function createPost(
   return rowToPost(data as Parameters<typeof rowToPost>[0], false, false, false)
 }
 
-/** 글 수정 (제목, 내용만) */
+/** 비로그인 사용자용: 모든 글 불러오기 (좋아요/북마크/즐겨찾기 상태 없이 읽기 전용) */
+export async function fetchPostsPublic(): Promise<Post[]> {
+  if (!supabase) return []
+
+  const { data: rows, error } = await supabase
+    .from("posts")
+    .select("id, title, content, code, language, filename, tags, author_id, author_name, author_initial, created_at, likes, comments")
+    .order("created_at", { ascending: false })
+
+  if (error || !rows?.length) {
+    if (error) console.error("fetchPostsPublic", error)
+    return []
+  }
+
+  return rows.map((row) =>
+    rowToPost(
+      row as Parameters<typeof rowToPost>[0],
+      false,
+      false,
+      false
+    )
+  )
+}
+
+/** 글 수정 (제목, 내용만). 작성자 또는 관리자(admins 테이블)만 가능. RLS로 권한 검사. */
 export async function updatePost(
   postId: string,
   updates: { title: string; content: string },
-  userId: string
+  _userId: string
 ): Promise<boolean> {
   if (!supabase) return false
   const { error } = await supabase
     .from("posts")
     .update({ title: updates.title, content: updates.content })
     .eq("id", postId)
-    .eq("author_id", userId)
   if (error) console.error("updatePost", error)
   return !error
 }
 
-/** 글 삭제 */
-export async function deletePost(postId: string, userId: string): Promise<boolean> {
+/** 글 삭제. 작성자 또는 관리자(admins 테이블)만 가능. RLS로 권한 검사. */
+export async function deletePost(postId: string, _userId: string): Promise<boolean> {
   if (!supabase) return false
-  const { error } = await supabase.from("posts").delete().eq("id", postId).eq("author_id", userId)
+  const { error } = await supabase.from("posts").delete().eq("id", postId)
   if (error) console.error("deletePost", error)
   return !error
 }

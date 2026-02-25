@@ -1,0 +1,590 @@
+
+
+
+
+
+공공데이터 오픈API 활용가이드
+금융위원회_주식시세정보
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1. 서비스 명세	3
+1.1 금융위원회_주식시세정보	3
+가. API 서비스 개요	3
+나. 상세기능 목록	3
+다. 상세기능내역	4
+1) 주식시세 상세기능명세	4
+2) 신주인수권증서시세 상세기능명세	10
+3) 수익증권시세 상세기능명세	17
+4) 신주인수권증권시세 상세기능명세	23
+2. OpenAPI 에러 코드정리	31
+
+ 
+1. 서비스 명세
+1.1 금융위원회_주식시세정보
+가. API 서비스 개요
+API 서비스 정보	API명(영문)	getStockSecuritiesInfoService
+	API명(국문)	금융위원회_주식시세정보
+	API 설명	한국거래소에서 제공하는 주식시세 정보로, 주식시세, 수익 증권 시세, 신주인수권 증권시세, 신주인수권 증서 시세에 대한 오퍼레이션을 제공한다.
+API 서비스
+보안적용
+기술 수준	서비스 인증/권한	[O] serviceKey    [ ] 인증서 (GPKI/NPKI)
+[ ] Basic (ID/PW)  [ ] 없음
+	메시지 레벨
+암호화	[ ] 전자서명   [ ] 암호화   [O] 없음
+	전송 레벨 암호화	[O] SSL   [ ] 없음
+	인터페이스 표준	[ ] SOAP 1.2
+(RPC-Encoded, Document Literal, Document Literal Wrapped)
+[O] REST (GET)
+[ ] RSS 1.0   [ ] RSS 2.0   [ ] Atom 1.0   [ ] 기타
+	교환 데이터 표준
+(중복선택가능)	[O] XML   [O] JSON   [ ] MIME   [ ] MTOM
+API 서비스
+배포정보	서비스 URL	https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService
+	서비스 명세 URL
+(WSDL 또는 WADL)	N/A
+	서비스 버전	1.0
+	서비스 시작일	2021-11-16	서비스 배포일	2021-11-16
+	서비스 이력	2021-11-16 : 서비스 시작
+	메시지 교환유형	[O] Request-Response   [ ] Publish-Subscribe
+[ ] Fire-and-Forgot   [ ] Notification
+	서비스 제공자	
+	데이터 갱신주기	일 1회
+
+나. 상세기능 목록
+번호	API명(국문)	상세기능명(영문)	상세기능명(국문)
+1	금융위원회_주식시세정보	getStockPriceInfo	주식시세
+2	금융위원회_주식시세정보	getPreemptiveRightCertificatePriceInfo	신주인수권증서시세
+3	금융위원회_주식시세정보	getSecuritiesPriceInfo	수익증권시세
+4	금융위원회_주식시세정보	getPreemptiveRightSecuritiesPriceInfo	신주인수권증권시세
+
+다. 상세기능내역
+1) 주식시세 상세기능명세
+a) 상세기능정보
+상세기능 번호	1	상세기능 유형	조회 (목록)
+상세기능명(국문)	주식시세
+상세기능 설명	KRX에 상장된 주식의 시세 정보를 제공
+Call Back URL	https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/getStockPriceInfo
+최대 메시지 사이즈	[4000] byte
+평균 응답 시간	[500] ms	초당 최대 트랙잭션	[30] tps
+b) 요청 메시지 명세 
+항목명(영문)	항목명(국문)	항목크기	항목구분	샘플데이터	항목설명
+serviceKey	서비스키	400	1	공공데이터포털에서 받은 인증키	공공데이터포털에서 받은 인증키
+numOfRows	한 페이지 결과 수	4	1	1	한 페이지 결과 수
+pageNo	페이지 번호	4	1	1	페이지 번호
+resultType	결과형식	4	1	xml	구분(xml, json) Default: xml
+basDt	기준일자
+8	0	20220919	검색값과 기준일자가 일치하는 데이터를 검색
+beginBasDt	기준일자
+8	0	20220919	기준일자가 검색값보다 크거나 같은 데이터를 검색
+endBasDt	기준일자
+8	0	20220919	기준일자가 검색값보다 작은 데이터를 검색
+likeBasDt	기준일자
+8	0	20220919	기준일자값이 검색값을 포함하는 데이터를 검색
+likeSrtnCd	단축코드
+9	0	900110	단축코드가 검색값을 포함하는 데이터를 검색
+isinCd	ISIN코드
+12	0	HK0000057197	검색값과 ISIN코드이 일치하는 데이터를 검색
+likeIsinCd	ISIN코드
+12	0	HK0000057198	ISIN코드가 검색값을 포함하는 데이터를 검색
+itmsNm	종목명
+120	0	이스트아시아홀딩스	검색값과 종목명이 일치하는 데이터를 검색
+likeItmsNm	종목명
+120	0	이스트아시아홀딩스	종목명이 검색값을 포함하는 데이터를 검색
+mrktCls	시장구분
+40	0	KOSDAQ	검색값과 시장구분이 일치하는 데이터를 검색
+beginVs	대비
+10	0	-8	대비가 검색값보다 크거나 같은 데이터를 검색
+endVs	대비
+10	0	-8	대비가 검색값보다 작은 데이터를 검색
+beginFltRt	등락률
+11	0	-4.57	등락률이 검색값보다 크거나 같은 데이터를 검색
+endFltRt	등락률
+11	0	-4.57	등락률이 검색값보다 작은 데이터를 검색
+beginTrqu	거래량
+12	0	2788311	거래량이 검색값보다 크거나 같은 데이터를 검색
+endTrqu	거래량
+12	0	2788311	거래량이 검색값보다 작은 데이터를 검색
+beginTrPrc	거래대금
+21	0	475708047	거래대금이 검색값보다 크거나 같은 데이터를 검색
+endTrPrc	거래대금
+21	0	475708047	거래대금이 검색값보다 작은 데이터를 검색
+beginLstgStCnt	상장주식수
+15	0	219932050	상장주식수가 검색값보다 크거나 같은 데이터를 검색
+endLstgStCnt	상장주식수
+15	0	219932050	상장주식수가 검색값보다 작은 데이터를 검색
+beginMrktTotAmt	시가총액
+21	0	36728652350	시가총액이 검색값보다 크거나 같은 데이터를 검색
+endMrktTotAmt	시가총액
+21	0	36728652350	시가총액이 검색값보다 작은 데이터를 검색
+※ 항목구분 : 필수(1), 옵션(0) 
+c) 응답 메시지 명세
+항목명(영문)	항목명(국문)	항목크기	항목구분	샘플데이터	항목설명
+resultCode	결과코드	2	1	00	API 호출 결과의 상태 코드
+resultMsg	결과메시지	50	1	NORMAL SERVICE.	API 호출 결과의 상태
+numOfRows	한 페이지 결과 수	4	1	1	한 페이지 결과 수
+pageNo	페이지 번호	4	1	1	페이지 번호
+totalCount	전체 결과 수	10	1	1713576	전체 결과 수
+basDt	기준일자	8	0	20220919	기준 일자
+srtnCd	단축코드	9	0	900110	종목 코드보다 짧으면서 유일성이 보장되는 코드(6자리)
+isinCd	ISIN코드	12	0	HK0000057197	국제 채권 식별 번호. 유가증권(채권)의 국제인증 고유번호
+itmsNm	종목명	120	0	이스트아시아홀딩스	종목의 명칭
+mrktCtg	시장구분	40	0	KOSDAQ	주식의 시장 구분 (KOSPI/KOSDAQ/
+KONEX 중 1)
+clpr	종가	12	0	167	정규시장의 매매시간 종료시까지 형성되는 최종가격
+vs	대비	10	0	-8	전일 대비 등락
+fltRt	등락률	11	0	-4.57	전일 대비 등락에 따른 비율
+mkp	시가	12	0	173	정규시장의 매매시간
+개시 후 형성되는 최초가격
+hipr	고가	12	0	176	하루 중 가격의 최고치
+lopr	저가	12	0	167	하루 중 가격의 최저치
+trqu	거래량	12	0	2788311	체결수량의 누적 합계
+trPrc	거래대금	21	0	475708047	거래건 별 체결가격 * 체결수량의 누적 합계
+lstgStCnt	상장주식수	15	0	219932050	종목의 상장주식수
+mrktTotAmt	시가총액	21	0	36728652350	종가 * 상장주식수
+※ 항목구분 : 필수(1), 옵션(0)
+d) 요청/응답 메시지 예제
+요청메시지
+https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/getStockPriceInfo?serviceKey=인증키&numOfRows=1&pageNo=1
+응답메시지
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<response>
+    <header>
+        <resultCode>00</resultCode>
+        <resultMsg>NORMAL SERVICE.</resultMsg>
+    </header>
+    <body>
+        <numOfRows>1</numOfRows>
+        <pageNo>1</pageNo>
+        <totalCount>1713576</totalCount>
+        <items>
+            <item>
+                <basDt>20220919</basDt>
+                <srtnCd>900110</srtnCd>
+                <isinCd>HK0000057197</isinCd>
+                <itmsNm>이스트아시아홀딩스</itmsNm>
+                <mrktCtg>KOSDAQ</mrktCtg>
+                <clpr>167</clpr>
+                <vs>-8</vs>
+                <fltRt>-4.57</fltRt>
+                <mkp>173</mkp>
+                <hipr>176</hipr>
+                <lopr>167</lopr>
+                <trqu>2788311</trqu>
+                <trPrc>475708047</trPrc>
+                <lstgStCnt>219932050</lstgStCnt>
+                <mrktTotAmt>36728652350</mrktTotAmt>
+            </item>
+        </items>
+    </body>
+</response>
+
+2) 신주인수권증서시세 상세기능명세
+a) 상세기능정보
+상세기능 번호	2	상세기능 유형	조회 (목록)
+상세기능명(국문)	신주인수권증서시세
+상세기능 설명	KRX에 상장된 신주인수권증서시세 정보를 제공
+Call Back URL	https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/getPreemptiveRightCertificatePriceInfo
+최대 메시지 사이즈	[4000] byte
+평균 응답 시간	[500] ms	초당 최대 트랙잭션	[30] tps
+b) 요청 메시지 명세 
+항목명(영문)	항목명(국문)	항목크기	항목구분	샘플데이터	항목설명
+serviceKey	서비스키	400	1	공공데이터포털에서 받은 인증키	공공데이터포털에서 받은 인증키
+numOfRows	한 페이지 결과 수	4	1	1	한 페이지 결과 수
+pageNo	페이지 번호	4	1	1	페이지 번호
+resultType	결과형식	4	1	xml	구분(xml, json) Default: xml
+basDt	기준일자
+8	0	20220906	검색값과 기준일자가 일치하는 데이터를 검색
+beginBasDt	기준일자
+8	0	20220906	기준일자가 검색값보다 크거나 같은 데이터를 검색
+endBasDt	기준일자
+8	0	20220906	기준일자가 검색값보다 작은 데이터를 검색
+likeBasDt	기준일자
+8	0	20220906	기준일자값이 검색값을 포함하는 데이터를 검색
+likeSrtnCd	단축코드
+9	0	2986901C	단축코드가 검색값을 포함하는 데이터를 검색
+isinCd	ISIN코드
+12	0	KRA2986901C1	검색값과 ISIN코드이 일치하는 데이터를 검색
+likeIsinCd	ISIN코드
+12	0	KRA2986901C2	ISIN코드가 검색값을 포함하는 데이터를 검색
+itmsNm	종목명
+120	0	에어부산 7R	검색값과 종목명이 일치하는 데이터를 검색
+likeItmsNm	종목명
+120	0	에어부산 8R	종목명이 검색값을 포함하는 데이터를 검색
+mrktCtg	시장구분
+40	0	KOSPI	검색값과 종목명이 일치하는 데이터를 검색
+beginVs	대비
+12	0	24	대비가 검색값보다 크거나 같은 데이터를 검색
+endVs	대비
+12	0	24	대비가 검색값보다 작은 데이터를 검색
+beginFltRt	등락률
+11	0	11.65	등락률이 검색값보다 크거나 같은 데이터를 검색
+endFltRt	등락률
+11	0	11.65	등락률이 검색값보다 작은 데이터를 검색
+beginTrqu	거래량
+12	0	2645748	거래량이 검색값보다 크거나 같은 데이터를 검색
+endTrqu	거래량
+12	0	2645748	거래량이 검색값보다 작은 데이터를 검색
+beginTrPrc	거래대금
+21	0	573046752	거래대금이 검색값보다 크거나 같은 데이터를 검색
+endTrPrc	거래대금
+21	0	573046752	거래대금이 검색값보다 작은 데이터를 검색
+beginMrktTotAmt	시가총액
+21	0	11355102760	시가총액이 검색값보다 크거나 같은 데이터를 검색
+endMrktTotAmt	시가총액
+21	0	11355102760	시가총액이 검색값보다 작은 데이터를 검색
+likePurRgtScrtItmsCd	목적주권_종목코드
+12	0	KR7298690009	목적주권_종목코드가 검색값을 포함하는 데이터를 검색
+purRgtScrtItmsNm	목적주권_종목명
+120	0	에어부산	검색값과 목적주권_종목명이 일치하는 데이터를 검색
+likePurRgtScrtItmsNm	목적주권_종목명
+120	0	에어부산	목적주권_종목명이 검색값을 포함하는 데이터를 검색
+※ 항목구분 : 필수(1), 옵션(0) 
+c) 응답 메시지 명세
+항목명(영문)	항목명(국문)	항목크기	항목구분	샘플데이터	항목설명
+resultCode	결과코드	2	1	00	API 호출 결과의 상태 코드
+resultMsg	결과메시지	50	1	NORMAL SERVICE.	API 호출 결과의 상태
+numOfRows	한 페이지 결과 수	4	1	1	한 페이지 결과 수
+pageNo	페이지 번호	4	1	1	페이지 번호
+totalCount	전체 결과 수	10	1	886	전체 결과 수
+basDt	기준일자	8	0	20220906	기준일자
+srtnCd	단축코드	9	0	2986901C	종목 코드보다 짧으면서 유일성이 보장되는 코드(6자리)
+isinCd	ISIN코드	12	0	KRA2986901C1	국제 채권 식별 번호. 유가증권(채권)의 국제인증 고유번호
+itmsNm	종목명	120	0	에어부산 7R	유가증권 국제인증 고유번호 코드 이름
+mrktCtg	시장구분	40	0	KOSPI	시장 구분 (KOSPI/KOSDAQ/KONEX 중 1)
+clpr	종가	12	0	230	정규시장의 매매시간종료시까지 형성되는 최종가격
+vs	대비	12	0	24	전일 대비 등락
+fltRt	등락률	11	0	11.65	전일 대비 등락에 따른 비율
+mkp	시가	12	0	207	정규시장의 매매시간개시후 형성되는 최초가격
+hipr	고가	12	0	243	하루 중 가격의 최고치
+lopr	저가	12	0	200	하루 중 가격의 최저치
+trqu	거래량	12	0	2645748	체결수량의 누적 합계
+trPrc	거래대금	21	0	573046752	거래건 별 체결가격 * 체결수량의 누적 합계
+mrktTotAmt	시가총액	21	0	11355102760	종가 * 상장증서수
+lstgCtfCnt	상장증서수	15	0	49370012	신주인수권증서의 상장증서수
+nstIssPrc	신주발행가	12	0	2865	신주인수권증서의 신주발행가
+dltDt	상장폐지일	8	0	20220907	신주인수권증서의 상장폐지일
+purRgtScrtItmsCd	목적주권_종목코드	12	0	KR7298690009	신주인수권증서의 목적주권 종목코드
+purRgtScrtItmsNm	목적주권_종목명	120	0	에어부산	신주인수권증서의 목적주권 종목명
+purRgtScrtItmsClpr	목적주권_종가	12	0	3130	신주인수권증서의 목적주권 종가
+※ 항목구분 : 필수(1), 옵션(0)
+d) 요청/응답 메시지 예제
+요청메시지
+https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/getPreemptiveRightCertificatePriceInfo?serviceKey=인증키&numOfRows=1&pageNo=1
+응답메시지
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<response>
+    <header>
+        <resultCode>00</resultCode>
+        <resultMsg>NORMAL SERVICE.</resultMsg>
+    </header>
+    <body>
+        <numOfRows>1</numOfRows>
+        <pageNo>1</pageNo>
+        <totalCount>886</totalCount>
+        <items>
+            <item>
+                <basDt>20220906</basDt>
+                <srtnCd>2986901C</srtnCd>
+                <isinCd>KRA2986901C1</isinCd>
+                <itmsNm>에어부산 7R</itmsNm>
+                <mrktCtg>KOSPI</mrktCtg>
+                <clpr>230</clpr>
+                <vs>24</vs>
+                <fltRt>11.65</fltRt>
+                <mkp>207</mkp>
+                <hipr>243</hipr>
+                <lopr>200</lopr>
+                <trqu>2645748</trqu>
+                <trPrc>573046752</trPrc>
+                <mrktTotAmt>11355102760</mrktTotAmt>
+                <lstgCtfCnt>49370012</lstgCtfCnt>
+                <nstIssPrc>2865</nstIssPrc>
+                <dltDt>20220907</dltDt>
+                <purRgtScrtItmsCd>KR7298690009</purRgtScrtItmsCd>
+                <purRgtScrtItmsNm>에어부산</purRgtScrtItmsNm>
+                <purRgtScrtItmsClpr>3130</purRgtScrtItmsClpr>
+            </item>
+        </items>
+    </body>
+</response>
+
+3) 수익증권시세 상세기능명세
+a) 상세기능정보
+상세기능 번호	3	상세기능 유형	조회 (목록)
+상세기능명(국문)	수익증권시세
+상세기능 설명	KRX에 상장된 수익증권의 시세 정보를 제공
+Call Back URL	https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/getSecuritiesPriceInfo
+최대 메시지 사이즈	[4000] byte
+평균 응답 시간	[500] ms	초당 최대 트랙잭션	[30] tps
+b) 요청 메시지 명세 
+항목명(영문)	항목명(국문)	항목크기	항목구분	샘플데이터	항목설명
+serviceKey	서비스키	400	1	공공데이터포털에서 받은 인증키	공공데이터포털에서 받은 인증키
+numOfRows	한 페이지 결과 수	4	1	1	한 페이지 결과 수
+pageNo	페이지 번호	4	1	1	페이지 번호
+resultType	결과 형식	4	1	xml	구분(xml, json) Default: xml
+basDt	기준일자
+8	0	20220919	검색값과 기준일자가 일치하는 데이터를 검색
+beginBasDt	기준일자
+8	0	20220919	기준일자가 검색값보다 크거나 같은 데이터를 검색
+endBasDt	기준일자
+8	0	20220919	기준일자가 검색값보다 작은 데이터를 검색
+likeBasDt	기준일자
+8	0	20220919	기준일자값이 검색값을 포함하는 데이터를 검색
+likeSrtnCd	단축코드
+9	0	70101786	단축코드가 검색값을 포함하는 데이터를 검색
+isinCd	ISIN코드
+12	0	KR5701017869	검색값과 ISIN코드이 일치하는 데이터를 검색
+likeIsinCd	ISIN코드
+12	0	KR5701017869	ISIN코드가 검색값을 포함하는 데이터를 검색
+itmsNm	종목명
+120	0	벨기에코어오피스부동산(A)	검색값과 종목명이 일치하는 데이터를 검색
+likeItmsNm	종목명
+120	0	벨기에코어오피스부동산(A)	종목명이 검색값을 포함하는 데이터를 검색
+beginVs	대비
+12	0	0	대비가 검색값보다 크거나 같은 데이터를 검색
+endVs	대비
+12	0	0	대비가 검색값보다 작은 데이터를 검색
+beginFltRt	등락률
+11	0	0	등락률이 검색값보다 크거나 같은 데이터를 검색
+endFltRt	등락률
+11	0	0	등락률이 검색값보다 작은 데이터를 검색
+beginTrqu	거래량
+12	0	0	거래량이 검색값보다 크거나 같은 데이터를 검색
+endTrqu	거래량
+12	0	0	거래량이 검색값보다 작은 데이터를 검색
+beginTrPrc	거래대금
+21	0	0	거래대금이 검색값보다 크거나 같은 데이터를 검색
+endTrPrc	거래대금
+21	0	0	거래대금이 검색값보다 작은 데이터를 검색
+beginStLstgCnt	상장좌수
+15	0	184179291	상장주식수가 검색값보다 크거나 같은 데이터를 검색
+endStLstgCnt	상장좌수
+15	0	184179291	상장주식수가 검색값보다 작은 데이터를 검색
+beginMrktTot
+Amt	시가총액
+21	0	182337498090	시가총액이 검색값보다 크거나 같은 데이터를 검색
+endMrktTot
+Amt	시가총액
+21	0	182337498090	시가총액이 검색값보다 작은 데이터를 검색
+※ 항목구분 : 필수(1), 옵션(0) 
+c) 응답 메시지 명세
+항목명(영문)	항목명(국문)	항목크기	항목구분	샘플데이터	항목설명
+resultCode	결과코드	2	1	00	API 호출 결과의 상태 코드
+resultMsg	결과메시지	50	1	NORMAL SERVICE.	API 호출 결과의 상태
+numOfRows	한 페이지 결과 수	4	1	1	한 페이지 결과 수
+pageNo	페이지 번호	4	1	1	페이지 번호
+totalCount	전체 결과 수	10	1	55258	전체 결과 수
+basDt	기준일자	8	0	20220919	기준일자
+srtnCd	단축코드	9	0	70101786	종목 코드보다 짧으면서 유일성이 보장되는 코드(6자리)
+isinCd	ISIN코드	12	0	KR5701017869	국제 채권 식별 번호. 유가증권(채권)의 국제인증 고유번호
+itmsNm	종목명	120	0	벨기에코어오피스부동산(A)	유가증권 국제인증 고유번호 코드 이름
+clpr	종가	12	0	990	정규시장의 매매시간종료시까지 형성되는 최종가격
+vs	대비	12	0	0	전일 대비 등락
+fltRt	등락률	11	0	0	전일 대비 등락에 따른 비율
+mkp	시가	12	0	0	정규시장의 매매시간개시후 형성되는 최초가격
+hipr	고가	12	0	0	하루 중 가격의 최고치
+lopr	저가	12	0	0	하루 중 가격의 최저치
+trqu	거래량	12	0	0	체결수량의 누적 합계
+trPrc	거래대금	21	0	0	거래건 별 체결가격 * 체결수량의 누적 합계
+stLstgCnt	상장좌수	15	0	184179291	수익증권의 상장좌수
+mrktTotAmt	시가총액	21	0	182337498090	종가 * 상장좌수
+※ 항목구분 : 필수(1), 옵션(0)
+d) 요청/응답 메시지 예제
+요청메시지
+https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/getSecuritiesPriceInfo?serviceKey=인증키&numOfRows=1&pageNo=1
+응답메시지
+
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<response>
+    <header>
+        <resultCode>00</resultCode>
+        <resultMsg>NORMAL SERVICE.</resultMsg>
+    </header>
+    <body>
+        <numOfRows>1</numOfRows>
+        <pageNo>1</pageNo>
+        <totalCount>55258</totalCount>
+        <items>
+            <item>
+                <basDt>20220919</basDt>
+                <srtnCd>70101786</srtnCd>
+                <isinCd>KR5701017869</isinCd>
+                <itmsNm>벨기에코어오피스부동산(A)</itmsNm>
+                <clpr>990</clpr>
+                <vs>0</vs>
+                <fltRt>0</fltRt>
+                <mkp>0</mkp>
+                <hipr>0</hipr>
+                <lopr>0</lopr>
+                <trqu>0</trqu>
+                <trPrc>0</trPrc>
+                <stLstgCnt>184179291</stLstgCnt>
+                <mrktTotAmt>182337498090</mrktTotAmt>
+            </item>
+        </items>
+    </body>
+</response>
+
+4) 신주인수권증권시세 상세기능명세
+a) 상세기능정보
+상세기능 번호	4	상세기능 유형	조회 (목록)
+상세기능명(국문)	신주인수권증권시세
+상세기능 설명	KRX에 상장된 신주인수권증권시세 정보를 제공
+Call Back URL	https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/getPreemptiveRightSecuritiesPriceInfo
+최대 메시지 사이즈	[4000] byte
+평균 응답 시간	[500] ms	초당 최대 트랙잭션	[30] tps
+b) 요청 메시지 명세 
+항목명(영문)	항목명(국문)	항목크기	항목구분	샘플데이터	항목설명
+serviceKey	서비스키	400	1	공공데이터포털에서 받은 인증키	공공데이터포털에서 받은 인증키
+numOfRows	한 페이지 결과 수	4	1	1	한 페이지 결과 수
+pageNo	페이지 번호	4	1	1	페이지 번호
+resultType	결과 형식	4	1	xml	구분(xml, json) Default: xml
+basDt	기준일자
+8	0	20220919	검색값과 기준일자가 일치하는 데이터를 검색
+beginBasDt	기준일자
+8	0	20220919	기준일자가 검색값보다 크거나 같은 데이터를 검색
+endBasDt	기준일자
+8	0	20220919	기준일자가 검색값보다 작은 데이터를 검색
+likeBasDt	기준일자
+8	0	20220919	기준일자값이 검색값을 포함하는 데이터를 검색
+likeSrtnCd	단축코드
+9	0	0003021C	단축코드가 검색값을 포함하는 데이터를 검색
+isinCd	ISIN코드
+12	0	KRA0003021C1	검색값과 ISIN코드이 일치하는 데이터를 검색
+likeIsinCd	ISIN코드
+12	0	KRA0003021C2	ISIN코드가 검색값을 포함하는 데이터를 검색
+itmsNm	종목명
+120	0	대유플러스 12WR	검색값과 종목명이 일치하는 데이터를 검색
+likeItmsNm	종목명
+120	0	대유플러스 13WR	종목명이 검색값을 포함하는 데이터를 검색
+mrktCtg	시장구분
+40	0	KOSPI	검색값과 시장구분이 일치하는 데이터를 검색
+beginVs	대비
+12	0	5	대비가 검색값보다 크거나 같은 데이터를 검색
+endVs	대비
+12	0	5	대비가 검색값보다 작은 데이터를 검색
+beginFltRt	등락률
+11	0	1.61	등락률이 검색값보다 크거나 같은 데이터를 검색
+endFltRt	등락률
+11	0	1.61	등락률이 검색값보다 작은 데이터를 검색
+beginTrqu	거래량
+12	0	148845	거래량이 검색값보다 크거나 같은 데이터를 검색
+endTrqu	거래량
+12	0	148845	거래량이 검색값보다 작은 데이터를 검색
+beginTrPrc	거래대금
+21	0	46881711	거래대금이 검색값보다 크거나 같은 데이터를 검색
+endTrPrc	거래대금
+21	0	46881711	거래대금이 검색값보다 작은 데이터를 검색
+beginMrktTotAmt	시가총액
+21	0	7499437470	시가총액이 검색값보다 크거나 같은 데이터를 검색
+endMrktTotAmt	시가총액
+21	0	7499437470	시가총액이 검색값보다 작은 데이터를 검색
+beginLstgScrtCnt	상장증권수
+15	0	23807738	상장증권수가 검색값보다 크거나 같은 데이터를 검색
+endLstgScrtCnt	상장증권수
+15	0	23807738	상장증권수가 검색값보다 작은 데이터를 검색
+likePurRgtScrtItmsCd	목적주권_종목코드
+12	0	KR7000300004	목적주권_종목코드가 검색값을 포함하는 데이터를 검색
+purRgtScrtItmsNm	목적주권_종목명
+120	0	대유플러스	검색값과 목적주권_종목명이 일치하는 데이터를 검색
+likePurRgtScrtItmsNm	목적주권_종목명
+120	0	대유플러스	목적주권_종목명이 검색값을 포함하는 데이터를 검색
+※ 항목구분 : 필수(1), 옵션(0) 
+c) 응답 메시지 명세
+항목명(영문)	항목명(국문)	항목크기	항목구분	샘플데이터	항목설명
+resultCode	결과코드	2	1	00	API 호출 결과의 상태 코드
+resultMsg	결과메시지	50	1	NORMAL SERVICE.	API 호출 결과의 상태
+numOfRows	한 페이지 결과 수	4	1	1	한 페이지 결과 수
+pageNo	페이지 번호	4	1	1	페이지 번호
+totalCount	전체 결과 수	10	1	20449	전체 결과 수
+basDt	기준일자	8	0	20220919	기준 일자
+srtnCd	단축코드	9	0	0003021C	종목 코드보다 짧으면서 유일성이 보장되는 코드(6자리)
+isinCd	ISIN코드	12	0	KRA0003021C1	국제 채권 식별 번호. 유가증권(채권)의 국제인증 고유번호
+itmsNm	종목명	120	0	대유플러스 12WR	유가증권 국제인증 고유번호 코드 이름
+mrktCtg	시장구분	40	0	KOSPI	시장 구분 (KOSPI/KOSDAQ/KONEX 중 1)
+clpr	종가	12	0	315	정규시장의 매매시간종료시까지 형성되는 최종가격
+vs	대비	12	0	5	전일 대비 등락
+fltRt	등락률	11	0	1.61	전일 대비 등락에 따른 비율
+mkp	시가	12	0	319	정규시장의 매매시간개시후 형성되는 최초가격
+hipr	고가	12	0	320	하루 중 가격의 최고치
+lopr	저가	12	0	308	하루 중 가격의 최저치
+trqu	거래량	12	0	148845	체결수량의 누적 합계
+trPrc	거래대금	21	0	46881711	거래건 별 체결가격 * 체결수량의 누적 합계
+mrktTotAmt	시가총액	21	0	7499437470	종가 * 상장증권수
+lstgScrtCnt	상장증권수	15	0	23807738	신주인수권증권의 상장증권수
+exertPric	행사가격	17	0	882	권리를 행사할 때 적용되는 가격
+subtPdSttgDt	존속기간_시작일	8	0	20220624	신주인수권증권의 존속기간 시작일
+subtPdEdDt	존속기간_종료일	8	0	20250224	신주인수권증권의 존속기간 종료일
+purRgtScrtItmsCd	목적주권_종목코드	12	0	KR7000300004	신주인수권증권의 목적주권 종목코드
+purRgtScrtItmsNm	목적주권_종목명	120	0	대유플러스	신주인수권증권의 목적주권 종목명
+purRgtScrtItmsClpr	목적주권_종가	12	0	1005	신주인수권증권의 목적주권 종가
+※ 항목구분 : 필수(1), 옵션(0)
+d) 요청/응답 메시지 예제
+요청메시지
+https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/getPreemptiveRightSecuritiesPriceInfo?serviceKey=인증키&numOfRows=1&pageNo=1
+응답메시지
+
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<response>
+    <header>
+        <resultCode>00</resultCode>
+        <resultMsg>NORMAL SERVICE.</resultMsg>
+    </header>
+    <body>
+        <numOfRows>1</numOfRows>
+        <pageNo>1</pageNo>
+        <totalCount>20449</totalCount>
+        <items>
+            <item>
+                <basDt>20220919</basDt>
+                <srtnCd>0003021C</srtnCd>
+                <isinCd>KRA0003021C1</isinCd>
+                <itmsNm>대유플러스 12WR</itmsNm>
+                <mrktCtg>KOSPI</mrktCtg>
+                <clpr>315</clpr>
+                <vs>5</vs>
+                <fltRt>1.61</fltRt>
+                <mkp>319</mkp>
+                <hipr>320</hipr>
+                <lopr>308</lopr>
+                <trqu>148845</trqu>
+                <trPrc>46881711</trPrc>
+                <mrktTotAmt>7499437470</mrktTotAmt>
+                <lstgScrtCnt>23807738</lstgScrtCnt>
+                <exertPric>882</exertPric>
+                <subtPdSttgDt>20220624</subtPdSttgDt>
+                <subtPdEdDt>20250224</subtPdEdDt>
+                <purRgtScrtItmsCd>KR7000300004</purRgtScrtItmsCd>
+                <purRgtScrtItmsNm>대유플러스</purRgtScrtItmsNm>
+                <purRgtScrtItmsClpr>1005</purRgtScrtItmsClpr>
+            </item>
+        </items>
+    </body>
+</response>
+
+2. OpenAPI 에러 코드정리
+에러코드	에러메시지	설명
+1	APPLICATION_ERROR	어플리케이션 에러
+10	INVALID_REQUEST_PARAMETER_ERROR	잘못된 요청 파라메터 에러
+12	NO_OPENAPI_SERVICE_ERROR	해당 오픈API서비스가 없거나 폐기됨
+20	SERVICE_ACCESS_DENIED_ERROR	서비스 접근거부
+22	LIMITED_NUMBER_OF_SERVICE_REQUESTS_EXCEEDS_ERROR	서비스 요청제한횟수 초과 에러
+30	SERVICE_KEY_IS_NOT_REGISTERED_ERROR	등록되지 않은 서비스키
+31	DEADLINE_HAS_EXPIRED_ERROR	기한 만료된 서비스키
+32	UNREGISTERED_IP_ERROR	등록되지 않은 IP
+99	UNKNOWN_ERROR	기타 에러
+

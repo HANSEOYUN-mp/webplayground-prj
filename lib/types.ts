@@ -10,6 +10,8 @@ export interface Post {
     name: string
     initial: string
   }
+  /** 글 작성자 user id (수정/삭제 권한 확인용) */
+  authorId?: string
   createdAt: string
   likes: number
   comments: number

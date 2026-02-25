@@ -21,9 +21,11 @@ interface HeaderProps {
   activeTab: NavTab
   onTabChange: (tab: NavTab) => void
   onOpenAuthModal?: (tab?: "login" | "signup") => void
+  /** false면 비로그인: 검색만 표시, 새 글 작성·Favorite 탭 숨김 */
+  isLoggedIn?: boolean
 }
 
-export function Header({ onNewPost, searchQuery, onSearchChange, activeTab, onTabChange, onOpenAuthModal }: HeaderProps) {
+export function Header({ onNewPost, searchQuery, onSearchChange, activeTab, onTabChange, onOpenAuthModal, isLoggedIn = true }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { user, loading: authLoading, signOut } = useAuth()
 
@@ -62,28 +64,32 @@ export function Header({ onNewPost, searchQuery, onSearchChange, activeTab, onTa
           >
             {'피드'}
           </button>
-          <button
-            onClick={() => onTabChange("favorite")}
-            className={`rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-secondary ${
-              activeTab === "favorite" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {'Favorite'}
-          </button>
+          {isLoggedIn && (
+            <button
+              onClick={() => onTabChange("favorite")}
+              className={`rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-secondary ${
+                activeTab === "favorite" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {'Favorite'}
+            </button>
+          )}
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
+          {(user || !isLoggedIn) && (
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="게시글 검색..."
+                className="h-9 w-64 bg-secondary pl-9 text-sm text-foreground placeholder:text-muted-foreground"
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+              />
+            </div>
+          )}
           {user ? (
             <>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="게시글 검색..."
-                  className="h-9 w-64 bg-secondary pl-9 text-sm text-foreground placeholder:text-muted-foreground"
-                  value={searchQuery}
-                  onChange={(e) => onSearchChange(e.target.value)}
-                />
-              </div>
               <Button
                 onClick={onNewPost}
                 size="sm"
@@ -159,27 +165,31 @@ export function Header({ onNewPost, searchQuery, onSearchChange, activeTab, onTa
             >
               {'피드'}
             </button>
-            <button
-              onClick={() => { onTabChange("favorite"); setMobileMenuOpen(false); }}
-              className={`rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-secondary ${
-                activeTab === "favorite" ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {'Favorite'}
-            </button>
+            {isLoggedIn && (
+              <button
+                onClick={() => { onTabChange("favorite"); setMobileMenuOpen(false); }}
+                className={`rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-secondary ${
+                  activeTab === "favorite" ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {'Favorite'}
+              </button>
+            )}
           </nav>
           <div className="flex flex-col gap-2 pt-2">
+            {(user || !isLoggedIn) && (
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="게시글 검색..."
+                  className="h-9 bg-secondary pl-9 text-sm text-foreground placeholder:text-muted-foreground"
+                  value={searchQuery}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                />
+              </div>
+            )}
             {user ? (
               <>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="게시글 검색..."
-                    className="h-9 bg-secondary pl-9 text-sm text-foreground placeholder:text-muted-foreground"
-                    value={searchQuery}
-                    onChange={(e) => onSearchChange(e.target.value)}
-                  />
-                </div>
                 <Button
                   onClick={() => {
                     onNewPost()
