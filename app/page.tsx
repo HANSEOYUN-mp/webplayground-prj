@@ -20,6 +20,7 @@ import {
 } from "@/lib/supabase/posts"
 import type { Post } from "@/lib/types"
 import { StockDashboard } from "@/components/stock-dashboard"
+import { PolymarketDashboard } from "@/components/polymarket-dashboard"
 import { Filter, PenLine } from "lucide-react"
 
 export default function Home() {
@@ -195,6 +196,7 @@ export default function Home() {
         />
         <main className="mx-auto max-w-7xl px-4 py-8 lg:px-8">
           <StockDashboard />
+          <PolymarketDashboard />
           {currentSelectedPost ? (
             <PostDetail
               post={currentSelectedPost}
@@ -326,6 +328,7 @@ export default function Home() {
 
       <main className="mx-auto max-w-7xl px-4 py-8 lg:px-8">
         <StockDashboard />
+        <PolymarketDashboard />
         {currentSelectedPost ? (
           <PostDetail
             post={currentSelectedPost}

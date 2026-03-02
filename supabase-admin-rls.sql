@@ -53,7 +53,7 @@ CREATE POLICY "posts_delete_author_or_admin"
 -- 5) 본인을 관리자로 등록
 --    Supabase 대시보드 → Authentication → Users 에서 본인 계정의 UUID 복사 후
 --    아래 한 줄의 주석을 해제하고 'YOUR_USER_ID'를 그 UUID로 바꾼 뒤 실행하세요.
--- INSERT INTO public.admins (user_id) VALUES ('YOUR_USER_ID'::uuid);
+-- INSERT INTO public.admins (user_id) VALUES ('e94bef27-3cac-44de-b59e-45a7c9c67267'::uuid);
 
 -- ※ 이미 posts에 다른 정책이 있어 오류가 나면, Table Editor → posts → Policies에서
 --    기존 정책과 겹치지 않게 수정하거나 정책 이름을 바꿔 적용하세요.
