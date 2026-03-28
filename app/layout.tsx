@@ -41,7 +41,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body className={`${_inter.variable} ${_jetbrainsMono.variable} font-sans antialiased`}>
+      <body className={`${_inter.variable} ${_jetbrainsMono.variable} font-sans antialiased text-white min-h-screen relative`}>
+        {/* 전체 사이트에 적용되는 우주/블랙홀 배경 */}
+        <div className="fixed inset-0 z-[-1]">
+          <img 
+            src="/galaxy-bg.jpg" 
+            alt="Galaxy Background" 
+            className="w-full h-full object-cover opacity-90 scale-100" 
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/80 pointer-events-none" />
+        </div>
+        
         <AuthProvider>
           {children}
           <Toaster />

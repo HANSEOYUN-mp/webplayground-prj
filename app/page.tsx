@@ -19,8 +19,7 @@ import {
   toggleFavorite as toggleFavoriteDb,
 } from "@/lib/supabase/posts"
 import type { Post } from "@/lib/types"
-import { StockDashboard } from "@/components/stock-dashboard"
-import { PolymarketDashboard } from "@/components/polymarket-dashboard"
+import { GalaxyHero } from "@/components/galaxy-hero"
 import { Filter, PenLine } from "lucide-react"
 
 export default function Home() {
@@ -184,7 +183,7 @@ export default function Home() {
   // 비로그인: 글만 보기 (작성/수정/삭제·좋아요·북마크·즐겨찾기 불가)
   if (!user) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen">
         <Header
           onNewPost={() => {}}
           searchQuery={searchQuery}
@@ -195,8 +194,7 @@ export default function Home() {
           isLoggedIn={false}
         />
         <main className="mx-auto max-w-7xl px-4 py-8 lg:px-8">
-          <StockDashboard />
-          <PolymarketDashboard />
+          <GalaxyHero />
           {currentSelectedPost ? (
             <PostDetail
               post={currentSelectedPost}
@@ -309,7 +307,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       <Header
         onNewPost={() => setShowCreateModal(true)}
         searchQuery={searchQuery}
@@ -327,8 +325,7 @@ export default function Home() {
       />
 
       <main className="mx-auto max-w-7xl px-4 py-8 lg:px-8">
-        <StockDashboard />
-        <PolymarketDashboard />
+        <GalaxyHero />
         {currentSelectedPost ? (
           <PostDetail
             post={currentSelectedPost}
