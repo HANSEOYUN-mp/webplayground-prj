@@ -64,40 +64,54 @@ export async function GET() {
     )
   }
 
-  // 최근 기준일자 (어제, 영업일 보정 없음)
-  const d = new Date()
-  d.setDate(d.getDate() - 1)
-  const basDt = d.toISOString().slice(0, 10).replace(/-/g, "")
-
   const all: StockItem[] = []
   const numOfRows = 1000
-  let pageNo = 1
-  let hasMore = true
+  let finalBasDt = ""
 
-  while (hasMore && pageNo <= 10) {
+  // 최대 7일(일주일) 전까지 거슬러 올라가며 가장 최근의 '영업일(장 열린 날)' 데이터를 찾음
+  for (let offset = 1; offset <= 7; offset++) {
+    const d = new Date()
+    d.setDate(d.getDate() - offset)
+    const basDt = d.toISOString().slice(0, 10).replace(/-/g, "")
+    
     try {
-      const page = await fetchPage(serviceKey, pageNo, numOfRows, basDt)
-      if (page.length === 0) break
-      all.push(...page)
-      if (page.length < numOfRows) break
-      pageNo++
+      // 해당 날짜의 첫 번째 페이지 확인
+      const firstPage = await fetchPage(serviceKey, 1, numOfRows, basDt)
+      if (firstPage.length > 0) {
+        // 데이터가 존재하면 휴일이 아님! (가장 최근 영업일 발견)
+        finalBasDt = basDt
+        all.push(...firstPage)
+        
+        // 데이터가 1000개(한 페이지 꽉 참)이면 나머지 페이지들도 연달아 호출
+        if (firstPage.length === numOfRows) {
+          let pageNo = 2
+          while (pageNo <= 10) {
+            const page = await fetchPage(serviceKey, pageNo, numOfRows, basDt)
+            if (page.length === 0) break
+            all.push(...page)
+            if (page.length < numOfRows) break
+            pageNo++
+          }
+        }
+        // 최신 영업일 1일치의 데이터를 전부 가져왔으므로 뒤의 날짜들은 검색 안 함
+        break
+      }
     } catch (e) {
-      console.error("stock API page error", e)
-      break
+      console.error(`stock API page error for basDt ${basDt}`, e)
     }
   }
 
-  // 시가총액 내림차순 정렬 후 상위 10
+  // 거래대금(trPrc) 내림차순 정렬 후 상위 15
   const sorted = [...all].sort((a, b) => {
-    const amtA = Number(a.mrktTotAmt ?? 0)
-    const amtB = Number(b.mrktTotAmt ?? 0)
-    return amtB - amtA
+    const prcA = Number(a.trPrc ?? 0)
+    const prcB = Number(b.trPrc ?? 0)
+    return prcB - prcA
   })
-  const top10 = sorted.slice(0, 10)
+  const top15 = sorted.slice(0, 15)
 
   return NextResponse.json({
-    basDt,
-    items: top10.map((item, i) => ({
+    basDt: finalBasDt || "N/A",
+    items: top15.map((item, i) => ({
       rank: i + 1,
       itmsNm: item.itmsNm ?? "-",
       mrktCtg: item.mrktCtg ?? "-",
@@ -105,6 +119,7 @@ export async function GET() {
       vs: item.vs ?? "-",
       fltRt: item.fltRt ?? "-",
       mrktTotAmt: item.mrktTotAmt ?? "-",
+      trPrc: item.trPrc ?? "-",
       trqu: item.trqu ?? "-",
       srtnCd: item.srtnCd ?? "-",
     })),

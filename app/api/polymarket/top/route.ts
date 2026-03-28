@@ -10,7 +10,7 @@ interface GammaEvent {
   description?: string | null
   volume?: number | null
   volumeNum?: number | null
-  volume_24hr?: number | null
+  volume24hr?: number | null
   liquidity?: number | null
   active?: boolean
   closed?: boolean
@@ -43,13 +43,13 @@ export async function GET() {
       return NextResponse.json({ error: "잘못된 응답 형식" }, { status: 502 })
     }
 
-    const vol = (evt: GammaEvent) =>
-      evt.volume ?? evt.volumeNum ?? (evt as Record<string, unknown>).volume_24hr ?? 0
-    const sorted = [...raw].sort((a, b) => vol(b) - vol(a))
-    const top = sorted.slice(0, 15)
+    // 최근 24시간 급상승 거래량(Trending) 기준 정렬
+    const vol24h = (evt: GammaEvent) => evt.volume24hr ?? 0
+    const sorted = [...raw].sort((a, b) => vol24h(b) - vol24h(a))
+    const top = sorted.slice(0, 10) // 상위 10개만 리턴
 
     const items = top.map((evt, i) => {
-      const volumeNum = vol(evt)
+      const volumeNum = vol24h(evt) // 프론트엔드에도 24시간 거래량 전달
       const pricesRaw = evt.markets?.[0]?.outcomePrices
       let yesPrice: string | null = null
       if (typeof pricesRaw === "string") {
