@@ -9,7 +9,7 @@ const _inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const _jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains-mono" });
 
 export const metadata: Metadata = {
-  title: 'KnowledgeHub - 코인부자 김인태와 코인 거지 한서윤의 Playground',
+  title: 'OmniArchive',
   description: '친구와 함께 지식을 공유하고, 코드 스니펫과 아이디어를 자유롭게 나누는 플레이그라운드입니다.',
   icons: {
     icon: [

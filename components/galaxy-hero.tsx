@@ -170,7 +170,7 @@ export function GalaxyHero() {
   }, [])
 
   return (
-    <div className="relative w-full h-[calc(100vh-100px)] min-h-[600px] mt-2 mb-8 overflow-hidden">
+    <div className="relative w-full h-auto min-h-[600px] md:h-[calc(100vh-100px)] mt-2 mb-8 overflow-visible md:overflow-hidden">
       {/* 로딩 / 에러 처리 */}
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center z-20">
@@ -196,13 +196,13 @@ export function GalaxyHero() {
         </div>
       )}
 
-      {/* 불규칙하게 흩뿌려진 4개의 앱솔루트 박스 레이아웃 (중앙 지구 보호) */}
+      {/* 4개의 패널 (모바일에선 세로 배치, md 이상에선 앱솔루트 배치) */}
       {!loading && !error && (
-        <div className="absolute inset-0 max-w-[1400px] mx-auto z-10 pointer-events-none">
+        <div className="relative md:absolute md:inset-0 w-full max-w-[1400px] mx-auto z-10 pointer-events-auto md:pointer-events-none flex flex-col md:block gap-6 p-4 md:p-0">
           
           {/* 상단 좌측: 주식 데이터 (15개 리스트, 여유있는 높이) */}
           <div 
-            className="absolute top-[2%] left-[2%] md:top-[3%] md:left-[5%] w-full md:w-[380px] lg:w-[410px] bg-cyan-950/40 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-4 md:p-5 shadow-[0_0_30px_rgba(0,255,255,0.15)] transition-colors duration-300 pointer-events-auto hover:bg-cyan-900/50 hover:border-cyan-500/60"
+            className="relative md:absolute md:top-[3%] md:left-[5%] w-full md:w-[380px] lg:w-[410px] bg-cyan-950/40 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-4 md:p-5 shadow-[0_0_30px_rgba(0,255,255,0.15)] transition-colors duration-300 pointer-events-auto md:pointer-events-auto hover:bg-cyan-900/50 hover:border-cyan-500/60"
           >
              <div className="flex items-center justify-between mb-4 pb-3 border-b border-cyan-500/30">
                 <div className="flex items-center gap-2">
@@ -242,7 +242,7 @@ export function GalaxyHero() {
           {/* 상단 우측: Polymarket (주식보다 아래로 살짝 내리고 오른쪽 끝으로) */}
           {/* 상단 우측: Polymarket (주식과 동일선상으로 변경) */}
           <div 
-            className="absolute top-[25%] right-[2%] md:top-[3%] md:right-[5%] w-full md:w-[380px] lg:w-[410px] bg-fuchsia-950/40 backdrop-blur-xl border border-fuchsia-500/30 rounded-2xl p-4 md:p-5 shadow-[0_0_30px_rgba(255,0,255,0.15)] transition-colors duration-300 pointer-events-auto hover:bg-fuchsia-900/50 hover:border-fuchsia-500/60"
+            className="relative md:absolute md:top-[3%] md:right-[5%] w-full md:w-[380px] lg:w-[410px] bg-fuchsia-950/40 backdrop-blur-xl border border-fuchsia-500/30 rounded-2xl p-4 md:p-5 shadow-[0_0_30px_rgba(255,0,255,0.15)] transition-colors duration-300 pointer-events-auto md:pointer-events-auto hover:bg-fuchsia-900/50 hover:border-fuchsia-500/60"
           >
              <div className="flex items-center gap-2 mb-4 pb-3 border-b border-fuchsia-500/30">
                 <BarChart3 className="w-5 h-5 text-fuchsia-400" />
@@ -277,7 +277,7 @@ export function GalaxyHero() {
 
           {/* 하단 좌측: Crypto Whales */}
           <div 
-            className="absolute bottom-[2%] left-[2%] md:bottom-[3%] md:left-[5%] w-full md:w-[380px] lg:w-[410px] bg-emerald-950/40 backdrop-blur-xl border border-emerald-500/30 rounded-2xl p-4 md:p-5 shadow-[0_0_30px_rgba(16,185,129,0.15)] transition-colors duration-300 pointer-events-auto hover:bg-emerald-900/50 hover:border-emerald-500/60"
+            className="relative md:absolute md:bottom-[3%] md:left-[5%] w-full md:w-[380px] lg:w-[410px] bg-emerald-950/40 backdrop-blur-xl border border-emerald-500/30 rounded-2xl p-4 md:p-5 shadow-[0_0_30px_rgba(16,185,129,0.15)] transition-colors duration-300 pointer-events-auto md:pointer-events-auto hover:bg-emerald-900/50 hover:border-emerald-500/60"
           >
              <div className="flex items-center gap-2 mb-4 pb-3 border-b border-emerald-500/30">
                 <TrendingUp className="w-5 h-5 text-emerald-400" />
@@ -313,7 +313,7 @@ export function GalaxyHero() {
 
           {/* 하단 우측: Google Trends */}
            <div 
-            className="absolute bottom-[2%] right-[2%] md:bottom-[3%] md:right-[5%] w-full md:w-[380px] lg:w-[410px] bg-rose-950/40 backdrop-blur-xl border border-rose-500/30 rounded-2xl p-4 md:p-5 shadow-[0_0_30px_rgba(244,63,94,0.15)] transition-colors duration-300 pointer-events-auto hover:bg-rose-900/50 hover:border-rose-500/60"
+            className="relative md:absolute md:bottom-[3%] md:right-[5%] w-full md:w-[380px] lg:w-[410px] bg-rose-950/40 backdrop-blur-xl border border-rose-500/30 rounded-2xl p-4 md:p-5 shadow-[0_0_30px_rgba(244,63,94,0.15)] transition-colors duration-300 pointer-events-auto md:pointer-events-auto hover:bg-rose-900/50 hover:border-rose-500/60"
           >
              <div className="flex items-center gap-2 mb-4 pb-3 border-b border-rose-500/30">
                 <Flame className="w-5 h-5 text-rose-400" />

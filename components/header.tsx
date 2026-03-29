@@ -41,17 +41,12 @@ export function Header({ onNewPost, searchQuery, onSearchChange, activeTab, onTa
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 lg:px-8">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <span className="text-sm font-bold text-primary-foreground">K</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-lg font-semibold leading-tight tracking-tight text-foreground">
-                KnowledgeHub
-              </span>
-              <span className="text-[10px] leading-tight text-muted-foreground">
-                {'코인부자 김인태와 코인거지 한서윤의 Playground'}
-              </span>
-            </div>
+            <span 
+              className="text-3xl font-black italic tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-primary to-white drop-shadow-md"
+              style={{ fontFamily: "'Dancing Script', 'Brush Script MT', cursive" }}
+            >
+              OmniArchive
+            </span>
           </div>
         </div>
 
