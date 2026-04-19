@@ -128,45 +128,26 @@ export function GalaxyHero() {
     }
   }
 
+  const fetchWhales = async () => {
+    try {
+      const res = await fetch("/api/whales/today")
+      const json = await res.json()
+      if (res.ok) {
+        setWhales(json.items || [])
+      }
+    } catch (e) {
+      console.error("고래 데이터 갱신 실패:", e)
+    }
+  }
+
   useEffect(() => {
     fetchData()
+    fetchWhales() // 초기 고래 데이터 호출
 
-    // 2. 업비트 고래(1억 이상) 감지 웹소켓 연결
-    const ws = new WebSocket("wss://api.upbit.com/websocket/v1")
-    ws.onopen = () => {
-      const msg = [
-        { ticket: "whale-tracker" },
-        { type: "trade", codes: ["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-SOL", "KRW-DOGE"] }
-      ]
-      ws.send(JSON.stringify(msg))
-    }
-    ws.onmessage = async (event) => {
-      try {
-        const text = await (event.data as Blob).text()
-        const data = JSON.parse(text)
-        
-        if (data.type === "trade") {
-          const amount = data.trade_price * data.trade_volume
-          if (amount >= 100_000_000) { // 1억 원 이상 체결
-            const newWhale: WhaleTrade = {
-              code: data.code.replace("KRW-", ""), // BTC, ETH 등
-              price: data.trade_price,
-              volume: data.trade_volume,
-              amount: amount,
-              ask_bid: data.ask_bid, // ASK(매도), BID(매수)
-              timestamp: data.trade_timestamp
-            }
-            setWhales(prev => [newWhale, ...prev].slice(0, 10))
-          }
-        }
-      } catch (e) {
-        // parsing error
-      }
-    }
+    // 10초마다 고래 데이터만 실시간 갱신(Polling)
+    const intervalId = setInterval(fetchWhales, 10000)
 
-    return () => {
-      ws.close()
-    }
+    return () => clearInterval(intervalId)
   }, [])
 
   return (
@@ -323,7 +304,13 @@ export function GalaxyHero() {
                 {trends.length === 0 ? (
                   <div className="col-span-2 text-rose-200/50 text-[11px] text-center p-4">트렌드 로딩 중...</div>
                 ) : trends.map((trend, i) => (
-                   <div key={i} className="flex justify-between items-center bg-rose-900/10 hover:bg-rose-900/20 px-2 py-1.5 rounded transition-colors overflow-hidden">
+                   <a 
+                     key={i} 
+                     href={`https://www.google.com/search?q=${encodeURIComponent(trend.title)}`}
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     className="flex justify-between items-center bg-rose-900/10 hover:bg-rose-900/20 px-2 py-1.5 rounded transition-colors overflow-hidden cursor-pointer"
+                   >
                     <span className="font-bold text-rose-50 text-[11px] line-clamp-1 truncate max-w-[85px] lg:max-w-[105px]" title={trend.title}>
                       <span className="text-rose-400 mr-1 opacity-80">{i+1}.</span>
                       {trend.title}
@@ -331,7 +318,7 @@ export function GalaxyHero() {
                     <span className="text-[9px] font-bold text-rose-300/90 bg-rose-950/60 shadow-inner px-1.5 py-0.5 rounded whitespace-nowrap ml-1 flex-shrink-0">
                       {trend.traffic}
                     </span>
-                  </div>
+                  </a>
                 ))}
              </div>
           </div>
