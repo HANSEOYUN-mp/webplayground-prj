@@ -86,6 +86,8 @@ export function GalaxyHero() {
   const [polys, setPolys] = useState<PolymarketRow[]>([])
   const [whales, setWhales] = useState<WhaleTrade[]>([])
   const [trends, setTrends] = useState<TrendItem[]>([])
+  const [usTrends, setUsTrends] = useState<TrendItem[]>([])
+  const [trendsTab, setTrendsTab] = useState<"kr" | "us">("kr")
   const [stockDate, setStockDate] = useState<string>("로딩중...")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -94,15 +96,17 @@ export function GalaxyHero() {
     setLoading(true)
     setError(null)
     try {
-      const [stockRes, polyRes, trendsRes] = await Promise.all([
+      const [stockRes, polyRes, trendsRes, usTrendsRes] = await Promise.all([
         fetch("/api/stocks/top"),
         fetch("/api/polymarket/top"),
         fetch("/api/trends/top"),
+        fetch("/api/trends/us"),
       ])
       
       const stockJson = await stockRes.json()
       const polyJson = await polyRes.json()
       const trendsJson = await trendsRes.json()
+      const usTrendsJson = await usTrendsRes.json()
 
       if (!stockRes.ok || !polyRes.ok || !trendsRes.ok) throw new Error("데이터 조회 실패")
 
@@ -121,6 +125,7 @@ export function GalaxyHero() {
       setStocks(fetchedStocks)
       setPolys(polyJson.items?.slice(0, 10) || [])
       setTrends(trendsJson.items || [])
+      setUsTrends(usTrendsJson.items || [])
     } catch (e) {
       setError(e instanceof Error ? e.message : "네트워크 오류")
     } finally {
@@ -151,7 +156,7 @@ export function GalaxyHero() {
   }, [])
 
   return (
-    <div className="relative w-full h-auto min-h-[600px] md:h-[calc(100vh-100px)] mt-2 mb-8 overflow-visible md:overflow-hidden">
+    <div className="relative w-full min-h-[600px] mt-2 mb-8">
       {/* 로딩 / 에러 처리 */}
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center z-20">
@@ -177,152 +182,208 @@ export function GalaxyHero() {
         </div>
       )}
 
-      {/* 4개의 패널 (모바일에선 세로 배치, md 이상에선 앱솔루트 배치) */}
+      {/* 2x4 패널 슬롯 배치 */}
       {!loading && !error && (
-        <div className="relative md:absolute md:inset-0 w-full max-w-[1400px] mx-auto z-10 pointer-events-auto md:pointer-events-none flex flex-col md:block gap-6 p-4 md:p-0">
+        <div className="w-full max-w-[1000px] mx-auto z-10 flex flex-col md:flex-row gap-6 p-4">
           
-          {/* 상단 좌측: 주식 데이터 (15개 리스트, 여유있는 높이) */}
-          <div 
-            className="relative md:absolute md:top-[3%] md:left-[5%] w-full md:w-[380px] lg:w-[410px] bg-cyan-950/40 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-4 md:p-5 shadow-[0_0_30px_rgba(0,255,255,0.15)] transition-colors duration-300 pointer-events-auto md:pointer-events-auto hover:bg-cyan-900/50 hover:border-cyan-500/60"
-          >
-             <div className="flex items-center justify-between mb-4 pb-3 border-b border-cyan-500/30">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-cyan-400" />
-                  <h2 className="text-base font-black text-white tracking-widest">KOREA STOCKS</h2>
-                </div>
-                {stockDate && (
-                  <span className="text-[10px] font-bold text-cyan-400 bg-cyan-900/50 px-2 py-0.5 rounded-full border border-cyan-500/20">
-                    기준일: {stockDate}
-                  </span>
-                )}
-             </div>
-             <div className="flex flex-col gap-2 max-h-[180px] md:max-h-[24vh] xl:max-h-[28vh] overflow-y-auto pr-2 custom-scrollbar-cyan">
-                {stocks.map((stock, i) => (
-                  <div key={i} className="flex flex-col gap-1.5 bg-cyan-900/10 hover:bg-cyan-900/20 p-2.5 rounded shrink-0 transition-colors">
-                    <div className="flex justify-between items-center w-full">
-                      {/* 종목명 */}
-                      <span className="font-bold text-cyan-50 text-[13px] truncate max-w-[130px]" title={stock.itmsNm}>{stock.rank}. {stock.itmsNm}</span>
-                      
-                      {/* 가격 & 등락률 */}
-                      <div className="flex items-center gap-3">
-                        <span className={`text-[11px] font-bold tracking-tighter ${Number(stock.fltRt) >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                          {Number(stock.fltRt) > 0 ? "+" : ""}{stock.fltRt}%
-                        </span>
-                        <span className="font-extrabold text-cyan-50 text-[13px] text-right w-[75px]">{Number(stock.clpr).toLocaleString()}원</span>
+          {/* 왼쪽 열: 구현된 위젯 4개 */}
+          <div className="flex-1 flex flex-col gap-6">
+            
+            {/* 1. 주식 데이터 */}
+            <div className="w-full flex flex-col h-[320px] bg-cyan-950/40 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(0,255,255,0.15)] transition-colors duration-300 hover:bg-cyan-900/50 hover:border-cyan-500/60">
+               <div className="flex items-center justify-between mb-4 pb-3 border-b border-cyan-500/30 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-cyan-400" />
+                    <h2 className="text-base font-black text-white tracking-widest">KOREA STOCKS</h2>
+                  </div>
+                  {stockDate && (
+                    <span className="text-[10px] font-bold text-cyan-400 bg-cyan-900/50 px-2 py-0.5 rounded-full border border-cyan-500/20">
+                      기준일: {stockDate}
+                    </span>
+                  )}
+               </div>
+               <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar-cyan">
+                  <div className="flex flex-col gap-2">
+                    {stocks.map((stock, i) => (
+                      <div key={i} className="flex flex-col gap-1.5 bg-cyan-900/10 hover:bg-cyan-900/20 p-2.5 rounded shrink-0 transition-colors">
+                        <div className="flex justify-between items-center w-full">
+                          {/* 종목명 */}
+                          <span className="font-bold text-cyan-50 text-[13px] truncate max-w-[130px]" title={stock.itmsNm}>{stock.rank}. {stock.itmsNm}</span>
+                          
+                          {/* 가격 & 등락률 */}
+                          <div className="flex items-center gap-3">
+                            <span className={`text-[11px] font-bold tracking-tighter ${Number(stock.fltRt) >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                              {Number(stock.fltRt) > 0 ? "+" : ""}{stock.fltRt}%
+                            </span>
+                            <span className="font-extrabold text-cyan-50 text-[13px] text-right w-[75px]">{Number(stock.clpr).toLocaleString()}원</span>
+                          </div>
+                        </div>
+                        {/* 하단 보조 지표 */}
+                        <div className="text-[10px] text-cyan-200/60 font-medium tracking-wide">
+                          거래대금: {formatAmount(Number(stock.trPrc))}원
+                        </div>
                       </div>
-                    </div>
-                    {/* 하단 보조 지표 */}
-                    <div className="text-[10px] text-cyan-200/60 font-medium tracking-wide">
-                      거래대금: {formatAmount(Number(stock.trPrc))}원
-                    </div>
+                    ))}
                   </div>
-                ))}
-             </div>
-          </div>
+               </div>
+            </div>
 
-          {/* 상단 우측: Polymarket (주식보다 아래로 살짝 내리고 오른쪽 끝으로) */}
-          {/* 상단 우측: Polymarket (주식과 동일선상으로 변경) */}
-          <div 
-            className="relative md:absolute md:top-[3%] md:right-[5%] w-full md:w-[380px] lg:w-[410px] bg-fuchsia-950/40 backdrop-blur-xl border border-fuchsia-500/30 rounded-2xl p-4 md:p-5 shadow-[0_0_30px_rgba(255,0,255,0.15)] transition-colors duration-300 pointer-events-auto md:pointer-events-auto hover:bg-fuchsia-900/50 hover:border-fuchsia-500/60"
-          >
-             <div className="flex items-center gap-2 mb-4 pb-3 border-b border-fuchsia-500/30">
-                <BarChart3 className="w-5 h-5 text-fuchsia-400" />
-                <div className="flex flex-col">
-                  <h2 className="text-base font-black text-white tracking-widest leading-none mt-1">POLYMARKET</h2>
-                  <span className="text-[10px] text-fuchsia-400/80 mt-1">24시간 기준 거래량 급증 예측 시장</span>
-                </div>
-             </div>
-             <div className="flex flex-col gap-3 max-h-[160px] md:max-h-[24vh] xl:max-h-[28vh] overflow-y-auto pr-2 custom-scrollbar">
-                {polys.map((poly, i) => (
-                  <a 
-                    key={i} 
-                    href={`https://polymarket.com/event/${poly.slug}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="flex flex-col gap-1 shrink-0 group cursor-pointer bg-fuchsia-900/10 hover:bg-fuchsia-900/20 px-2.5 py-2 rounded transition-colors"
-                  >
-                    <h3 className="text-[11px] font-semibold text-fuchsia-50 line-clamp-1 leading-tight group-hover:text-fuchsia-300 transition-colors">
-                      <span className="text-fuchsia-400 mr-1">{poly.rank}.</span>
-                      {poly.title}
-                    </h3>
-                    <div className="flex items-center justify-between text-[11px] mt-0.5">
-                      <span className="text-fuchsia-200/70 font-medium">24h Vol: {formatVolume(poly.volume)}</span>
-                      <span className="font-bold text-fuchsia-300 bg-fuchsia-950/60 shadow-inner px-1.5 py-0.5 rounded">
-                        YES {((poly.yesPrice ?? 0) * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                  </a>
-                ))}
-             </div>
-          </div>
-
-          {/* 하단 좌측: Crypto Whales */}
-          <div 
-            className="relative md:absolute md:bottom-[3%] md:left-[5%] w-full md:w-[380px] lg:w-[410px] bg-emerald-950/40 backdrop-blur-xl border border-emerald-500/30 rounded-2xl p-4 md:p-5 shadow-[0_0_30px_rgba(16,185,129,0.15)] transition-colors duration-300 pointer-events-auto md:pointer-events-auto hover:bg-emerald-900/50 hover:border-emerald-500/60"
-          >
-             <div className="flex items-center gap-2 mb-4 pb-3 border-b border-emerald-500/30">
-                <TrendingUp className="w-5 h-5 text-emerald-400" />
-                <div className="flex flex-col">
-                  <h2 className="text-base font-black text-white tracking-widest leading-none mt-1">CRYPTO WHALES</h2>
-                  <span className="text-[10px] text-emerald-400/80 mt-1">Live: 1억 이상 체결 알림</span>
-                </div>
-             </div>
-             <div className="flex flex-col gap-2 max-h-[140px] md:max-h-[20vh] xl:max-h-[24vh] overflow-y-auto pr-2 custom-scrollbar-emerald">
-                {whales.length === 0 ? (
-                   <div className="flex flex-col items-center justify-center p-4">
-                     <div className="w-6 h-6 border-2 border-emerald-500/50 border-t-emerald-300 rounded-full animate-spin mb-3"></div>
-                     <span className="text-emerald-200/50 text-[11px] text-center">고래 움직임 대기중... <br/>(BTC, ETH, XRP, SOL, DOGE)</span>
-                   </div>
-                ) : whales.map((whale, i) => (
-                  <div key={i} className="flex flex-col gap-1 shrink-0 p-2 bg-emerald-900/10 rounded">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-emerald-50 flex items-center gap-1.5">
-                        {whale.code}
-                        <span className="text-[10px] font-normal text-emerald-200/50">{formatTime(whale.timestamp)}</span>
-                      </span>
-                      <span className={`font-bold tracking-tight ${whale.ask_bid === "BID" ? "text-red-400" : "text-blue-400"}`}>
-                        {whale.ask_bid === "BID" ? "매수" : "매도"} {formatAmount(whale.amount)}
-                      </span>
-                    </div>
-                    <div className="text-[10px] text-emerald-100/60 font-medium">
-                      단가: {whale.price.toLocaleString()}원
-                    </div>
+            {/* 2. Polymarket */}
+            <div className="w-full flex flex-col h-[320px] bg-fuchsia-950/40 backdrop-blur-xl border border-fuchsia-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(255,0,255,0.15)] transition-colors duration-300 hover:bg-fuchsia-900/50 hover:border-fuchsia-500/60">
+               <div className="flex items-center gap-2 mb-4 pb-3 border-b border-fuchsia-500/30 shrink-0">
+                  <BarChart3 className="w-5 h-5 text-fuchsia-400" />
+                  <div className="flex flex-col">
+                    <h2 className="text-base font-black text-white tracking-widest leading-none mt-1">POLYMARKET</h2>
+                    <span className="text-[10px] text-fuchsia-400/80 mt-1">24시간 기준 거래량 급증 예측 시장</span>
                   </div>
-                ))}
-             </div>
-          </div>
+               </div>
+               <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="flex flex-col gap-3">
+                    {polys.map((poly, i) => (
+                      <a 
+                        key={i} 
+                        href={`https://polymarket.com/event/${poly.slug}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="flex flex-col gap-1 shrink-0 group cursor-pointer bg-fuchsia-900/10 hover:bg-fuchsia-900/20 px-2.5 py-2 rounded transition-colors"
+                      >
+                        <h3 className="text-[11px] font-semibold text-fuchsia-50 line-clamp-1 leading-tight group-hover:text-fuchsia-300 transition-colors">
+                          <span className="text-fuchsia-400 mr-1">{poly.rank}.</span>
+                          {poly.title}
+                        </h3>
+                        <div className="flex items-center justify-between text-[11px] mt-0.5">
+                          <span className="text-fuchsia-200/70 font-medium">24h Vol: {formatVolume(poly.volume)}</span>
+                          <span className="font-bold text-fuchsia-300 bg-fuchsia-950/60 shadow-inner px-1.5 py-0.5 rounded">
+                            YES {((poly.yesPrice ?? 0) * 100).toFixed(0)}%
+                          </span>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+               </div>
+            </div>
 
-          {/* 하단 우측: Google Trends */}
-           <div 
-            className="relative md:absolute md:bottom-[3%] md:right-[5%] w-full md:w-[380px] lg:w-[410px] bg-rose-950/40 backdrop-blur-xl border border-rose-500/30 rounded-2xl p-4 md:p-5 shadow-[0_0_30px_rgba(244,63,94,0.15)] transition-colors duration-300 pointer-events-auto md:pointer-events-auto hover:bg-rose-900/50 hover:border-rose-500/60"
-          >
-             <div className="flex items-center gap-2 mb-4 pb-3 border-b border-rose-500/30">
-                <Flame className="w-5 h-5 text-rose-400" />
-                <h2 className="text-base font-black text-white tracking-widest">GOOGLE TRENDS</h2>
-             </div>
-             <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 max-h-[180px] md:max-h-[20vh] xl:max-h-[24vh] overflow-y-auto pr-1 custom-scrollbar-rose">
-                {trends.length === 0 ? (
-                  <div className="col-span-2 text-rose-200/50 text-[11px] text-center p-4">트렌드 로딩 중...</div>
-                ) : trends.map((trend, i) => (
-                   <a 
-                     key={i} 
-                     href={`https://www.google.com/search?q=${encodeURIComponent(trend.title)}`}
-                     target="_blank"
-                     rel="noopener noreferrer"
-                     className="flex justify-between items-center bg-rose-900/10 hover:bg-rose-900/20 px-2 py-1.5 rounded transition-colors overflow-hidden cursor-pointer"
+            {/* 3. Crypto Whales */}
+            <div className="w-full flex flex-col h-[320px] bg-emerald-950/40 backdrop-blur-xl border border-emerald-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(16,185,129,0.15)] transition-colors duration-300 hover:bg-emerald-900/50 hover:border-emerald-500/60">
+               <div className="flex items-center gap-2 mb-4 pb-3 border-b border-emerald-500/30 shrink-0">
+                  <TrendingUp className="w-5 h-5 text-emerald-400" />
+                  <div className="flex flex-col">
+                    <h2 className="text-base font-black text-white tracking-widest leading-none mt-1">CRYPTO WHALES</h2>
+                    <span className="text-[10px] text-emerald-400/80 mt-1">Live: 1억 이상 체결 알림</span>
+                  </div>
+               </div>
+               <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar-emerald">
+                  <div className="flex flex-col gap-2">
+                    {whales.length === 0 ? (
+                       <div className="flex flex-col items-center justify-center p-4 h-full">
+                         <div className="w-6 h-6 border-2 border-emerald-500/50 border-t-emerald-300 rounded-full animate-spin mb-3"></div>
+                         <span className="text-emerald-200/50 text-[11px] text-center">고래 움직임 대기중... <br/>(BTC, ETH, XRP, SOL, DOGE)</span>
+                       </div>
+                    ) : whales.map((whale, i) => (
+                      <div key={i} className="flex flex-col gap-1 shrink-0 p-2 bg-emerald-900/10 rounded">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-emerald-50 flex items-center gap-1.5">
+                            {whale.code}
+                            <span className="text-[10px] font-normal text-emerald-200/50">{formatTime(whale.timestamp)}</span>
+                          </span>
+                          <span className={`font-bold tracking-tight ${whale.ask_bid === "BID" ? "text-red-400" : "text-blue-400"}`}>
+                            {whale.ask_bid === "BID" ? "매수" : "매도"} {formatAmount(whale.amount)}
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-emerald-100/60 font-medium">
+                          단가: {whale.price.toLocaleString()}원
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+               </div>
+            </div>
+
+            {/* 4. Google Trends */}
+            <div className="w-full flex flex-col h-[320px] bg-rose-950/40 backdrop-blur-xl border border-rose-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(244,63,94,0.15)] transition-colors duration-300 hover:bg-rose-900/50 hover:border-rose-500/60">
+               {/* 헤더 + 탭 */}
+               <div className="flex items-center justify-between mb-4 pb-3 border-b border-rose-500/30 shrink-0">
+                 <div className="flex items-center gap-2">
+                   <Flame className="w-5 h-5 text-rose-400" />
+                   <h2 className="text-base font-black text-white tracking-widest">GOOGLE TRENDS</h2>
+                 </div>
+                 <div className="flex items-center gap-0.5 bg-rose-950/60 rounded-lg p-0.5">
+                   <button
+                     onClick={() => setTrendsTab("kr")}
+                     className={`px-2 py-1 rounded-md text-[9px] font-bold transition-all ${
+                       trendsTab === "kr"
+                         ? "bg-rose-500 text-white shadow"
+                         : "text-rose-300/70 hover:text-rose-200"
+                     }`}
                    >
-                    <span className="font-bold text-rose-50 text-[11px] line-clamp-1 truncate max-w-[85px] lg:max-w-[105px]" title={trend.title}>
-                      <span className="text-rose-400 mr-1 opacity-80">{i+1}.</span>
-                      {trend.title}
-                    </span>
-                    <span className="text-[9px] font-bold text-rose-300/90 bg-rose-950/60 shadow-inner px-1.5 py-0.5 rounded whitespace-nowrap ml-1 flex-shrink-0">
-                      {trend.traffic}
-                    </span>
-                  </a>
-                ))}
-             </div>
+                     🇰🇷 한국
+                   </button>
+                   <button
+                     onClick={() => setTrendsTab("us")}
+                     className={`px-2 py-1 rounded-md text-[9px] font-bold transition-all ${
+                       trendsTab === "us"
+                         ? "bg-rose-500 text-white shadow"
+                         : "text-rose-300/70 hover:text-rose-200"
+                     }`}
+                   >
+                     🇺🇸 미국
+                   </button>
+                 </div>
+               </div>
+
+               {/* 탭 공통 렌더 함수 */}
+               <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar-rose">
+                 {(trendsTab === "kr" ? trends : usTrends).length === 0 ? (
+                   <div className="flex items-center justify-center h-full text-rose-200/50 text-[11px] text-center p-4">트렌드 로딩 중...</div>
+                 ) : (
+                   <div className="flex flex-col gap-1.5">
+                     {(trendsTab === "kr" ? trends : usTrends).map((trend, i) => (
+                       <a
+                         key={i}
+                         href={`https://www.google.com/search?q=${encodeURIComponent(trend.title)}`}
+                         target="_blank"
+                         rel="noopener noreferrer"
+                         className="flex justify-between items-center bg-rose-900/10 hover:bg-rose-900/20 px-2.5 py-2 rounded transition-colors overflow-hidden cursor-pointer shrink-0"
+                       >
+                         <span className="font-bold text-rose-50 text-[11px] line-clamp-1 truncate max-w-[120px] lg:max-w-[160px]" title={trend.title}>
+                           <span className="text-rose-400 mr-1 opacity-80">{i+1}.</span>
+                           {trend.title}
+                         </span>
+                         <span className="text-[9px] font-bold text-rose-300/90 bg-rose-950/60 shadow-inner px-1.5 py-0.5 rounded whitespace-nowrap ml-1 flex-shrink-0">
+                           {trend.traffic}
+                         </span>
+                       </a>
+                     ))}
+                   </div>
+                 )}
+               </div>
+            </div>
+
           </div>
 
+          {/* 오른쪽 열: 빈 위젯 4개 */}
+          <div className="flex-1 flex flex-col gap-6">
+            {/* Empty Widget 1 */}
+            <div className="w-full flex flex-col items-center justify-center h-[320px] bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 border-dashed rounded-2xl p-5 shadow-inner transition-colors duration-300 hover:bg-slate-800/40">
+              <span className="text-slate-500 font-bold tracking-widest text-sm">EMPTY SLOT 1</span>
+              <span className="text-slate-600/70 text-xs mt-2 text-center">To be filled with a chart or data</span>
+            </div>
+            
+            {/* Empty Widget 2 */}
+            <div className="w-full flex flex-col items-center justify-center h-[320px] bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 border-dashed rounded-2xl p-5 shadow-inner transition-colors duration-300 hover:bg-slate-800/40">
+              <span className="text-slate-500 font-bold tracking-widest text-sm">EMPTY SLOT 2</span>
+            </div>
+
+            {/* Empty Widget 3 */}
+            <div className="w-full flex flex-col items-center justify-center h-[320px] bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 border-dashed rounded-2xl p-5 shadow-inner transition-colors duration-300 hover:bg-slate-800/40">
+              <span className="text-slate-500 font-bold tracking-widest text-sm">EMPTY SLOT 3</span>
+            </div>
+
+            {/* Empty Widget 4 */}
+            <div className="w-full flex flex-col items-center justify-center h-[320px] bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 border-dashed rounded-2xl p-5 shadow-inner transition-colors duration-300 hover:bg-slate-800/40">
+              <span className="text-slate-500 font-bold tracking-widest text-sm">EMPTY SLOT 4</span>
+            </div>
+          </div>
         </div>
       )}
       {/* 애니메이션 및 스크롤바 스타일 */}

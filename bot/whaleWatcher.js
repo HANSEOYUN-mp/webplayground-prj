@@ -87,5 +87,63 @@ function connectUpbit() {
   });
 }
 
+// ─────────────────────────────────────────
+// 🗑️ 매일 오전 9시(KST) 자동 데이터 정리
+// ─────────────────────────────────────────
+
+async function cleanOldData() {
+  const now = new Date();
+  const kstOffset = 9 * 60 * 60 * 1000;
+  const nowKst = new Date(now.getTime() + kstOffset);
+
+  // 오늘 오전 9시 KST → UTC 밀리초
+  const todayNineAm = new Date(nowKst);
+  todayNineAm.setUTCHours(9, 0, 0, 0);
+  const cutoffMs = todayNineAm.getTime() - kstOffset;
+
+  console.log(`🗑️ [자동 정리] ${cutoffMs} (${new Date(cutoffMs).toISOString()}) 이전 데이터 삭제 시작...`);
+
+  const { error, count } = await supabase
+    .from('crypto_whales')
+    .delete({ count: 'exact' })
+    .lt('timestamp', cutoffMs);
+
+  if (error) {
+    console.error('❌ 자동 정리 실패:', error.message);
+  } else {
+    console.log(`✅ 자동 정리 완료: ${count ?? '?'}건 삭제됨`);
+  }
+
+  // 다음 날 오전 9시에 다시 실행 예약
+  scheduleNextCleanup();
+}
+
+function scheduleNextCleanup() {
+  const now = new Date();
+  const kstOffset = 9 * 60 * 60 * 1000;
+  const nowKst = new Date(now.getTime() + kstOffset);
+
+  // 다음 오전 9시(KST) 계산
+  const nextNineAm = new Date(nowKst);
+  nextNineAm.setUTCHours(9, 0, 0, 0);
+
+  // 이미 오전 9시가 지났으면 내일 오전 9시로
+  if (nowKst.getTime() >= nextNineAm.getTime()) {
+    nextNineAm.setUTCDate(nextNineAm.getUTCDate() + 1);
+  }
+
+  // 실제 UTC 기준 타겟 시각
+  const nextCleanupUtc = new Date(nextNineAm.getTime() - kstOffset);
+  const msUntilCleanup = nextCleanupUtc.getTime() - now.getTime();
+
+  const hoursLeft = (msUntilCleanup / 1000 / 60 / 60).toFixed(1);
+  console.log(`⏰ 다음 자동 정리 예약: ${nextCleanupUtc.toISOString()} (약 ${hoursLeft}시간 후)`);
+
+  setTimeout(cleanOldData, msUntilCleanup);
+}
+
 // 봇 실행
 connectUpbit();
+
+// 자동 정리 스케줄 시작
+scheduleNextCleanup();
