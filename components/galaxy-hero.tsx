@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { TrendingUp, BarChart3, RefreshCw, AlertCircle, Bitcoin, MessageSquareText, Flame } from "lucide-react"
+import { MinskyWidget } from "@/components/minsky-widget"
 
 interface StockRow {
   rank: number
@@ -369,10 +370,8 @@ export function GalaxyHero() {
               <span className="text-slate-600/70 text-xs mt-2 text-center">To be filled with a chart or data</span>
             </div>
             
-            {/* Empty Widget 2 */}
-            <div className="w-full flex flex-col items-center justify-center h-[320px] bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 border-dashed rounded-2xl p-5 shadow-inner transition-colors duration-300 hover:bg-slate-800/40">
-              <span className="text-slate-500 font-bold tracking-widest text-sm">EMPTY SLOT 2</span>
-            </div>
+            {/* Empty Widget 2 replaced by Minsky */}
+            <MinskyWidget />
 
             {/* Empty Widget 3 */}
             <div className="w-full flex flex-col items-center justify-center h-[320px] bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 border-dashed rounded-2xl p-5 shadow-inner transition-colors duration-300 hover:bg-slate-800/40">
