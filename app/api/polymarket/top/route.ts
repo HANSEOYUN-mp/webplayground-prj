@@ -1,33 +1,20 @@
 import { NextResponse } from "next/server"
 
+export const dynamic = "force-dynamic"
+
 const GAMMA_URL = "https://gamma-api.polymarket.com/events"
 
-/** Gamma API 이벤트 객체 (필요 필드만) */
-interface GammaEvent {
-  id?: string
-  slug?: string
-  title?: string
-  description?: string | null
-  volume?: number | null
-  volumeNum?: number | null
-  volume24hr?: number | null
-  liquidity?: number | null
-  active?: boolean
-  closed?: boolean
-  endDate?: string | null
-  markets?: Array<{ question?: string; outcomePrices?: string | string[] }>
-}
-
-/** 베팅 금액(volume) 순 상위 이벤트 조회 */
 export async function GET() {
   try {
+    // featured=true 로 폴리마켓이 선정한 주요 이슈들을 모두 가져온 뒤
+    // volume24hr 기준으로 재정렬 → 홈 화면 실시간 트렌딩 순서 반영
     const params = new URLSearchParams({
       active: "true",
       closed: "false",
-      _limit: "100",
+      featured: "true",
     })
     const res = await fetch(`${GAMMA_URL}?${params}`, {
-      next: { revalidate: 300 },
+      cache: "no-store",
       headers: { Accept: "application/json" },
     })
     if (!res.ok) {
@@ -38,39 +25,38 @@ export async function GET() {
         { status: 502 }
       )
     }
-    const raw: GammaEvent[] = await res.json()
+    const raw = await res.json()
     if (!Array.isArray(raw)) {
       return NextResponse.json({ error: "잘못된 응답 형식" }, { status: 502 })
     }
 
-    // 최근 24시간 급상승 거래량(Trending) 기준 정렬
-    const vol24h = (evt: GammaEvent) => evt.volume24hr ?? 0
-    const sorted = [...raw].sort((a, b) => vol24h(b) - vol24h(a))
-    const top = sorted.slice(0, 10) // 상위 10개만 리턴
+    // volume24hr 내림차순 정렬 → 폴리마켓 메인 화면과 동일한 트렌딩 순서
+    const sorted = [...raw].sort((a, b) => (b.volume24hr ?? 0) - (a.volume24hr ?? 0))
+    const top = sorted.slice(0, 10)
 
-    const items = top.map((evt, i) => {
-      const volumeNum = vol24h(evt) // 프론트엔드에도 24시간 거래량 전달
-      const pricesRaw = evt.markets?.[0]?.outcomePrices
-      let yesPrice: string | null = null
-      if (typeof pricesRaw === "string") {
+    const items = top.map((evt) => {
+      // 파생 마켓(날짜별 옵션 등) 파싱
+      const markets = (evt.markets || []).slice(0, 5).map((m: any) => {
+        let yesPrice = null
         try {
-          const arr = JSON.parse(pricesRaw) as string[]
-          yesPrice = arr?.[0] ?? null
-        } catch {
-          yesPrice = null
+          const prices = typeof m.outcomePrices === "string" ? JSON.parse(m.outcomePrices) : m.outcomePrices
+          if (Array.isArray(prices)) yesPrice = parseFloat(prices[0])
+        } catch (e) {}
+        return {
+          id: m.id,
+          title: m.groupItemTitle || m.question || "Yes/No",
+          yesPrice,
         }
-      } else if (Array.isArray(pricesRaw)) {
-        yesPrice = pricesRaw[0] ?? null
-      }
+      })
+
       return {
-        rank: i + 1,
         id: evt.id ?? "",
         slug: evt.slug ?? "",
         title: evt.title ?? "Untitled",
-        volume: volumeNum,
-        liquidity: evt.liquidity ?? null,
-        yesPrice: yesPrice != null ? parseFloat(String(yesPrice)) : null,
-        endDate: evt.endDate ?? null,
+        description: evt.description ?? "",
+        volume: evt.volume24hr ?? 0,
+        image: evt.image ?? "",
+        markets,
       }
     })
 

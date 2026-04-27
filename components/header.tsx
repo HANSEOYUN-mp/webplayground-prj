@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-export type NavTab = "feed" | "favorite"
+export type NavTab = "stock" | "crypto" | "prediction" | "news" | "post"
 
 interface HeaderProps {
   onNewPost: () => void
@@ -51,24 +51,23 @@ export function Header({ onNewPost, searchQuery, onSearchChange, activeTab, onTa
         </div>
 
         <nav className="hidden items-center gap-1 md:flex">
-          <button
-            onClick={() => onTabChange("feed")}
-            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:bg-secondary ${
-              activeTab === "feed" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {'피드'}
-          </button>
-          {isLoggedIn && (
+          {[
+            { id: "stock", label: "Stock" },
+            { id: "crypto", label: "Crypto" },
+            { id: "prediction", label: "Prediction" },
+            { id: "news", label: "News & Trends" },
+            { id: "post", label: "Post" },
+          ].map((tab) => (
             <button
-              onClick={() => onTabChange("favorite")}
-              className={`rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-secondary ${
-                activeTab === "favorite" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+              key={tab.id}
+              onClick={() => onTabChange(tab.id as NavTab)}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:bg-secondary ${
+                activeTab === tab.id ? "text-foreground bg-secondary/50" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {'Favorite'}
+              {tab.label}
             </button>
-          )}
+          ))}
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
@@ -152,24 +151,23 @@ export function Header({ onNewPost, searchQuery, onSearchChange, activeTab, onTa
       {mobileMenuOpen && (
         <div className="border-t border-border px-4 pb-4 md:hidden">
           <nav className="flex flex-col gap-1 py-2">
-            <button
-              onClick={() => { onTabChange("feed"); setMobileMenuOpen(false); }}
-              className={`rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-secondary ${
-                activeTab === "feed" ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {'피드'}
-            </button>
-            {isLoggedIn && (
+            {[
+              { id: "stock", label: "Stock" },
+              { id: "crypto", label: "Crypto" },
+              { id: "prediction", label: "Prediction" },
+              { id: "news", label: "News & Trends" },
+              { id: "post", label: "Post" },
+            ].map((tab) => (
               <button
-                onClick={() => { onTabChange("favorite"); setMobileMenuOpen(false); }}
+                key={tab.id}
+                onClick={() => { onTabChange(tab.id as NavTab); setMobileMenuOpen(false); }}
                 className={`rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-secondary ${
-                  activeTab === "favorite" ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground"
+                  activeTab === tab.id ? "font-medium text-foreground bg-secondary/50" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {'Favorite'}
+                {tab.label}
               </button>
-            )}
+            ))}
           </nav>
           <div className="flex flex-col gap-2 pt-2">
             {(user || !isLoggedIn) && (

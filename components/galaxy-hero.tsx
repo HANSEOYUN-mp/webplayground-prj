@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { TrendingUp, BarChart3, RefreshCw, AlertCircle, Bitcoin, MessageSquareText, Flame } from "lucide-react"
+import { TrendingUp, BarChart3, ChevronLeft, ChevronRight, Calendar, RefreshCw, AlertCircle, Bitcoin, MessageSquareText, Flame } from "lucide-react"
 import { MinskyWidget } from "@/components/minsky-widget"
 
 interface StockRow {
@@ -14,11 +14,21 @@ interface StockRow {
 }
 
 interface PolymarketRow {
-  rank: number
+  id: string
+  slug: string
+  title: string
+  description?: string
+  image?: string
+  volume: number
+  markets: Array<{ id: string, title: string, yesPrice: number | null }>
+}
+
+interface PolymarketFinanceRow {
   id: string
   slug: string
   title: string
   volume: number
+  endDate: string | null
   yesPrice: number | null
 }
 
@@ -64,6 +74,16 @@ function formatVolume(v: number): string {
   return `$${Math.round(v)}`
 }
 
+
+function EmptySlot({ index, title = `EMPTY SLOT ${index}`, subtitle = 'To be filled with a chart or data' }: { index: number, title?: string, subtitle?: string }) {
+  return (
+    <div className="w-full flex flex-col items-center justify-center h-[320px] bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 border-dashed rounded-2xl p-5 shadow-inner transition-colors duration-300 hover:bg-slate-800/40">
+      <span className="text-slate-500 font-bold tracking-widest text-sm">{title}</span>
+      {subtitle && <span className="text-slate-600/70 text-xs mt-2 text-center">{subtitle}</span>}
+    </div>
+  )
+}
+
 const FALLBACK_STOCKS: StockRow[] = [
   { rank: 1, itmsNm: "삼성전자", clpr: "80000", fltRt: "1.2", mrktTotAmt: "460000000000000", trPrc: "1500000000000" },
   { rank: 2, itmsNm: "SK하이닉스", clpr: "180000", fltRt: "2.5", mrktTotAmt: "135000000000000", trPrc: "800000000000" },
@@ -82,9 +102,11 @@ const FALLBACK_STOCKS: StockRow[] = [
   { rank: 15, itmsNm: "LG화학", clpr: "375000", fltRt: "0.2", mrktTotAmt: "26000000000000", trPrc: "110000000000" },
 ]
 
-export function GalaxyHero() {
+export function GalaxyHero({ activeTab }: { activeTab: "stock" | "crypto" | "prediction" | "news" }) {
   const [stocks, setStocks] = useState<StockRow[]>([])
   const [polys, setPolys] = useState<PolymarketRow[]>([])
+  const [fedPolys, setFedPolys] = useState<PolymarketFinanceRow[]>([])
+  const [polyIndex, setPolyIndex] = useState(0)
   const [whales, setWhales] = useState<WhaleTrade[]>([])
   const [trends, setTrends] = useState<TrendItem[]>([])
   const [usTrends, setUsTrends] = useState<TrendItem[]>([])
@@ -97,15 +119,17 @@ export function GalaxyHero() {
     setLoading(true)
     setError(null)
     try {
-      const [stockRes, polyRes, trendsRes, usTrendsRes] = await Promise.all([
+      const [stockRes, polyRes, financeRes, trendsRes, usTrendsRes] = await Promise.all([
         fetch("/api/stocks/top"),
         fetch("/api/polymarket/top"),
+        fetch("/api/polymarket/finance"),
         fetch("/api/trends/top"),
         fetch("/api/trends/us"),
       ])
       
       const stockJson = await stockRes.json()
       const polyJson = await polyRes.json()
+      const financeJson = financeRes.ok ? await financeRes.json() : { items: [] }
       const trendsJson = await trendsRes.json()
       const usTrendsJson = await usTrendsRes.json()
 
@@ -125,6 +149,7 @@ export function GalaxyHero() {
       }
       setStocks(fetchedStocks)
       setPolys(polyJson.items?.slice(0, 10) || [])
+      setFedPolys(financeJson.items?.slice(0, 10) || [])
       setTrends(trendsJson.items || [])
       setUsTrends(usTrendsJson.items || [])
     } catch (e) {
@@ -183,14 +208,12 @@ export function GalaxyHero() {
         </div>
       )}
 
-      {/* 2x4 패널 슬롯 배치 */}
+      {/* 2x3 패널 슬롯 배치 */}
       {!loading && !error && (
-        <div className="w-full max-w-[1000px] mx-auto z-10 flex flex-col md:flex-row gap-6 p-4">
-          
-          {/* 왼쪽 열: 구현된 위젯 4개 */}
-          <div className="flex-1 flex flex-col gap-6">
-            
-            {/* 1. 주식 데이터 */}
+        <div className="w-full max-w-7xl mx-auto z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
+          {activeTab === 'stock' && (
+            <>
+              {/* 1. 주식 데이터 */}
             <div className="w-full flex flex-col h-[320px] bg-cyan-950/40 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(0,255,255,0.15)] transition-colors duration-300 hover:bg-cyan-900/50 hover:border-cyan-500/60">
                <div className="flex items-center justify-between mb-4 pb-3 border-b border-cyan-500/30 shrink-0">
                   <div className="flex items-center gap-2">
@@ -229,42 +252,19 @@ export function GalaxyHero() {
                </div>
             </div>
 
-            {/* 2. Polymarket */}
-            <div className="w-full flex flex-col h-[320px] bg-fuchsia-950/40 backdrop-blur-xl border border-fuchsia-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(255,0,255,0.15)] transition-colors duration-300 hover:bg-fuchsia-900/50 hover:border-fuchsia-500/60">
-               <div className="flex items-center gap-2 mb-4 pb-3 border-b border-fuchsia-500/30 shrink-0">
-                  <BarChart3 className="w-5 h-5 text-fuchsia-400" />
-                  <div className="flex flex-col">
-                    <h2 className="text-base font-black text-white tracking-widest leading-none mt-1">POLYMARKET</h2>
-                    <span className="text-[10px] text-fuchsia-400/80 mt-1">24시간 기준 거래량 급증 예측 시장</span>
-                  </div>
-               </div>
-               <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                  <div className="flex flex-col gap-3">
-                    {polys.map((poly, i) => (
-                      <a 
-                        key={i} 
-                        href={`https://polymarket.com/event/${poly.slug}`} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="flex flex-col gap-1 shrink-0 group cursor-pointer bg-fuchsia-900/10 hover:bg-fuchsia-900/20 px-2.5 py-2 rounded transition-colors"
-                      >
-                        <h3 className="text-[11px] font-semibold text-fuchsia-50 line-clamp-1 leading-tight group-hover:text-fuchsia-300 transition-colors">
-                          <span className="text-fuchsia-400 mr-1">{poly.rank}.</span>
-                          {poly.title}
-                        </h3>
-                        <div className="flex items-center justify-between text-[11px] mt-0.5">
-                          <span className="text-fuchsia-200/70 font-medium">24h Vol: {formatVolume(poly.volume)}</span>
-                          <span className="font-bold text-fuchsia-300 bg-fuchsia-950/60 shadow-inner px-1.5 py-0.5 rounded">
-                            YES {((poly.yesPrice ?? 0) * 100).toFixed(0)}%
-                          </span>
-                        </div>
-                      </a>
-                    ))}
-                  </div>
-               </div>
-            </div>
-
-            {/* 3. Crypto Whales */}
+            
+              <div className="w-full flex flex-col h-[320px]">
+                <MinskyWidget />
+              </div>
+              <EmptySlot index={3} />
+              <EmptySlot index={4} />
+              <EmptySlot index={5} />
+              <EmptySlot index={6} />
+            </>
+          )}
+          {activeTab === 'crypto' && (
+            <>
+              {/* 3. Crypto Whales */}
             <div className="w-full flex flex-col h-[320px] bg-emerald-950/40 backdrop-blur-xl border border-emerald-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(16,185,129,0.15)] transition-colors duration-300 hover:bg-emerald-900/50 hover:border-emerald-500/60">
                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-emerald-500/30 shrink-0">
                   <TrendingUp className="w-5 h-5 text-emerald-400" />
@@ -300,7 +300,131 @@ export function GalaxyHero() {
                </div>
             </div>
 
-            {/* 4. Google Trends */}
+            
+              <EmptySlot index={2} />
+              <EmptySlot index={3} />
+              <EmptySlot index={4} />
+              <EmptySlot index={5} />
+              <EmptySlot index={6} />
+            </>
+          )}
+          {activeTab === 'prediction' && (
+            <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+              {/* Slot 1: Featured Carousel */}
+              <div className="w-full flex flex-col h-[360px] bg-fuchsia-950/40 backdrop-blur-xl border border-fuchsia-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(255,0,255,0.15)] relative overflow-hidden group">
+                 <div className="flex items-center gap-2 mb-3 pb-2 border-b border-fuchsia-500/30 shrink-0 z-10 relative">
+                    <BarChart3 className="w-5 h-5 text-fuchsia-400" />
+                    <div className="flex flex-col">
+                      <h2 className="text-base font-black text-white tracking-widest leading-none mt-1">HOT ISSUES</h2>
+                      <span className="text-[10px] text-fuchsia-400/80 mt-1">폴리마켓 주요 트렌딩 토픽</span>
+                    </div>
+                 </div>
+                 
+                 {polys.length > 0 ? (
+                   <div className="flex-1 flex flex-col justify-between relative z-10">
+                     <div className="flex items-start gap-4 h-full">
+                       {polys[polyIndex]?.image && (
+                         <img src={polys[polyIndex].image} className="w-16 h-16 rounded-xl object-cover border border-fuchsia-500/30 hidden sm:block" alt="event" />
+                       )}
+                       <div className="flex-1 min-w-0">
+                         <a href={`https://polymarket.com/event/${polys[polyIndex]?.slug}`} target="_blank" rel="noopener noreferrer" className="block mb-3 hover:opacity-80">
+                           <h3 className="text-sm font-bold text-white line-clamp-2 leading-snug">{polys[polyIndex]?.title}</h3>
+                         </a>
+                         
+                         <div className="flex flex-col gap-2 overflow-y-auto max-h-[160px] custom-scrollbar pr-2">
+                           {polys[polyIndex]?.markets?.map((m, idx) => (
+                             <div key={idx} className="flex justify-between items-center bg-fuchsia-900/20 px-3 py-1.5 rounded-lg border border-fuchsia-800/50">
+                               <span className="text-xs text-fuchsia-100 font-medium truncate pr-2">{m.title}</span>
+                               <span className="text-xs font-bold text-fuchsia-300 bg-fuchsia-950/80 px-2 py-0.5 rounded shadow-inner whitespace-nowrap">
+                                 {m.yesPrice !== null ? `YES ${(m.yesPrice * 100).toFixed(0)}%` : '-'}
+                               </span>
+                             </div>
+                           ))}
+                         </div>
+                       </div>
+                     </div>
+                     
+                     <div className="flex justify-between items-center mt-3 pt-3 border-t border-fuchsia-500/20">
+                       <span className="text-xs font-medium text-fuchsia-200/60">Vol: {formatMarketCap(polys[polyIndex]?.volume?.toString() || '0')}</span>
+                       <div className="flex gap-1.5">
+                         {polys.map((_, idx) => (
+                           <div key={idx} onClick={() => setPolyIndex(idx)} className={`w-2 h-2 rounded-full cursor-pointer transition-all ${idx === polyIndex ? 'bg-fuchsia-400 w-4' : 'bg-fuchsia-900/50 hover:bg-fuchsia-400/50'}`} />
+                         ))}
+                       </div>
+                     </div>
+                     
+                     {/* Arrows */}
+                     <button onClick={() => setPolyIndex(i => (i === 0 ? polys.length - 1 : i - 1))} className="absolute top-1/2 -left-3 -translate-y-1/2 p-1 bg-fuchsia-950/80 rounded-full text-fuchsia-400 opacity-0 group-hover:opacity-100 transition-opacity border border-fuchsia-500/30">
+                       <ChevronLeft className="w-5 h-5" />
+                     </button>
+                     <button onClick={() => setPolyIndex(i => (i === polys.length - 1 ? 0 : i + 1))} className="absolute top-1/2 -right-3 -translate-y-1/2 p-1 bg-fuchsia-950/80 rounded-full text-fuchsia-400 opacity-0 group-hover:opacity-100 transition-opacity border border-fuchsia-500/30">
+                       <ChevronRight className="w-5 h-5" />
+                     </button>
+                   </div>
+                 ) : (
+                   <div className="flex-1 flex items-center justify-center text-xs text-fuchsia-300/50">데이터를 불러오는 중...</div>
+                 )}
+              </div>
+
+              {/* Slot 2: Fed & Finance */}
+              <div className="w-full flex flex-col h-[360px] bg-amber-950/40 backdrop-blur-xl border border-amber-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(245,158,11,0.15)] transition-colors duration-300 hover:bg-amber-900/50 hover:border-amber-500/60">
+                 <div className="flex items-center gap-2 mb-4 pb-3 border-b border-amber-500/30 shrink-0">
+                    <Calendar className="w-5 h-5 text-amber-400" />
+                    <div className="flex flex-col">
+                      <h2 className="text-base font-black text-white tracking-widest leading-none mt-1">FED & FINANCE</h2>
+                      <span className="text-[10px] text-amber-400/80 mt-1">경제 지표 및 연준 금리 예측</span>
+                    </div>
+                 </div>
+                 
+                 <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar-amber">
+                   <div className="flex flex-col gap-2.5">
+                     {fedPolys.length > 0 ? fedPolys.map((poly, i) => (
+                       <a 
+                         key={i} 
+                         href={`https://polymarket.com/event/${poly.slug}`} 
+                         target="_blank" 
+                         rel="noopener noreferrer" 
+                         className="flex flex-col gap-1 shrink-0 group cursor-pointer bg-amber-900/10 hover:bg-amber-900/20 px-3 py-2.5 rounded-lg transition-colors border border-amber-900/30"
+                       >
+                         <h3 className="text-[12px] font-bold text-amber-50 line-clamp-2 leading-tight group-hover:text-amber-300 transition-colors">
+                           {poly.title}
+                         </h3>
+                         <div className="flex items-center justify-between mt-1">
+                           <div className="flex items-center gap-2">
+                             <span className="text-[10px] font-bold text-amber-900 bg-amber-400 px-1.5 py-0.5 rounded flex-shrink-0">
+                               {poly.endDate ? new Date(poly.endDate).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : 'N/A'}
+                             </span>
+                             <span className="text-[10px] text-amber-200/50 hidden sm:inline">Vol: {formatMarketCap(poly.volume?.toString() || '0')}</span>
+                           </div>
+                           <span className="font-extrabold text-[11px] text-amber-300 bg-amber-950/80 shadow-inner px-2 py-0.5 rounded">
+                             YES {poly.yesPrice !== null ? (poly.yesPrice * 100).toFixed(0) : '-'}%
+                           </span>
+                         </div>
+                       </a>
+                     )) : (
+                       <div className="flex items-center justify-center h-full text-amber-200/50 text-[11px] text-center p-4">데이터 로딩 중...</div>
+                     )}
+                   </div>
+                 </div>
+              </div>
+
+              {/* Fill remaining slots if 2x3 is maintained globally, but prediction is isolated here */}
+              {/* Wait, the container grid is already defined outside! 
+                  The prediction block itself only renders its own fragments.
+                  I should render the remaining empty slots to match the global layout.
+                  Wait, lg:col-span-3 spans the entire row. But we can just use EmptySlot for the rest.
+              */}
+              <div className="hidden lg:block lg:col-span-1">
+                <EmptySlot index={3} />
+              </div>
+              <EmptySlot index={4} />
+              <EmptySlot index={5} />
+              <EmptySlot index={6} />
+            </div>
+          )}
+          {activeTab === 'news' && (
+            <>
+              {/* 4. Google Trends */}
             <div className="w-full flex flex-col h-[320px] bg-rose-950/40 backdrop-blur-xl border border-rose-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(244,63,94,0.15)] transition-colors duration-300 hover:bg-rose-900/50 hover:border-rose-500/60">
                {/* 헤더 + 탭 */}
                <div className="flex items-center justify-between mb-4 pb-3 border-b border-rose-500/30 shrink-0">
@@ -360,32 +484,15 @@ export function GalaxyHero() {
                </div>
             </div>
 
-          </div>
-
-          {/* 오른쪽 열: 빈 위젯 4개 */}
-          <div className="flex-1 flex flex-col gap-6">
-            {/* Empty Widget 1 */}
-            <div className="w-full flex flex-col items-center justify-center h-[320px] bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 border-dashed rounded-2xl p-5 shadow-inner transition-colors duration-300 hover:bg-slate-800/40">
-              <span className="text-slate-500 font-bold tracking-widest text-sm">EMPTY SLOT 1</span>
-              <span className="text-slate-600/70 text-xs mt-2 text-center">To be filled with a chart or data</span>
-            </div>
-            
-            {/* Empty Widget 2 replaced by Minsky */}
-            <MinskyWidget />
-
-            {/* Empty Widget 3 */}
-            <div className="w-full flex flex-col items-center justify-center h-[320px] bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 border-dashed rounded-2xl p-5 shadow-inner transition-colors duration-300 hover:bg-slate-800/40">
-              <span className="text-slate-500 font-bold tracking-widest text-sm">EMPTY SLOT 3</span>
-            </div>
-
-            {/* Empty Widget 4 */}
-            <div className="w-full flex flex-col items-center justify-center h-[320px] bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 border-dashed rounded-2xl p-5 shadow-inner transition-colors duration-300 hover:bg-slate-800/40">
-              <span className="text-slate-500 font-bold tracking-widest text-sm">EMPTY SLOT 4</span>
-            </div>
-          </div>
+              <EmptySlot index={2} />
+              <EmptySlot index={3} />
+              <EmptySlot index={4} />
+              <EmptySlot index={5} />
+              <EmptySlot index={6} />
+            </>
+          )}
         </div>
       )}
-      {/* 애니메이션 및 스크롤바 스타일 */}
       <style jsx>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 4px;
@@ -446,6 +553,10 @@ export function GalaxyHero() {
         .custom-scrollbar-rose::-webkit-scrollbar-thumb:hover {
           background: rgba(244, 63, 94, 0.6); 
         }
+        .custom-scrollbar-amber::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar-amber::-webkit-scrollbar-track { background: rgba(245, 158, 11, 0.05); border-radius: 4px; }
+        .custom-scrollbar-amber::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.3); border-radius: 4px; }
+        .custom-scrollbar-amber::-webkit-scrollbar-thumb:hover { background: rgba(245, 158, 11, 0.6); }
       `}</style>
     </div>
   )

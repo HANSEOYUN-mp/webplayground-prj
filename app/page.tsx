@@ -34,7 +34,7 @@ export default function Home() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedPost, setSelectedPost] = useState<Post | null>(null)
   const [sortBy, setSortBy] = useState<"latest" | "popular">("latest")
-  const [activeTab, setActiveTab] = useState<NavTab>("feed")
+  const [activeTab, setActiveTab] = useState<NavTab>("stock")
 
   // 비로그인: 공개 글 목록 / 로그인: 본인용 글 목록(좋아요·북마크·즐겨찾기 포함)
   useEffect(() => {
@@ -59,10 +59,6 @@ export default function Home() {
 
   const filteredPosts = useMemo(() => {
     let result = posts
-
-    if (activeTab === "favorite") {
-      result = result.filter((post) => post.favorited === true)
-    }
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
@@ -188,14 +184,18 @@ export default function Home() {
           onNewPost={() => {}}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          activeTab="feed"
-          onTabChange={() => {}}
+          activeTab={activeTab}
+          onTabChange={(tab) => {
+            setActiveTab(tab)
+            setSelectedTag(null)
+            setSearchQuery("")
+          }}
           onOpenAuthModal={openAuthModal}
           isLoggedIn={false}
         />
         <main className="mx-auto max-w-7xl px-4 py-8 lg:px-8">
-          <GalaxyHero />
-          {currentSelectedPost ? (
+          {activeTab !== "post" && <GalaxyHero activeTab={activeTab as any} />}
+          {activeTab === "post" && (currentSelectedPost ? (
             <PostDetail
               post={currentSelectedPost}
               onBack={() => setSelectedPost(null)}
@@ -295,7 +295,7 @@ export default function Home() {
                 />
               </div>
             </div>
-          )}
+          ))}
         </main>
         <AuthModal
           open={authModalOpen}
@@ -315,18 +315,16 @@ export default function Home() {
         activeTab={activeTab}
         onTabChange={(tab) => {
           setActiveTab(tab)
-          if (tab === "favorite") {
-            setSelectedTag(null)
-            setSearchQuery("")
-          }
+          setSelectedTag(null)
+          setSearchQuery("")
         }}
         onOpenAuthModal={openAuthModal}
         isLoggedIn={true}
       />
 
       <main className="mx-auto max-w-7xl px-4 py-8 lg:px-8">
-        <GalaxyHero />
-        {currentSelectedPost ? (
+        {activeTab !== "post" && <GalaxyHero activeTab={activeTab as any} />}
+        {activeTab === "post" && (currentSelectedPost ? (
           <PostDetail
             post={currentSelectedPost}
             onBack={() => setSelectedPost(null)}
@@ -346,16 +344,12 @@ export default function Home() {
               <div className="mb-6 flex items-center justify-between">
                 <div>
                   <h1 className="text-2xl font-bold text-foreground">
-                    {activeTab === "favorite"
-                      ? "Favorite"
-                      : selectedTag
+                    {selectedTag
                         ? `#${selectedTag}`
                         : "지식 피드"}
                   </h1>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    {activeTab === "favorite"
-                      ? "즐겨찾기한 게시글만 보여요"
-                      : selectedTag
+                    {selectedTag
                         ? `${selectedTag} 태그 게시글`
                         : "커뮤니티와 함께 지식을 발견하고 공유하세요"}
                   </p>
@@ -429,16 +423,12 @@ export default function Home() {
                     <PenLine className="h-7 w-7 text-primary" />
                   </div>
                   <h3 className="mb-2 text-lg font-semibold text-foreground">
-                    {activeTab === "favorite"
-                      ? "즐겨찾기한 게시글이 없습니다"
-                      : posts.length === 0
+                    {posts.length === 0
                         ? "아직 게시글이 없습니다"
                         : "게시글을 찾을 수 없습니다"}
                   </h3>
                   <p className="mb-4 text-sm text-muted-foreground">
-                    {activeTab === "favorite"
-                      ? "게시글의 하트를 눌러 Favorite에 추가해 보세요!"
-                      : posts.length === 0
+                    {posts.length === 0
                         ? "첫 번째 게시글을 작성하고 지식을 공유해 보세요!"
                         : "검색어 또는 필터 조건을 변경해 보세요"}
                   </p>
@@ -464,7 +454,7 @@ export default function Home() {
               />
             </div>
           </div>
-        )}
+        ))}
       </main>
 
       <CreatePostModal
