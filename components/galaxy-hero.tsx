@@ -3,6 +3,9 @@
 import { useState, useEffect } from "react"
 import { TrendingUp, BarChart3, ChevronLeft, ChevronRight, Calendar, RefreshCw, AlertCircle, Bitcoin, MessageSquareText, Flame } from "lucide-react"
 import { MinskyWidget } from "@/components/minsky-widget"
+import { FredWidget } from "@/components/fred-widget"
+import { TradingViewHeatmapWidget } from "@/components/tradingview-heatmap-widget"
+import { CustomHeatmapWidget } from "@/components/custom-heatmap-widget"
 
 interface StockRow {
   rank: number
@@ -77,7 +80,7 @@ function formatVolume(v: number): string {
 
 function EmptySlot({ index, title = `EMPTY SLOT ${index}`, subtitle = 'To be filled with a chart or data' }: { index: number, title?: string, subtitle?: string }) {
   return (
-    <div className="w-full flex flex-col items-center justify-center h-[320px] bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 border-dashed rounded-2xl p-5 shadow-inner transition-colors duration-300 hover:bg-slate-800/40">
+    <div className="w-full flex flex-col items-center justify-center h-[360px] bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 border-dashed rounded-2xl p-5 shadow-inner transition-colors duration-300 hover:bg-slate-800/40">
       <span className="text-slate-500 font-bold tracking-widest text-sm">{title}</span>
       {subtitle && <span className="text-slate-600/70 text-xs mt-2 text-center">{subtitle}</span>}
     </div>
@@ -212,9 +215,9 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "crypto" | "pre
       {!loading && !error && (
         <div className="w-full max-w-7xl mx-auto z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
           {activeTab === 'stock' && (
-            <>
+            <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
               {/* 1. 주식 데이터 */}
-            <div className="w-full flex flex-col h-[320px] bg-cyan-950/40 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(0,255,255,0.15)] transition-colors duration-300 hover:bg-cyan-900/50 hover:border-cyan-500/60">
+            <div className="w-full flex flex-col h-[360px] bg-cyan-950/40 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(0,255,255,0.15)] transition-colors duration-300 hover:bg-cyan-900/50 hover:border-cyan-500/60">
                <div className="flex items-center justify-between mb-4 pb-3 border-b border-cyan-500/30 shrink-0">
                   <div className="flex items-center gap-2">
                     <TrendingUp className="w-5 h-5 text-cyan-400" />
@@ -253,19 +256,18 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "crypto" | "pre
             </div>
 
             
-              <div className="w-full flex flex-col h-[320px]">
+              <div className="w-full flex flex-col h-[360px]">
                 <MinskyWidget />
               </div>
-              <EmptySlot index={3} />
-              <EmptySlot index={4} />
-              <EmptySlot index={5} />
-              <EmptySlot index={6} />
-            </>
+              <TradingViewHeatmapWidget />
+              <FredWidget />
+              <CustomHeatmapWidget />
+            </div>
           )}
           {activeTab === 'crypto' && (
             <>
               {/* 3. Crypto Whales */}
-            <div className="w-full flex flex-col h-[320px] bg-emerald-950/40 backdrop-blur-xl border border-emerald-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(16,185,129,0.15)] transition-colors duration-300 hover:bg-emerald-900/50 hover:border-emerald-500/60">
+            <div className="w-full flex flex-col h-[360px] bg-emerald-950/40 backdrop-blur-xl border border-emerald-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(16,185,129,0.15)] transition-colors duration-300 hover:bg-emerald-900/50 hover:border-emerald-500/60">
                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-emerald-500/30 shrink-0">
                   <TrendingUp className="w-5 h-5 text-emerald-400" />
                   <div className="flex flex-col">
@@ -425,7 +427,7 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "crypto" | "pre
           {activeTab === 'news' && (
             <>
               {/* 4. Google Trends */}
-            <div className="w-full flex flex-col h-[320px] bg-rose-950/40 backdrop-blur-xl border border-rose-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(244,63,94,0.15)] transition-colors duration-300 hover:bg-rose-900/50 hover:border-rose-500/60">
+            <div className="w-full flex flex-col h-[360px] bg-rose-950/40 backdrop-blur-xl border border-rose-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(244,63,94,0.15)] transition-colors duration-300 hover:bg-rose-900/50 hover:border-rose-500/60">
                {/* 헤더 + 탭 */}
                <div className="flex items-center justify-between mb-4 pb-3 border-b border-rose-500/30 shrink-0">
                  <div className="flex items-center gap-2">

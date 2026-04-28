@@ -79,7 +79,7 @@ export function MinskyWidget() {
   }
 
   return (
-    <div className="w-full h-[320px] bg-indigo-950/40 backdrop-blur-xl border border-indigo-500/30 rounded-2xl shadow-[0_0_30px_rgba(99,102,241,0.15)] flex flex-col overflow-hidden group transition-colors duration-300 hover:bg-indigo-900/50 hover:border-indigo-500/60 relative">
+    <div className="w-full h-[360px] bg-indigo-950/40 backdrop-blur-xl border border-indigo-500/30 rounded-2xl shadow-[0_0_30px_rgba(99,102,241,0.15)] flex flex-col overflow-hidden group transition-colors duration-300 hover:bg-indigo-900/50 hover:border-indigo-500/60 relative">
       
       {/* Header - Fixed At Top */}
       <div className="flex items-center gap-2 px-5 py-4 border-b border-indigo-500/30 shrink-0 bg-indigo-950/20 z-10">

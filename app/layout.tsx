@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, JetBrains_Mono } from 'next/font/google'
+import { Inter, JetBrains_Mono, Dancing_Script } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from "@/components/ui/sonner"
 import { AuthProvider } from "@/contexts/auth-context"
@@ -7,6 +7,7 @@ import './globals.css'
 
 const _inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const _jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains-mono" });
+const _dancingScript = Dancing_Script({ subsets: ["latin"], variable: "--font-dancing-script", weight: ["700"] });
 
 export const metadata: Metadata = {
   title: 'OmniArchive',
@@ -41,7 +42,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body className={`${_inter.variable} ${_jetbrainsMono.variable} font-sans antialiased text-white min-h-screen relative`}>
+      <body className={`${_inter.variable} ${_jetbrainsMono.variable} ${_dancingScript.variable} font-sans antialiased text-white min-h-screen relative`}>
         {/* 전체 사이트에 적용되는 우주/블랙홀 배경 */}
         <div className="fixed inset-0 z-[-1]">
           <img 

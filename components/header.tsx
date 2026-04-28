@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Search, Plus, Menu, X, LogOut, LogIn, UserPlus } from "lucide-react"
+import { Search, Plus, ChevronDown, LogOut, LogIn, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/contexts/auth-context"
@@ -43,7 +43,7 @@ export function Header({ onNewPost, searchQuery, onSearchChange, activeTab, onTa
           <div className="flex items-center gap-2">
             <span 
               className="text-3xl font-black italic tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-primary to-white drop-shadow-md"
-              style={{ fontFamily: "'Dancing Script', 'Brush Script MT', cursive" }}
+              style={{ fontFamily: "var(--font-dancing-script, 'Dancing Script', cursive)" }}
             >
               OmniArchive
             </span>
@@ -135,16 +135,22 @@ export function Header({ onNewPost, searchQuery, onSearchChange, activeTab, onTa
           ) : null}
         </div>
 
+        {/* 모바일: 현재 탭명 + 드롭다운 버튼 */}
         <button
-          className="md:hidden"
+          className="md:hidden flex items-center gap-1.5 rounded-lg border border-border bg-secondary/60 px-3 py-1.5 text-sm font-medium text-foreground hover:bg-secondary transition-colors"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+          aria-label="탭 선택"
         >
-          {mobileMenuOpen ? (
-            <X className="h-5 w-5 text-foreground" />
-          ) : (
-            <Menu className="h-5 w-5 text-foreground" />
-          )}
+          <span>
+            {[
+              { id: "stock", label: "📈 Stock" },
+              { id: "crypto", label: "🪙 Crypto" },
+              { id: "prediction", label: "🔮 Prediction" },
+              { id: "news", label: "🔥 News" },
+              { id: "post", label: "✏️ Post" },
+            ].find((t) => t.id === activeTab)?.label ?? "메뉴"}
+          </span>
+          <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${mobileMenuOpen ? "rotate-180" : ""}`} />
         </button>
       </div>
 
