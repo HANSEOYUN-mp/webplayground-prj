@@ -6,6 +6,7 @@ import { MinskyWidget } from "@/components/minsky-widget"
 import { FredWidget } from "@/components/fred-widget"
 import { TradingViewHeatmapWidget } from "@/components/tradingview-heatmap-widget"
 import { CustomHeatmapWidget } from "@/components/custom-heatmap-widget"
+import { FinlifeProductsWidget } from "@/components/finlife-products-widget"
 
 interface StockRow {
   rank: number
@@ -425,7 +426,7 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "crypto" | "pre
             </div>
           )}
           {activeTab === 'news' && (
-            <>
+            <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
               {/* 4. Google Trends */}
             <div className="w-full flex flex-col h-[360px] bg-rose-950/40 backdrop-blur-xl border border-rose-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(244,63,94,0.15)] transition-colors duration-300 hover:bg-rose-900/50 hover:border-rose-500/60">
                {/* 헤더 + 탭 */}
@@ -486,12 +487,12 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "crypto" | "pre
                </div>
             </div>
 
-              <EmptySlot index={2} />
+              <FinlifeProductsWidget />
               <EmptySlot index={3} />
               <EmptySlot index={4} />
               <EmptySlot index={5} />
               <EmptySlot index={6} />
-            </>
+            </div>
           )}
         </div>
       )}

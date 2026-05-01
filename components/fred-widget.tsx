@@ -37,9 +37,13 @@ export function FredWidget() {
     setError(null)
     try {
       const res = await fetch("/api/fred")
-      if (!res.ok) throw new Error("FRED 데이터를 불러오지 못했습니다.")
-      const json = await res.json()
-      if (json.error) throw new Error(json.error)
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(
+          typeof json?.error === "string" ? json.error : "FRED 데이터를 불러오지 못했습니다."
+        )
+      }
+      if (json.error) throw new Error(String(json.error))
       setData(json.items || [])
     } catch (e) {
       setError(e instanceof Error ? e.message : "알 수 없는 오류")
