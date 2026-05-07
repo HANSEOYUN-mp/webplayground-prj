@@ -7,6 +7,10 @@ import { FredWidget } from "@/components/fred-widget"
 import { TradingViewHeatmapWidget } from "@/components/tradingview-heatmap-widget"
 import { CustomHeatmapWidget } from "@/components/custom-heatmap-widget"
 import { FinlifeProductsWidget } from "@/components/finlife-products-widget"
+import { TradingViewCryptoWidget } from "@/components/tradingview-crypto-widget"
+import { TradingViewTetherDomWidget } from "@/components/tradingview-tether-dom-widget"
+import { LiquidationHeatmapWidget } from "@/components/liquidation-heatmap-widget"
+import { FarsideEtfFlowsWidget } from "@/components/farside-etf-flows-widget"
 
 interface StockRow {
   rank: number
@@ -266,7 +270,7 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "crypto" | "pre
             </div>
           )}
           {activeTab === 'crypto' && (
-            <>
+            <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
               {/* 3. Crypto Whales */}
             <div className="w-full flex flex-col h-[360px] bg-emerald-950/40 backdrop-blur-xl border border-emerald-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(16,185,129,0.15)] transition-colors duration-300 hover:bg-emerald-900/50 hover:border-emerald-500/60">
                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-emerald-500/30 shrink-0">
@@ -304,12 +308,12 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "crypto" | "pre
             </div>
 
             
-              <EmptySlot index={2} />
-              <EmptySlot index={3} />
-              <EmptySlot index={4} />
+              <FarsideEtfFlowsWidget />
+              <TradingViewCryptoWidget />
+              <TradingViewTetherDomWidget />
               <EmptySlot index={5} />
               <EmptySlot index={6} />
-            </>
+            </div>
           )}
           {activeTab === 'prediction' && (
             <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
