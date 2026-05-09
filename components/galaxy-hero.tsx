@@ -11,6 +11,8 @@ import { TradingViewCryptoWidget } from "@/components/tradingview-crypto-widget"
 import { TradingViewTetherDomWidget } from "@/components/tradingview-tether-dom-widget"
 import { LiquidationHeatmapWidget } from "@/components/liquidation-heatmap-widget"
 import { FarsideEtfFlowsWidget } from "@/components/farside-etf-flows-widget"
+import { TopTraderLongShortChartWidget } from "@/components/top-trader-long-short-chart-widget"
+import { CmeBtcFuturesWidget } from "@/components/cme-btc-futures-widget"
 
 interface StockRow {
   rank: number
@@ -311,8 +313,8 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "crypto" | "pre
               <FarsideEtfFlowsWidget />
               <TradingViewCryptoWidget />
               <TradingViewTetherDomWidget />
-              <EmptySlot index={5} />
-              <EmptySlot index={6} />
+              <TopTraderLongShortChartWidget />
+              <CmeBtcFuturesWidget />
             </div>
           )}
           {activeTab === 'prediction' && (
