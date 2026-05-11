@@ -28,6 +28,21 @@ function fmtDate(ts?: number) {
   return new Date(ts).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })
 }
 
+/** 차트와 동일: 끝에서부터 처음으로 유효한 숫자가 있는 행 (마지막 점 기준) */
+function lastFiniteFromSeries(
+  points: Row[],
+  read: (p: Row) => number | null
+): { value: number; timestamp: number } | null {
+  for (let i = points.length - 1; i >= 0; i--) {
+    const p = points[i]
+    const v = read(p)
+    if (v != null && Number.isFinite(v)) {
+      return { value: v, timestamp: p.timestamp }
+    }
+  }
+  return null
+}
+
 /** 데이터 범위 기준 Y축 자동 스케일 (상·하 패딩) */
 function autoDomain(values: number[], padRatio = 0.08): { min: number; max: number } {
   const v = values.filter((x) => Number.isFinite(x))
@@ -69,11 +84,15 @@ export function CmeBtcFuturesWidget() {
   }, [])
 
   useEffect(() => {
-    load()
+    const t = window.setTimeout(() => void load(), 1000)
+    return () => window.clearTimeout(t)
   }, [load])
 
   const points = useMemo(() => (data?.points ?? []).filter((p) => p && Number.isFinite(p.timestamp)), [data])
-  const last = points.length ? points[points.length - 1] : null
+
+  const lastBtcSnap = useMemo(() => lastFiniteFromSeries(points, (p) => p.btc_price), [points])
+  const lastOiSnap = useMemo(() => lastFiniteFromSeries(points, (p) => p.open_interest), [points])
+  const lastVolSnap = useMemo(() => lastFiniteFromSeries(points, (p) => p.volume), [points])
 
   const priceVals = useMemo(() => points.map((p) => p.btc_price), [points])
   const oiVals = useMemo(() => points.map((p) => p.open_interest), [points])
@@ -227,23 +246,23 @@ export function CmeBtcFuturesWidget() {
               <div className="rounded-xl border border-slate-500/20 bg-slate-950/30 p-1">
                 <div className="text-slate-400">BTC Price</div>
                 <div className="text-white font-extrabold text-[11px] leading-tight">
-                  {last?.btc_price != null ? fmtK(last.btc_price) : "-"}
+                  {lastBtcSnap != null ? fmtK(lastBtcSnap.value) : "-"}
                 </div>
-                <div className="text-[7px] text-slate-400/80">{fmtDate(last?.timestamp)}</div>
+                <div className="text-[7px] text-slate-400/80">{fmtDate(lastBtcSnap?.timestamp)}</div>
               </div>
               <div className="rounded-xl border border-slate-500/20 bg-slate-950/30 p-1">
                 <div className="text-slate-400">Open Interest</div>
                 <div className="text-white font-extrabold text-[11px] leading-tight">
-                  {last?.open_interest != null ? fmtK(last.open_interest) : "-"}
+                  {lastOiSnap != null ? fmtK(lastOiSnap.value) : "-"}
                 </div>
-                <div className="text-[7px] text-slate-500/70">{fmtDate(last?.timestamp)}</div>
+                <div className="text-[7px] text-slate-500/70">{fmtDate(lastOiSnap?.timestamp)}</div>
               </div>
               <div className="rounded-xl border border-slate-500/20 bg-slate-950/30 p-1">
                 <div className="text-slate-400">Volume</div>
                 <div className="text-white font-extrabold text-[11px] leading-tight">
-                  {last?.volume != null ? fmtK(last.volume) : "-"}
+                  {lastVolSnap != null ? fmtK(lastVolSnap.value) : "-"}
                 </div>
-                <div className="text-[7px] text-slate-500/70">{fmtDate(last?.timestamp)}</div>
+                <div className="text-[7px] text-slate-500/70">{fmtDate(lastVolSnap?.timestamp)}</div>
               </div>
             </div>
 
