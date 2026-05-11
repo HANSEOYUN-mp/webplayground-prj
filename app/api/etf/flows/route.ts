@@ -2,6 +2,11 @@ import { NextResponse } from "next/server"
 
 type AssetSymbol = "BTC" | "ETH"
 
+/**
+ * GET /etfs/summary-history — SoSoValue 2.1 ETF Summary History
+ * @see https://sosovalue.gitbook.io/soso-value-api-doc/2.-etf/summary-history.md
+ * `total_net_inflow` = 일별 전체 ETF 순유입(USD), API에서 집계된 값 (티커별 합산과 동일하지 않을 수 있음)
+ */
 type SoSoSummaryRow = {
   date: string
   total_net_inflow: number | string
@@ -11,10 +16,6 @@ type SoSoEtfHistoryRow = {
   date: string | number
   ticker: string
   net_inflow: number | string
-}
-
-type SoSoEtfListRow = {
-  ticker: string
 }
 
 type FlowRow = {
@@ -100,45 +101,15 @@ async function sosoFetchJson<T>(path: string, apiKey: string, search?: Record<st
   throw new Error("SoSoValue API 응답 형식을 해석하지 못했습니다.")
 }
 
-async function loadTotalBySummingTickers(asset: AssetSymbol, days: number, apiKey: string): Promise<Map<string, number>> {
-  const list = await sosoFetchJson<SoSoEtfListRow[]>("/etfs", apiKey, {
-    symbol: asset,
-    country_code: "US",
-  })
-
-  const tickers = list
-    .map((x) => x?.ticker)
-    .filter((t): t is string => typeof t === "string" && t.length > 0)
-
-  const mapTotal = new Map<string, number>()
-
-  // Keep concurrency moderate to avoid timeouts/rate limits.
-  const chunkSize = 4
-  for (let i = 0; i < tickers.length; i += chunkSize) {
-    const chunk = tickers.slice(i, i + chunkSize)
-    const results = await Promise.all(
-      chunk.map(async (ticker) => {
-        try {
-          return await sosoFetchJson<SoSoEtfHistoryRow[]>(`/etfs/${ticker}/history`, apiKey, {
-            limit: String(Math.min(Math.max(days, 1), 30)),
-          })
-        } catch {
-          return [] as SoSoEtfHistoryRow[]
-        }
-      })
-    )
-
-    for (const rows of results) {
-      for (const r of rows) {
-        const ymd = toYmd(r.date)
-        const v = toNumber(r.net_inflow)
-        if (!ymd || v == null) continue
-        mapTotal.set(ymd, (mapTotal.get(ymd) ?? 0) + v)
-      }
-    }
+/** 문서상 summary-history 조회 구간은 최근 1개월 이내. UTC yyyy-MM-dd */
+function summaryHistoryDateRange(): { start_date: string; end_date: string } {
+  const end = new Date()
+  const start = new Date(end)
+  start.setUTCDate(start.getUTCDate() - 29)
+  return {
+    end_date: `${end.getUTCFullYear()}-${pad2(end.getUTCMonth() + 1)}-${pad2(end.getUTCDate())}`,
+    start_date: `${start.getUTCFullYear()}-${pad2(start.getUTCMonth() + 1)}-${pad2(start.getUTCDate())}`,
   }
-
-  return mapTotal
 }
 
 function pickDailyTotalByDate(
@@ -164,6 +135,7 @@ function pickDailyTotalByDate(
     const anchor = anchorByDate?.get(date)
     let best = values[0]
     if (anchor != null && Number.isFinite(anchor)) {
+      // 동일 날짜에 summary 행이 여러 개일 때: IBIT+FBTC(또는 ETHA+FETH) 합과 가장 가까운 후보를 택해 대시보드와 맞춤
       for (const v of values) {
         if (Math.abs(v - anchor) < Math.abs(best - anchor)) best = v
       }
@@ -179,10 +151,12 @@ function pickDailyTotalByDate(
 }
 
 async function loadAssetRows(asset: AssetSymbol, days: number, apiKey: string): Promise<FlowRow[]> {
+  // 기관별 표시용: BlackRock = BTC는 IBIT · ETH는 ETHA / Fidelity = BTC는 FBTC · ETH는 FETH
   const tickerBlackrock = asset === "BTC" ? "IBIT" : "ETHA"
   const tickerFidelity = asset === "BTC" ? "FBTC" : "FETH"
 
-  const [blackrock, fidelity, summary, totalByTickers] = await Promise.all([
+  const range = summaryHistoryDateRange()
+  const [blackrock, fidelity, summary] = await Promise.all([
     sosoFetchJson<SoSoEtfHistoryRow[]>(`/etfs/${tickerBlackrock}/history`, apiKey, {
       limit: String(Math.min(Math.max(days, 1), 30)),
     }).catch(() => [] as SoSoEtfHistoryRow[]),
@@ -192,10 +166,10 @@ async function loadAssetRows(asset: AssetSymbol, days: number, apiKey: string): 
     sosoFetchJson<SoSoSummaryRow[]>("/etfs/summary-history", apiKey, {
       symbol: asset,
       country_code: "US",
-      limit: String(Math.min(Math.max(days, 1), 300)),
+      limit: String(Math.min(Math.max(days * 3, 20), 300)),
+      start_date: range.start_date,
+      end_date: range.end_date,
     }).catch(() => [] as SoSoSummaryRow[]),
-    // fallback only (used when summary is empty/unavailable)
-    loadTotalBySummingTickers(asset, days, apiKey).catch(() => new Map<string, number>()),
   ])
 
   const mapBlackrock = new Map<string, number>()
@@ -221,15 +195,14 @@ async function loadAssetRows(asset: AssetSymbol, days: number, apiKey: string): 
     anchorByDate.set(date, br + fd)
   }
 
+  // Daily Total Net Inflow(USD): API 집계값 total_net_inflow만 사용 (티커 전체 합산 호출 없음)
   const mapTotal = pickDailyTotalByDate(summary, anchorByDate)
-  if (mapTotal.size === 0) {
-    // Fallback: sum per-ticker histories (can be rate-limited, but better than empty).
-    for (const [k, v] of totalByTickers.entries()) {
-      if (typeof k === "string" && typeof v === "number" && Number.isFinite(v)) mapTotal.set(k, v)
-    }
-  }
 
-  const dates = Array.from(mapTotal.keys()).sort().reverse().slice(0, days)
+  const dateSet = new Set<string>([...mapTotal.keys(), ...mapBlackrock.keys(), ...mapFidelity.keys()])
+  const dates = Array.from(dateSet)
+    .sort()
+    .reverse()
+    .slice(0, days)
 
   return dates.map((date) => ({
     date,
@@ -238,6 +211,22 @@ async function loadAssetRows(asset: AssetSymbol, days: number, apiKey: string): 
     total: toMillionsUsd(mapTotal.get(date) ?? null),
   }))
 }
+
+type FlowsCachePayload = {
+  configured: true
+  days: number
+  btc: FlowRow[]
+  eth: FlowRow[]
+  source: string
+  error?: string
+}
+
+const FLOWS_CACHE_TTL_MS = 120_000
+
+const gFlows = globalThis as unknown as {
+  __soso_etf_flows_route_cache?: Record<string, { ts: number; payload: FlowsCachePayload }>
+}
+if (!gFlows.__soso_etf_flows_route_cache) gFlows.__soso_etf_flows_route_cache = {}
 
 export async function GET(req: Request) {
   const apiKey = process.env.SOSOVALUE_API_KEY
@@ -258,30 +247,42 @@ export async function GET(req: Request) {
     )
   }
 
-  try {
-    const [btc, eth] = await Promise.all([
-      loadAssetRows("BTC", days, apiKey),
-      loadAssetRows("ETH", days, apiKey),
-    ])
+  const routeCacheKey = `flows:v1:${days}`
+  const cachedRoute = gFlows.__soso_etf_flows_route_cache?.[routeCacheKey]
+  if (cachedRoute && Date.now() - cachedRoute.ts < FLOWS_CACHE_TTL_MS && !cachedRoute.payload.error) {
+    return NextResponse.json(cachedRoute.payload, {
+      status: 200,
+      headers: { "x-cache": "HIT" },
+    })
+  }
 
-    return NextResponse.json({
+  try {
+    // Sequential assets lowers peak concurrency vs Promise.all(BTC, ETH) (fewer parallel SoSo calls).
+    const btc = await loadAssetRows("BTC", days, apiKey)
+    const eth = await loadAssetRows("ETH", days, apiKey)
+
+    const payload: FlowsCachePayload = {
       configured: true,
       days,
       btc,
       eth,
       source: "SoSoValue",
+    }
+    gFlows.__soso_etf_flows_route_cache![routeCacheKey] = { ts: Date.now(), payload }
+
+    return NextResponse.json(payload, {
+      status: 200,
+      headers: { "x-cache": "MISS" },
     })
   } catch (e) {
-    return NextResponse.json(
-      {
-        configured: true,
-        days,
-        btc: [] as FlowRow[],
-        eth: [] as FlowRow[],
-        error: e instanceof Error ? e.message : "ETF 데이터 조회 실패",
-      },
-      { status: 200 }
-    )
+    const errBody = {
+      configured: true as const,
+      days,
+      btc: [] as FlowRow[],
+      eth: [] as FlowRow[],
+      error: e instanceof Error ? e.message : "ETF 데이터 조회 실패",
+    }
+    return NextResponse.json(errBody, { status: 200 })
   }
 }
 

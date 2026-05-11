@@ -51,8 +51,8 @@ export function TradingViewCryptoWidget() {
         <div className="flex items-center gap-2">
           <BarChart2 className="w-5 h-5 text-slate-400" />
           <div className="flex flex-col">
-            <h2 className="text-base font-black text-white tracking-widest leading-none mt-1">BTC & DOMINANCE</h2>
-            <span className="text-[10px] text-slate-400/80 mt-1">비트코인 가격 및 도미넌스 지표</span>
+            <h2 className="text-base font-black text-white tracking-widest leading-none mt-1">BTC PRICE</h2>
+            <span className="text-[10px] text-slate-400/80 mt-1">Binance BTCUSDT · 일봉</span>
           </div>
         </div>
         <a
