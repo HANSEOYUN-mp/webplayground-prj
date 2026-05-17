@@ -35,7 +35,7 @@ export function TradingViewCryptoWidget() {
       hide_legend: false,
       save_image: false,
       container_id: "tradingview_crypto",
-      studies: ["RSI@tv-basicstudies"],
+      studies: ["RSI@tv-basicstudies", "WMA@tv-basicstudies"],
     })
 
     container.appendChild(script)

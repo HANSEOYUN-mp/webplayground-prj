@@ -23,7 +23,7 @@ export function TradingViewTetherDomWidget() {
       interval: "D",
       timezone: "Asia/Seoul",
       theme: "dark",
-      style: "3", // 3: Area (도미넌스는 주로 영역이나 선 차트로 봄)
+      style: "1", // 1: 캔들
       locale: "kr",
       enable_publishing: false,
       backgroundColor: "rgba(15, 23, 42, 0.4)", 
@@ -32,7 +32,7 @@ export function TradingViewTetherDomWidget() {
       hide_legend: false,
       save_image: false,
       container_id: "tradingview_usdt_dom",
-      studies: ["RSI@tv-basicstudies"],
+      studies: ["RSI@tv-basicstudies", "WMA@tv-basicstudies"],
     })
 
     container.appendChild(script)

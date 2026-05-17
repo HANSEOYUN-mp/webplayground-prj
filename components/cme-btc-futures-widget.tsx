@@ -63,6 +63,7 @@ const M = { left: 56, right: 56, top: 20, bottom: 42 }
 export function CmeBtcFuturesWidget() {
   const [data, setData] = useState<ApiPayload | null>(null)
   const [loading, setLoading] = useState(true)
+  const [showExplanation, setShowExplanation] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -102,13 +103,16 @@ export function CmeBtcFuturesWidget() {
   const w = VB_W
   const h = 248
 
-  const leftDomain = useMemo(() => {
-    const nums: number[] = []
-    for (const x of [...oiVals, ...volVals]) {
-      if (x != null && Number.isFinite(x)) nums.push(x)
-    }
-    return autoDomain(nums, 0.08)
-  }, [oiVals, volVals])
+  const oiDomain = useMemo(() => {
+    const valid = oiVals.filter((v): v is number => typeof v === "number" && Number.isFinite(v))
+    return autoDomain(valid, 0.08)
+  }, [oiVals])
+
+  const volMax = useMemo(() => {
+    const valid = volVals.filter((v): v is number => typeof v === "number" && Number.isFinite(v))
+    if (valid.length === 0) return 1
+    return Math.max(...valid, 1)
+  }, [volVals])
 
   const priceDomain = useMemo(() => {
     const valid = priceVals.filter((v): v is number => typeof v === "number" && Number.isFinite(v))
@@ -124,7 +128,7 @@ export function CmeBtcFuturesWidget() {
     const plotH = plotBottom - plotTop
     const { min: pMin, max: pMax } = priceDomain
     const pSpan = pMax - pMin || 1
-    const { min: lMin, max: lMax } = leftDomain
+    const { min: lMin, max: lMax } = oiDomain
     const lSpan = lMax - lMin || 1
 
     const xAt = (i: number) => plotLeft + (n <= 1 ? plotW / 2 : (i / (n - 1)) * plotW)
@@ -150,9 +154,9 @@ export function CmeBtcFuturesWidget() {
     }
 
     const bars = volVals.map((v, i) => {
-      const vv = v == null || !Number.isFinite(v) ? lMin : v
-      const norm = Math.max(0, (vv - lMin) / lSpan)
-      const bh = norm * plotH
+      const vv = v == null || !Number.isFinite(v) ? 0 : v
+      const norm = Math.max(0, vv / volMax)
+      const bh = norm * (plotH * 0.3) // 볼륨은 차트 하단 30% 영역만 사용
       const step = n <= 1 ? plotW : plotW / (n - 1)
       const barW = Math.max(1, step * 0.65)
       const cx = n <= 1 ? plotLeft + plotW / 2 : xAt(i)
@@ -204,7 +208,7 @@ export function CmeBtcFuturesWidget() {
       lastPx,
       xMonthTicks,
     }
-  }, [n, w, leftDomain, priceDomain, oiVals, volVals, priceVals, points])
+  }, [n, w, oiDomain, volMax, priceDomain, oiVals, volVals, priceVals, points])
 
   return (
     <div className="w-full flex flex-col h-[360px] overflow-hidden bg-slate-950/40 backdrop-blur-xl border border-slate-500/30 rounded-2xl p-4 shadow-[0_0_30px_rgba(148,163,184,0.10)] transition-colors duration-300 hover:bg-slate-900/50 hover:border-slate-500/60">
@@ -407,9 +411,67 @@ export function CmeBtcFuturesWidget() {
             </div>
 
             <div className="flex items-center justify-between text-[9px] text-slate-400/80 px-1 shrink-0">
-              <span>회색: Volume · 파랑: Open Interest · 주황: BTC Price</span>
+              <div className="flex items-center gap-3">
+                <span>회색: Volume · 파랑: Open Interest · 주황: BTC Price</span>
+                <button 
+                  onClick={() => setShowExplanation(!showExplanation)} 
+                  className="text-slate-300 hover:text-white font-bold bg-slate-800/50 hover:bg-slate-700/60 px-2 py-0.5 rounded transition-colors"
+                >
+                  {showExplanation ? "설명 닫기 ▲" : "지표 해석법 ▼"}
+                </button>
+              </div>
               <span>{points.length} pts · 90d</span>
             </div>
+
+            {showExplanation && (
+              <div className="mt-1 p-3 bg-slate-900/80 rounded-xl border border-slate-500/30 text-[10px] text-slate-300 shrink-0">
+                <div className="font-bold text-white mb-2 text-[11px]">💡 가격 + OI + 거래량 핵심 해석 공식</div>
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-500/50 text-slate-400">
+                      <th className="py-1.5 w-10">가격</th>
+                      <th className="py-1.5 w-10">OI</th>
+                      <th className="py-1.5 w-10">거래량</th>
+                      <th className="py-1.5 w-[110px]">해석</th>
+                      <th className="py-1.5">의미</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-500/20">
+                    <tr>
+                      <td className="py-1.5 text-emerald-400 font-bold">상승</td>
+                      <td className="py-1.5 text-emerald-400 font-bold">상승</td>
+                      <td className="py-1.5 text-emerald-400 font-bold">증가</td>
+                      <td className="py-1.5 text-emerald-300 font-bold">강한 강세</td>
+                      <td className="py-1.5 text-slate-400">신규 매수(Long) 세력 진입. 신뢰도 높은 상승장.</td>
+                    </tr>
+                    <tr>
+                      <td className="py-1.5 text-emerald-400 font-bold">상승</td>
+                      <td className="py-1.5 text-rose-400 font-bold">하락</td>
+                      <td className="py-1.5 text-emerald-400 font-bold">증가</td>
+                      <td className="py-1.5 text-amber-300 font-bold">숏 커버링</td>
+                      <td className="py-1.5 text-slate-400">기존 숏 포지션의 강제 손절로 인한 상승. 상승 지속력 낮음.</td>
+                    </tr>
+                    <tr>
+                      <td className="py-1.5 text-rose-400 font-bold">하락</td>
+                      <td className="py-1.5 text-emerald-400 font-bold">상승</td>
+                      <td className="py-1.5 text-emerald-400 font-bold">증가</td>
+                      <td className="py-1.5 text-rose-400 font-bold">강한 약세</td>
+                      <td className="py-1.5 text-slate-400">신규 공매도(Short) 세력 진입. 신뢰도 높은 하락장.</td>
+                    </tr>
+                    <tr>
+                      <td className="py-1.5 text-rose-400 font-bold">하락</td>
+                      <td className="py-1.5 text-rose-400 font-bold">하락</td>
+                      <td className="py-1.5 text-emerald-400 font-bold">증가</td>
+                      <td className="py-1.5 text-amber-300 font-bold">롱 청산</td>
+                      <td className="py-1.5 text-slate-400">기존 롱 포지션의 강제 손절로 인한 하락. 바닥 근접 (반등 임박).</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div className="mt-2 text-[9px] text-slate-400/80 leading-tight">
+                  * 거래량이 감소할 때는 세력 개입이 없는 관망장/노이즈이므로 추세가 곧 꺾이거나 큰 의미가 없을 확률이 높습니다.
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>

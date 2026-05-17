@@ -349,6 +349,16 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "crypto" | "pre
               <TradingViewTetherDomWidget />
               <TopTraderLongShortChartWidget />
               <CmeBtcFuturesWidget />
+              {/* Slot 7 (Placeholder) */}
+              <div className="w-full flex flex-col h-[360px] bg-slate-900/20 backdrop-blur-xl border border-dashed border-slate-500/30 rounded-2xl p-5 items-center justify-center text-slate-500/50 transition-colors hover:bg-slate-900/40 hover:border-slate-500/60">
+                <span className="text-sm font-bold tracking-widest">SLOT 7 (EMPTY)</span>
+                <span className="text-[10px] mt-2">나중에 새 위젯을 여기에 추가하세요</span>
+              </div>
+              {/* Slot 8 (Placeholder) */}
+              <div className="w-full flex flex-col h-[360px] bg-slate-900/20 backdrop-blur-xl border border-dashed border-slate-500/30 rounded-2xl p-5 items-center justify-center text-slate-500/50 transition-colors hover:bg-slate-900/40 hover:border-slate-500/60">
+                <span className="text-sm font-bold tracking-widest">SLOT 8 (EMPTY)</span>
+                <span className="text-[10px] mt-2">나중에 새 위젯을 여기에 추가하세요</span>
+              </div>
             </div>
           )}
           {activeTab === 'prediction' && (
