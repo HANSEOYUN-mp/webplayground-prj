@@ -1,11 +1,15 @@
 {
-  "name": "whale-bot",
-  "version": "1.0.0",
-  "description": "Upbit WebSocket 24/7 Whale Tracker",
-  "main": "whaleWatcher.js",
+  "name": "upbit-bot",
+  "version": "2.0.0",
+  "description": "Upbit volatility breakout bot (GCP) + legacy whale watcher",
+  "main": "breakoutBot.js",
   "type": "module",
   "scripts": {
-    "start": "node whaleWatcher.js"
+    "start": "node breakoutBot.js",
+    "start:breakout": "node breakoutBot.js",
+    "start:whale": "node whaleWatcher.js",
+    "selftest": "node selftest.mjs",
+    "test:supabase": "node test-supabase.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",

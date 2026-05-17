@@ -88,7 +88,9 @@ export function TopTraderLongShortChartWidget() {
   }, [])
 
   useEffect(() => {
-    load()
+    // 크립토 탭 동시 마운트 시 SoSo 호출 분산
+    const t = window.setTimeout(() => void load(), 450)
+    return () => window.clearTimeout(t)
   }, [load])
 
   const points = useMemo(() => (data?.points ?? []).filter((p) => p && Number.isFinite(p.timestamp)), [data])

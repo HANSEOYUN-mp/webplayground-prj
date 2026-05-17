@@ -28,8 +28,8 @@ sudo apt install -y nodejs
 단 3개의 파일(package.json, whaleWatcher.js, .env)만 있으면 됩니다. 폴더를 하나 만들고 세팅합니다.
 ```bash
 # bot 폴더 만들고 이동
-mkdir whale-bot
-cd whale-bot
+mkdir breakout-bot
+cd breakout-bot
 ```
 
 ### 1) package.json 만들기
@@ -38,30 +38,34 @@ nano package.json
 ```
 빈 화면이 나오면 내 컴퓨터의 `bot/package.json` 안의 내용을 전체 복사해서 우클릭으로 붙여넣은 뒤, **`Ctrl+X` -> `Y` -> `Enter`** 를 순서대로 눌러서 저장하고 빠져나옵니다.
 
-### 2) whaleWatcher.js 만들기
+### 2) breakoutBot.js 만들기
 ```bash
-nano whaleWatcher.js
+nano breakoutBot.js
 ```
-마찬가지로 내 컴퓨터의 `bot/whaleWatcher.js` 파일 내용(단, 테스트로 변경한 1천만을 다시 **1억(100_000_000)**으로 돌린 원본)을 붙여넣고 **`Ctrl+X` -> `Y` -> `Enter`** 로 저장합니다.
+마찬가지로 내 컴퓨터의 `bot/breakoutBot.js` 파일 내용을 전체 복사해서 붙여넣고 **`Ctrl+X` -> `Y` -> `Enter`** 로 저장합니다.
 
 ### 3) .env 만들기
 ```bash
 nano .env
 ```
-내 컴퓨터에 설정해둔 `bot/.env`의 내용(프라이빗 키 포함)을 똑같이 붙여넣고 **`Ctrl+X` -> `Y` -> `Enter`** 로 저장합니다.
+내 컴퓨터에 설정해둔 `bot/.env`의 내용을 똑같이 붙여넣고 **`Ctrl+X` -> `Y` -> `Enter`** 로 저장합니다.
+(🚨 필수 확인: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `MARKETS`, `K_VOL`, `MIN_VOL_REL_PCT` 값이 잘 들어있는지 확인하세요!)
 
 ## 4. 라이브러리 설치 및 24시간 가동
 서버 셋팅은 모두 끝났습니다! 이제 필요한 패키지를 설치하고, 봇이 꺼지지 않도록 `pm2`라는 매니저를 써서 실행합니다.
 
 ```bash
-# 1. 터미널 경로가 여전히 whale-bot 폴더인지 확인 후 설치
+# 1. 터미널 경로가 여전히 breakout-bot 폴더인지 확인 후 설치
 npm install
 
-# 2. 24시간 무중단 가동을 돕는 pm2 매니저 설치
+# 2. 24시간 무중단 가동을 돕는 pm2 매니저 설치 (이미 설치되어 있다면 생략 가능)
 sudo npm install -g pm2
 
-# 3. 봇 실전 가동!
-pm2 start whaleWatcher.js --name "whale-bot"
+# 3. 기존 고래 봇 중지 및 삭제 (기존에 돌고 있었다면)
+pm2 delete whale-bot
+
+# 4. 봇 실전 가동!
+pm2 start breakoutBot.js --name "breakout-bot"
 
 # 4. (선택사항) 서버가 재부팅되어도 봇이 알아서 켜지게 설정
 pm2 save
@@ -69,4 +73,9 @@ pm2 startup
 ```
 
 ---
-🎉 **끝입니다!** 이제 터미널 창을 꺼버려도, 컴퓨터 전원을 뽑아도 구글 클라우드에서 봇이 24시간 작동하며 Supabase DB에 1억 이상 거래를 꽂아 넣어줄 것입니다. 내일 아침 9시에 대시보드에 접속해보시면 어젯밤 고래들의 치열한 전투 흔적이 쌓여있을 겁니다!
+🎉 **끝입니다!** 이제 터미널 창을 꺼버려도 구글 클라우드에서 봇이 24시간 작동하며, 조건이 만족될 때마다 Supabase DB에 롱 이벤트를 저장하고 텔레그램으로 알림을 보내줄 것입니다. 
+
+pm2 로그를 확인하고 싶다면 아래 명령어를 입력하세요:
+```bash
+pm2 logs breakout-bot
+```

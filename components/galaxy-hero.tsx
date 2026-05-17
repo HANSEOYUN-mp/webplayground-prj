@@ -42,13 +42,23 @@ interface PolymarketFinanceRow {
   yesPrice: number | null
 }
 
-interface WhaleTrade {
-  code: string
+interface VolatilityEvent {
+  market: string
+  event_time: number
   price: number
-  volume: number
-  amount: number
-  ask_bid: "ASK" | "BID"
-  timestamp: number
+  threshold: number
+  breakout_excess_pct: number
+  volume_relative_pct: number
+  post_1m_window_start: number
+  post_1m_window_end: number
+  post_1m_trade_count: number
+  post_1m_volume_sum: number
+  post_1m_buy_pct_by_count: number
+  post_1m_sell_pct_by_count: number
+  post_1m_dominant_side: string
+  ob_total_bid_qty: number
+  ob_total_ask_qty: number
+  ob_snapshot_at: number
 }
 
 interface TrendItem {
@@ -117,7 +127,7 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "crypto" | "pre
   const [polys, setPolys] = useState<PolymarketRow[]>([])
   const [fedPolys, setFedPolys] = useState<PolymarketFinanceRow[]>([])
   const [polyIndex, setPolyIndex] = useState(0)
-  const [whales, setWhales] = useState<WhaleTrade[]>([])
+  const [volEvents, setVolEvents] = useState<VolatilityEvent[]>([])
   const [trends, setTrends] = useState<TrendItem[]>([])
   const [usTrends, setUsTrends] = useState<TrendItem[]>([])
   const [trendsTab, setTrendsTab] = useState<"kr" | "us">("kr")
@@ -169,24 +179,24 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "crypto" | "pre
     }
   }
 
-  const fetchWhales = async () => {
+  const fetchVolEvents = async () => {
     try {
-      const res = await fetch("/api/whales/today")
+      const res = await fetch("/api/volatility/today")
       const json = await res.json()
       if (res.ok) {
-        setWhales(json.items || [])
+        setVolEvents(json.items || [])
       }
     } catch (e) {
-      console.error("고래 데이터 갱신 실패:", e)
+      console.error("변동성 돌파 데이터 갱신 실패:", e)
     }
   }
 
   useEffect(() => {
     fetchData()
-    fetchWhales() // 초기 고래 데이터 호출
+    fetchVolEvents() // 초기 변동성 돌파 데이터 호출
 
-    // 10초마다 고래 데이터만 실시간 갱신(Polling)
-    const intervalId = setInterval(fetchWhales, 10000)
+    // 10초마다 실시간 갱신(Polling)
+    const intervalId = setInterval(fetchVolEvents, 10000)
 
     return () => clearInterval(intervalId)
   }, [])
@@ -278,30 +288,54 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "crypto" | "pre
                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-emerald-500/30 shrink-0">
                   <TrendingUp className="w-5 h-5 text-emerald-400" />
                   <div className="flex flex-col">
-                    <h2 className="text-base font-black text-white tracking-widest leading-none mt-1">CRYPTO WHALES</h2>
-                    <span className="text-[10px] text-emerald-400/80 mt-1">Live: 1억 이상 체결 알림</span>
+                    <h2 className="text-base font-black text-white tracking-widest leading-none mt-1">VOLATILITY BREAKOUT</h2>
+                    <span className="text-[10px] text-emerald-400/80 mt-1">변동성 돌파 감지 (최신 1건 유지)</span>
                   </div>
                </div>
                <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar-emerald">
                   <div className="flex flex-col gap-2">
-                    {whales.length === 0 ? (
+                    {volEvents.length === 0 ? (
                        <div className="flex flex-col items-center justify-center p-4 h-full">
                          <div className="w-6 h-6 border-2 border-emerald-500/50 border-t-emerald-300 rounded-full animate-spin mb-3"></div>
-                         <span className="text-emerald-200/50 text-[11px] text-center">고래 움직임 대기중... <br/>(BTC, ETH, XRP, SOL, DOGE)</span>
+                         <span className="text-emerald-200/50 text-[11px] text-center">돌파 이벤트 대기 중...<br/>(감시 중: KRW-BTC, KRW-ETH)</span>
+                         <span className="text-emerald-200/30 text-[9px] text-center mt-2 px-4">가격이 하향(숏) 돌파선 아래로 떨어지면<br/>당일 돌파 기록이 초기화될 수 있습니다.</span>
                        </div>
-                    ) : whales.map((whale, i) => (
-                      <div key={i} className="flex flex-col gap-1 shrink-0 p-2 bg-emerald-900/10 rounded">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-bold text-emerald-50 flex items-center gap-1.5">
-                            {whale.code}
-                            <span className="text-[10px] font-normal text-emerald-200/50">{formatTime(whale.timestamp)}</span>
+                    ) : volEvents.map((evt, i) => (
+                      <div key={i} className="flex flex-col gap-2 shrink-0 p-3 bg-emerald-900/10 hover:bg-emerald-900/20 rounded border border-emerald-500/20 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-emerald-50 flex items-center gap-2 text-sm">
+                            {evt.market}
+                            <span className="text-[10px] font-medium text-emerald-200/70 bg-emerald-950/60 px-1.5 py-0.5 rounded">
+                              (KST) {formatTime(evt.event_time)}
+                            </span>
                           </span>
-                          <span className={`font-bold tracking-tight ${whale.ask_bid === "BID" ? "text-red-400" : "text-blue-400"}`}>
-                            {whale.ask_bid === "BID" ? "매수" : "매도"} {formatAmount(whale.amount)}
-                          </span>
+                          <div className="flex items-center gap-2 text-[11px] font-bold">
+                            <span className="text-blue-400">Vol: {evt.volume_relative_pct?.toFixed(0)}%</span>
+                            <span className="text-red-400">초과: {evt.breakout_excess_pct?.toFixed(2)}%</span>
+                          </div>
                         </div>
-                        <div className="text-[10px] text-emerald-100/60 font-medium">
-                          단가: {whale.price.toLocaleString()}원
+                        
+                        {/* 1분 체결 집계 요약 */}
+                        <div className="flex flex-col gap-1 mt-1 pt-2 border-t border-emerald-500/10">
+                          <div className="flex justify-between items-center text-[10px] text-emerald-100/60">
+                            <span title={`${formatTime(evt.post_1m_window_start)} ~ ${formatTime(evt.post_1m_window_end)}`}>
+                              1분 체결 (총 {evt.post_1m_trade_count}건 / {evt.post_1m_volume_sum?.toFixed(2)} 코인)
+                            </span>
+                            <span className={`font-bold ${evt.post_1m_dominant_side === 'BUY_HEAVY' ? 'text-red-400' : evt.post_1m_dominant_side === 'SELL_HEAVY' ? 'text-blue-400' : 'text-emerald-400'}`}>
+                              {evt.post_1m_dominant_side}
+                            </span>
+                          </div>
+                          <div className="w-full h-1.5 bg-emerald-950/50 rounded-full overflow-hidden flex mt-0.5">
+                            <div className="h-full bg-red-500/80" style={{ width: `${evt.post_1m_buy_pct_by_count || 0}%` }} title={`매수 ${evt.post_1m_buy_pct_by_count?.toFixed(1)}%`} />
+                            <div className="h-full bg-blue-500/80" style={{ width: `${evt.post_1m_sell_pct_by_count || 0}%` }} title={`매도 ${evt.post_1m_sell_pct_by_count?.toFixed(1)}%`} />
+                          </div>
+                        </div>
+
+                        {/* 호가 총물량 */}
+                        <div className="flex justify-between items-center mt-1 text-[10px] text-emerald-200/50">
+                          <span title={`호가 스냅샷 시각: ${formatTime(evt.ob_snapshot_at)}`}>
+                            호가 스냅샷 (매수: {evt.ob_total_bid_qty?.toFixed(1)} / 매도: {evt.ob_total_ask_qty?.toFixed(1)})
+                          </span>
                         </div>
                       </div>
                     ))}

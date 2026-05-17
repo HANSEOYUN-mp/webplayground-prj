@@ -221,7 +221,9 @@ type FlowsCachePayload = {
   error?: string
 }
 
-const FLOWS_CACHE_TTL_MS = 120_000
+const FLOWS_CACHE_TTL_MS = 300_000
+
+const BETWEEN_ASSET_MS = 500
 
 const gFlows = globalThis as unknown as {
   __soso_etf_flows_route_cache?: Record<string, { ts: number; payload: FlowsCachePayload }>
@@ -257,8 +259,8 @@ export async function GET(req: Request) {
   }
 
   try {
-    // Sequential assets lowers peak concurrency vs Promise.all(BTC, ETH) (fewer parallel SoSo calls).
     const btc = await loadAssetRows("BTC", days, apiKey)
+    await new Promise((r) => setTimeout(r, BETWEEN_ASSET_MS))
     const eth = await loadAssetRows("ETH", days, apiKey)
 
     const payload: FlowsCachePayload = {
