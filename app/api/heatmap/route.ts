@@ -5,10 +5,13 @@ export const revalidate = 60
 // Yahoo Finance 심볼 기반 자산
 const YAHOO_ASSETS = [
   { symbol: "^GSPC",    name: "S&P 500",      label: "S&P 500",  type: "index" },
-  { symbol: "^RUT",     name: "Russell 2000",  label: "RUSS 2K",  type: "index" },
+  { symbol: "^IXIC",    name: "Nasdaq Composite", label: "NASDAQ",  type: "index" },
   { symbol: "DX-Y.NYB", name: "US Dollar",     label: "DXY",      type: "fx" },
   { symbol: "GC=F",     name: "Gold",          label: "GOLD",     type: "commodity" },
   { symbol: "CL=F",     name: "Crude Oil WTI", label: "WTI",      type: "commodity" },
+  { symbol: "^VIX",     name: "VIX Index",     label: "VIX",      type: "index" },
+  { symbol: "^TNX",     name: "10-Year Treasury", label: "US 10Y",  type: "bond" },
+  { symbol: "^TYX",     name: "30-Year Treasury", label: "US 30Y",  type: "bond" },
 ]
 
 const HEADERS = {
@@ -83,8 +86,11 @@ export async function GET() {
         }))
       : []
 
-    // 순서: S&P500, Russell, BTC, DXY, Gold, WTI
-    const ordered = ["S&P 500", "RUSS 2K", "BTC", "DXY", "GOLD", "WTI"]
+    // 순서: 3x3 매트릭스 (좌->우: 단기->장기, 위->아래: 위험->안전)
+    // Row 0 (Risk): BTC, NASDAQ, S&P 500
+    // Row 1 (Neutral): VIX, WTI, DXY
+    // Row 2 (Safe): GOLD, US 10Y, US 30Y
+    const ordered = ["BTC", "NASDAQ", "S&P 500", "VIX", "WTI", "DXY", "GOLD", "US 10Y", "US 30Y"]
     const allItems = [...yahooItems, ...btcItems]
     const items = ordered
       .map((sym) => allItems.find((i) => i?.symbol === sym))

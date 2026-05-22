@@ -1,10 +1,71 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { LayoutGrid } from "lucide-react"
+
+interface MarketStatus {
+  isOpen: boolean
+  dateStr: string
+  timeStr: string
+  weekday: string
+}
 
 export function TradingViewHeatmapWidget() {
   const containerRef = useRef<HTMLDivElement>(null)
+  const [marketStatus, setMarketStatus] = useState<MarketStatus | null>(null)
+
+  useEffect(() => {
+    // 미국 시장 상태 및 시간 계산
+    const updateMarketStatus = () => {
+      try {
+        const nyFormatter = new Intl.DateTimeFormat("en-US", {
+          timeZone: "America/New_York",
+          year: "numeric",
+          month: "numeric",
+          day: "numeric",
+          hour: "numeric",
+          minute: "numeric",
+          second: "numeric",
+          hour12: false,
+          weekday: "short"
+        })
+        
+        const parts = nyFormatter.formatToParts(new Date())
+        const partMap = Object.fromEntries(parts.map(p => [p.type, p.value]))
+        
+        const weekday = partMap.weekday
+        const hour = parseInt(partMap.hour, 10)
+        const minute = parseInt(partMap.minute, 10)
+        
+        // 주말 여부
+        const isWeekend = weekday === "Sat" || weekday === "Sun"
+        
+        // 정규 거래 시간: 09:30 ~ 16:00
+        const timeInHours = hour + minute / 60
+        const isOpenHours = timeInHours >= 9.5 && timeInHours < 16.0
+        
+        const isOpen = !isWeekend && isOpenHours
+        
+        const monthStr = partMap.month.padStart(2, "0")
+        const dayStr = partMap.day.padStart(2, "0")
+        const nyDateStr = `${partMap.year}.${monthStr}.${dayStr}`
+        
+        setMarketStatus({
+          isOpen,
+          dateStr: nyDateStr,
+          timeStr: `${partMap.hour.padStart(2, "0")}:${partMap.minute.padStart(2, "0")}`,
+          weekday
+        })
+      } catch (e) {
+        console.error("Failed to compute US market status", e)
+      }
+    }
+
+    updateMarketStatus()
+    const timer = setInterval(updateMarketStatus, 60000) // 1분마다 갱신
+
+    return () => clearInterval(timer)
+  }, [])
 
   useEffect(() => {
     const container = containerRef.current
@@ -28,8 +89,8 @@ export function TradingViewHeatmapWidget() {
       locale: "en",
       symbolUrl: "",
       colorTheme: "dark",
-      hasTopBar: false,
-      isDataSetEnabled: false,
+      hasTopBar: true,
+      isDataSetEnabled: true,
       isZoomEnabled: true,
       hasSymbolTooltip: true,
       isMonoSize: false,
@@ -55,14 +116,29 @@ export function TradingViewHeatmapWidget() {
             <span className="text-[10px] text-slate-400/80 mt-1">S&P 500 · 시가총액 크기 · 등락률 색상</span>
           </div>
         </div>
-        <a
-          href="https://www.tradingview.com/heatmap/stock/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-[9px] text-slate-500 hover:text-slate-300 transition-colors font-medium"
-        >
-          TradingView ↗
-        </a>
+        
+        {/* 미국 시장 날짜 및 영업 상태 표시 */}
+        <div className="flex items-center gap-3">
+          {marketStatus && (
+            <div className="flex items-center gap-1.5 bg-slate-950/50 px-2.5 py-1 rounded-full border border-slate-800/40 text-[9px] font-bold">
+              <span className={`w-1.5 h-1.5 rounded-full ${marketStatus.isOpen ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
+              <span className="text-slate-300 tracking-wider">
+                NY {marketStatus.dateStr} ({marketStatus.weekday}) {marketStatus.timeStr}
+              </span>
+              <span className={marketStatus.isOpen ? "text-emerald-400" : "text-rose-400"}>
+                {marketStatus.isOpen ? "개장" : "마감"}
+              </span>
+            </div>
+          )}
+          <a
+            href="https://www.tradingview.com/heatmap/stock/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[9px] text-slate-500 hover:text-slate-300 transition-colors font-medium"
+          >
+            TradingView ↗
+          </a>
+        </div>
       </div>
 
       {/* TradingView Widget Container */}
