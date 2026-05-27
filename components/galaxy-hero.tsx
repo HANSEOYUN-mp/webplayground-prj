@@ -233,8 +233,13 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "crypto" | "pre
         <div className="w-full max-w-7xl mx-auto z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
           {activeTab === 'stock' && (
             <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+              {/* 미국 주식 히트맵 (슬롯 1, 2 위에 크게 배치) */}
+              <div className="md:col-span-2 w-full">
+                <TradingViewHeatmapWidget />
+              </div>
+
               {/* 1. 주식 데이터 */}
-            <div className="w-full flex flex-col h-[360px] bg-cyan-950/40 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(0,255,255,0.15)] transition-colors duration-300 hover:bg-cyan-900/50 hover:border-cyan-500/60">
+            <div className="w-full flex flex-col h-[360px] bg-cyan-950/40 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(0,255,255,0.15)] transition-colors duration-300 hover:bg-cyan-900/50 hover:border-cyan-505/60">
                <div className="flex items-center justify-between mb-4 pb-3 border-b border-cyan-500/30 shrink-0">
                   <div className="flex items-center gap-2">
                     <TrendingUp className="w-5 h-5 text-cyan-400" />
@@ -276,7 +281,6 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "crypto" | "pre
               <div className="w-full flex flex-col h-[360px]">
                 <MinskyWidget />
               </div>
-              <TradingViewHeatmapWidget />
               <FredWidget />
               <CustomHeatmapWidget />
             </div>

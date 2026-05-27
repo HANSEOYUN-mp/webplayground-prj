@@ -121,7 +121,7 @@ export function CustomHeatmapWidget() {
   useEffect(() => { fetchData() }, [])
 
   return (
-    <div className="w-full h-[420px] bg-slate-950/60 backdrop-blur-xl border border-slate-600/40 rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(148,163,184,0.08)] transition-colors duration-300 hover:border-slate-500/60 flex flex-col">
+    <div className="w-full h-[360px] bg-slate-950/60 backdrop-blur-xl border border-slate-600/40 rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(148,163,184,0.08)] transition-colors duration-300 hover:border-slate-500/60 flex flex-col">
 
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-3 border-b border-slate-700/40 shrink-0">

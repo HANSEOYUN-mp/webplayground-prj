@@ -106,7 +106,7 @@ export function TradingViewHeatmapWidget() {
   }, [])
 
   return (
-    <div className="w-full h-[360px] bg-slate-900/60 backdrop-blur-xl border border-slate-600/40 rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(148,163,184,0.1)] transition-colors duration-300 hover:border-slate-500/60 flex flex-col">
+    <div className="w-full h-[520px] bg-slate-900/60 backdrop-blur-xl border border-slate-600/40 rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(148,163,184,0.1)] transition-colors duration-300 hover:border-slate-500/60 flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-3 border-b border-slate-600/30 shrink-0 bg-slate-900/40">
         <div className="flex items-center gap-2">
