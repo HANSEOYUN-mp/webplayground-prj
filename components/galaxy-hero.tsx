@@ -1,18 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { TrendingUp, BarChart3, ChevronLeft, ChevronRight, Calendar, RefreshCw, AlertCircle, Bitcoin, MessageSquareText, Flame } from "lucide-react"
+import { TrendingUp, BarChart3, ChevronLeft, ChevronRight, Calendar, RefreshCw, AlertCircle, MessageSquareText, Flame } from "lucide-react"
 import { MinskyWidget } from "@/components/minsky-widget"
 import { FredWidget } from "@/components/fred-widget"
 import { TradingViewHeatmapWidget } from "@/components/tradingview-heatmap-widget"
 import { CustomHeatmapWidget } from "@/components/custom-heatmap-widget"
 import { FinlifeProductsWidget } from "@/components/finlife-products-widget"
-import { TradingViewCryptoWidget } from "@/components/tradingview-crypto-widget"
-import { TradingViewTetherDomWidget } from "@/components/tradingview-tether-dom-widget"
-import { LiquidationHeatmapWidget } from "@/components/liquidation-heatmap-widget"
-import { FarsideEtfFlowsWidget } from "@/components/farside-etf-flows-widget"
-import { TopTraderLongShortChartWidget } from "@/components/top-trader-long-short-chart-widget"
-import { CmeBtcFuturesWidget } from "@/components/cme-btc-futures-widget"
 
 interface StockRow {
   rank: number
@@ -122,7 +116,7 @@ const FALLBACK_STOCKS: StockRow[] = [
   { rank: 15, itmsNm: "LG화학", clpr: "375000", fltRt: "0.2", mrktTotAmt: "26000000000000", trPrc: "110000000000" },
 ]
 
-export function GalaxyHero({ activeTab }: { activeTab: "stock" | "crypto" | "prediction" | "news" }) {
+export function GalaxyHero({ activeTab }: { activeTab: "stock" | "prediction" | "news" }) {
   const [stocks, setStocks] = useState<StockRow[]>([])
   const [polys, setPolys] = useState<PolymarketRow[]>([])
   const [fedPolys, setFedPolys] = useState<PolymarketFinanceRow[]>([])
@@ -285,87 +279,7 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "crypto" | "pre
               <CustomHeatmapWidget />
             </div>
           )}
-          {activeTab === 'crypto' && (
-            <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-              {/* 3. Crypto Whales */}
-            <div className="w-full flex flex-col h-[360px] bg-emerald-950/40 backdrop-blur-xl border border-emerald-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(16,185,129,0.15)] transition-colors duration-300 hover:bg-emerald-900/50 hover:border-emerald-500/60">
-               <div className="flex items-center gap-2 mb-4 pb-3 border-b border-emerald-500/30 shrink-0">
-                  <TrendingUp className="w-5 h-5 text-emerald-400" />
-                  <div className="flex flex-col">
-                    <h2 className="text-base font-black text-white tracking-widest leading-none mt-1">VOLATILITY BREAKOUT</h2>
-                    <span className="text-[10px] text-emerald-400/80 mt-1">변동성 돌파 감지 (최신 1건 유지)</span>
-                  </div>
-               </div>
-               <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar-emerald">
-                  <div className="flex flex-col gap-2">
-                    {volEvents.length === 0 ? (
-                       <div className="flex flex-col items-center justify-center p-4 h-full">
-                         <div className="w-6 h-6 border-2 border-emerald-500/50 border-t-emerald-300 rounded-full animate-spin mb-3"></div>
-                         <span className="text-emerald-200/50 text-[11px] text-center">돌파 이벤트 대기 중...<br/>(감시 중: KRW-BTC, KRW-ETH)</span>
-                         <span className="text-emerald-200/30 text-[9px] text-center mt-2 px-4">가격이 하향(숏) 돌파선 아래로 떨어지면<br/>당일 돌파 기록이 초기화될 수 있습니다.</span>
-                       </div>
-                    ) : volEvents.map((evt, i) => (
-                      <div key={i} className="flex flex-col gap-2 shrink-0 p-3 bg-emerald-900/10 hover:bg-emerald-900/20 rounded border border-emerald-500/20 transition-colors">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-emerald-50 flex items-center gap-2 text-sm">
-                            {evt.market}
-                            <span className="text-[10px] font-medium text-emerald-200/70 bg-emerald-950/60 px-1.5 py-0.5 rounded">
-                              (KST) {formatTime(evt.event_time)}
-                            </span>
-                          </span>
-                          <div className="flex items-center gap-2 text-[11px] font-bold">
-                            <span className="text-blue-400">Vol: {evt.volume_relative_pct?.toFixed(0)}%</span>
-                            <span className="text-red-400">초과: {evt.breakout_excess_pct?.toFixed(2)}%</span>
-                          </div>
-                        </div>
-                        
-                        {/* 1분 체결 집계 요약 */}
-                        <div className="flex flex-col gap-1 mt-1 pt-2 border-t border-emerald-500/10">
-                          <div className="flex justify-between items-center text-[10px] text-emerald-100/60">
-                            <span title={`${formatTime(evt.post_1m_window_start)} ~ ${formatTime(evt.post_1m_window_end)}`}>
-                              1분 체결 (총 {evt.post_1m_trade_count}건 / {evt.post_1m_volume_sum?.toFixed(2)} 코인)
-                            </span>
-                            <span className={`font-bold ${evt.post_1m_dominant_side === 'BUY_HEAVY' ? 'text-red-400' : evt.post_1m_dominant_side === 'SELL_HEAVY' ? 'text-blue-400' : 'text-emerald-400'}`}>
-                              {evt.post_1m_dominant_side}
-                            </span>
-                          </div>
-                          <div className="w-full h-1.5 bg-emerald-950/50 rounded-full overflow-hidden flex mt-0.5">
-                            <div className="h-full bg-red-500/80" style={{ width: `${evt.post_1m_buy_pct_by_count || 0}%` }} title={`매수 ${evt.post_1m_buy_pct_by_count?.toFixed(1)}%`} />
-                            <div className="h-full bg-blue-500/80" style={{ width: `${evt.post_1m_sell_pct_by_count || 0}%` }} title={`매도 ${evt.post_1m_sell_pct_by_count?.toFixed(1)}%`} />
-                          </div>
-                        </div>
 
-                        {/* 호가 총물량 */}
-                        <div className="flex justify-between items-center mt-1 text-[10px] text-emerald-200/50">
-                          <span title={`호가 스냅샷 시각: ${formatTime(evt.ob_snapshot_at)}`}>
-                            호가 스냅샷 (매수: {evt.ob_total_bid_qty?.toFixed(1)} / 매도: {evt.ob_total_ask_qty?.toFixed(1)})
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-               </div>
-            </div>
-
-            
-              <FarsideEtfFlowsWidget />
-              <TradingViewCryptoWidget />
-              <TradingViewTetherDomWidget />
-              <TopTraderLongShortChartWidget />
-              <CmeBtcFuturesWidget />
-              {/* Slot 7 (Placeholder) */}
-              <div className="w-full flex flex-col h-[360px] bg-slate-900/20 backdrop-blur-xl border border-dashed border-slate-500/30 rounded-2xl p-5 items-center justify-center text-slate-400 font-bold transition-colors hover:bg-slate-900/40 hover:border-slate-500/60 text-center">
-                <span className="text-sm font-bold tracking-wider leading-relaxed">
-                  미국 SEC의 13F 내 비트코인을 보유한 대가
-                </span>
-              </div>
-              {/* Slot 8 (Placeholder) */}
-              <div className="w-full flex flex-col h-[360px] bg-slate-900/20 backdrop-blur-xl border border-dashed border-slate-500/30 rounded-2xl p-5 items-center justify-center text-slate-500/50 transition-colors hover:bg-slate-900/40 hover:border-slate-500/60">
-                <span className="text-sm font-bold tracking-widest">SLOT 8 (EMPTY)</span>
-                <span className="text-[10px] mt-2">나중에 새 위젯을 여기에 추가하세요</span>
-              </div>
-            </div>
-          )}
           {activeTab === 'prediction' && (
             <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
               {/* Slot 1: Featured Carousel */}

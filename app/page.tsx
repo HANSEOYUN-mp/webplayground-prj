@@ -194,7 +194,7 @@ export default function Home() {
           isLoggedIn={false}
         />
         <main className="mx-auto max-w-7xl px-4 py-8 lg:px-8">
-          {activeTab !== "post" && <GalaxyHero activeTab={activeTab as any} />}
+          {activeTab !== "post" && <GalaxyHero activeTab={activeTab as "stock" | "prediction" | "news"} />}
           {activeTab === "post" && (currentSelectedPost ? (
             <PostDetail
               post={currentSelectedPost}
@@ -323,7 +323,7 @@ export default function Home() {
       />
 
       <main className="mx-auto max-w-7xl px-4 py-8 lg:px-8">
-        {activeTab !== "post" && <GalaxyHero activeTab={activeTab as any} />}
+        {activeTab !== "post" && <GalaxyHero activeTab={activeTab as "stock" | "prediction" | "news"} />}
         {activeTab === "post" && (currentSelectedPost ? (
           <PostDetail
             post={currentSelectedPost}
