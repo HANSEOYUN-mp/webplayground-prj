@@ -88,7 +88,7 @@ export function TradingViewHeatmapWidget() {
       blockColor: "change",
       locale: "en",
       symbolUrl: "",
-      colorTheme: "dark",
+      colorTheme: "light",
       hasTopBar: true,
       isDataSetEnabled: true,
       isZoomEnabled: true,
@@ -106,26 +106,24 @@ export function TradingViewHeatmapWidget() {
   }, [])
 
   return (
-    <div className="w-full h-[520px] bg-slate-900/60 backdrop-blur-xl border border-slate-600/40 rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(148,163,184,0.1)] transition-colors duration-300 hover:border-slate-500/60 flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-slate-600/30 shrink-0 bg-slate-900/40">
+    <div className="w-full h-[520px] bg-card border border-border overflow-hidden transition-colors duration-300 hover:bg-neutral-50/50 flex flex-col">
+      {/* IDE Window Header */}
+      <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
         <div className="flex items-center gap-2">
-          <LayoutGrid className="w-5 h-5 text-slate-300" />
-          <div className="flex flex-col">
-            <h2 className="text-base font-black text-white tracking-widest leading-none mt-1">STOCK HEATMAP</h2>
-            <span className="text-[10px] text-slate-400/80 mt-1">S&P 500 · 시가총액 크기 · 등락률 색상</span>
-          </div>
+          <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
+            <LayoutGrid className="w-3.5 h-3.5" /> S&P 500 맵
+          </span>
         </div>
         
-        {/* 미국 시장 날짜 및 영업 상태 표시 */}
+        {/* 미국 시장 상태 및 영업 상태 표시 */}
         <div className="flex items-center gap-3">
           {marketStatus && (
-            <div className="flex items-center gap-1.5 bg-slate-950/50 px-2.5 py-1 rounded-full border border-slate-800/40 text-[9px] font-bold">
-              <span className={`w-1.5 h-1.5 rounded-full ${marketStatus.isOpen ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
-              <span className="text-slate-300 tracking-wider">
+            <div className="flex items-center gap-1.5 bg-secondary px-2.5 py-0.5 border border-border/10 text-[9px] font-bold">
+              <span className={`w-1.5 h-1.5 rounded-full ${marketStatus.isOpen ? "bg-red-700 animate-pulse" : "bg-blue-700"}`} />
+              <span className="text-foreground/85 tracking-wider font-mono">
                 NY {marketStatus.dateStr} ({marketStatus.weekday}) {marketStatus.timeStr}
               </span>
-              <span className={marketStatus.isOpen ? "text-emerald-400" : "text-rose-400"}>
+              <span className={marketStatus.isOpen ? "text-red-700 font-bold" : "text-blue-700 font-bold"}>
                 {marketStatus.isOpen ? "개장" : "마감"}
               </span>
             </div>
@@ -134,7 +132,7 @@ export function TradingViewHeatmapWidget() {
             href="https://www.tradingview.com/heatmap/stock/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[9px] text-slate-500 hover:text-slate-300 transition-colors font-medium"
+            className="text-[9px] text-muted-foreground hover:text-foreground transition-colors font-medium font-sans"
           >
             TradingView ↗
           </a>
@@ -142,7 +140,7 @@ export function TradingViewHeatmapWidget() {
       </div>
 
       {/* TradingView Widget Container */}
-      <div className="flex-1 tradingview-widget-container relative overflow-hidden">
+      <div className="flex-1 tradingview-widget-container relative overflow-hidden bg-white">
         <div
           ref={containerRef}
           className="tradingview-widget-container__widget w-full h-full"

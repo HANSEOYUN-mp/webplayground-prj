@@ -40,12 +40,14 @@ export function Header({ onNewPost, searchQuery, onSearchChange, activeTab, onTa
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 lg:px-8">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <span 
-              className="text-3xl font-black italic tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-primary to-white drop-shadow-md"
-              style={{ fontFamily: "var(--font-dancing-script, 'Dancing Script', cursive)" }}
+              className="text-xl font-bold tracking-tight text-foreground select-none"
             >
-              OmniArchive
+              Insightra
+            </span>
+            <span className="stamp-red text-[10px] font-bold rounded-sm ml-1 select-none">
+              통찰
             </span>
           </div>
         </div>

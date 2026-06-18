@@ -63,7 +63,7 @@ function HeatmapTile({ item }: { item: HeatmapItem }) {
 
   return (
     <div
-      className="flex flex-col items-center justify-center gap-1.5 rounded-xl transition-all duration-300 hover:brightness-110 cursor-default select-none overflow-hidden"
+      className="flex flex-col items-center justify-center gap-1.5 rounded-xl transition-all duration-300 hover:brightness-110 cursor-default select-none overflow-hidden h-full w-full"
       style={{
         background: getHeatBg(pct),
         border: `1px solid ${getBorderColor(pct)}`,
@@ -73,22 +73,22 @@ function HeatmapTile({ item }: { item: HeatmapItem }) {
       {/* 아이콘 + 심볼 */}
       <div className="flex items-center gap-1">
         <span className="text-base leading-none">{meta.icon}</span>
-        <span className="text-white font-black text-sm tracking-wider leading-none">{item.symbol}</span>
+        <span className="text-foreground font-bold text-sm tracking-wider leading-none">{item.symbol}</span>
       </div>
 
       {/* 등락률 (핵심) */}
-      <div className={`flex items-center gap-0.5 font-black text-lg leading-none ${isUp ? "text-emerald-300" : "text-rose-300"}`}>
+      <div className="flex items-center gap-0.5 font-black text-lg leading-none text-foreground">
         <span className="text-xs">{isUp ? "▲" : "▼"}</span>
         <span>{Math.abs(pct).toFixed(2)}%</span>
       </div>
 
       {/* 현재가 */}
-      <span className="text-white/60 text-xs font-medium leading-none">
+      <span className="text-foreground/85 text-xs font-bold leading-none">
         {formatPrice(item.price, item.symbol)}
       </span>
 
       {/* 자산 설명 */}
-      <span className="text-white/30 text-[9px] tracking-wide leading-none hidden sm:block">
+      <span className="text-foreground/60 text-[9px] tracking-wide leading-none hidden sm:block">
         {meta.desc}
       </span>
     </div>
@@ -118,62 +118,58 @@ export function CustomHeatmapWidget() {
     }
   }
 
-  useEffect(() => { fetchData() }, [])
+  useEffect(() => {
+    fetchData()
+  }, [])
 
   return (
-    <div className="w-full h-[360px] bg-slate-950/60 backdrop-blur-xl border border-slate-600/40 rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(148,163,184,0.08)] transition-colors duration-300 hover:border-slate-500/60 flex flex-col">
-
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-slate-700/40 shrink-0">
+    <div className="w-full h-[360px] bg-card border border-border overflow-hidden transition-colors duration-300 hover:bg-neutral-50/50 flex flex-col">
+ 
+      {/* IDE Window Header */}
+      <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
         <div className="flex items-center gap-2">
-          <div className="grid grid-cols-3 gap-0.5 w-5 h-3.5">
-            {["emerald","rose","emerald","rose","emerald","rose"].map((c,i) => (
-              <div key={i} className={`rounded-[2px] bg-${c}-500/70`} />
-            ))}
-          </div>
-          <div className="flex flex-col">
-            <h2 className="text-base font-black text-white tracking-widest leading-none mt-1">MONEY FLOW</h2>
-            <span className="text-[10px] text-slate-400/80 mt-1">좌➡️우: 단기➡️장기 · 위➡️아래: 위험➡️안전자산 · 색상: 등락률</span>
-          </div>
+          <span className="text-[11px] font-bold text-muted-foreground tracking-wider">
+            주요 자금 흐름
+          </span>
         </div>
         <div className="flex items-center gap-2">
-          {updatedAt && <span className="text-[9px] text-slate-500">{updatedAt} 기준</span>}
-          <button onClick={fetchData} disabled={loading} className="p-1 hover:bg-slate-600/30 rounded transition-colors" title="새로고침">
-            <RefreshCw className={`w-3.5 h-3.5 text-slate-400 ${loading ? "animate-spin" : ""}`} />
+          {updatedAt && <span className="text-[9px] text-muted-foreground font-mono">{updatedAt} 기준</span>}
+          <button onClick={fetchData} disabled={loading} className="p-1 hover:bg-secondary rounded transition-colors" title="새로고침">
+            <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${loading ? "animate-spin" : ""}`} />
           </button>
         </div>
       </div>
-
-      {/* Heatmap 3×3 Grid */}
-      <div className="flex-1 p-3 relative">
+ 
+      {/* 3×3 Grid */}
+      <div className="flex-1 p-3 relative flex flex-col justify-stretch">
         {loading && data.length === 0 ? (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-6 h-6 border-2 border-slate-500/50 border-t-slate-300 rounded-full animate-spin" />
+            <div className="w-6 h-6 border-2 border-primary/50 border-t-primary rounded-full animate-spin" />
           </div>
         ) : error ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-            <AlertCircle className="w-5 h-5 text-rose-400" />
-            <span className="text-[11px] text-rose-200/80">{error}</span>
-            <button onClick={fetchData} className="text-[10px] text-slate-300 bg-slate-700/60 px-3 py-1 rounded hover:bg-slate-600/60 transition-colors">재시도</button>
+            <AlertCircle className="w-5 h-5 text-primary" />
+            <span className="text-[11px] text-primary">{error}</span>
+            <button onClick={fetchData} className="text-[10px] text-foreground bg-secondary px-3 py-1 border border-border hover:bg-secondary/60 transition-colors font-mono">재시도</button>
           </div>
         ) : (
-          <div className="grid grid-cols-3 grid-rows-3 gap-2 h-full">
+          <div className="grid grid-cols-3 grid-rows-3 gap-1.5 w-full h-full">
             {data.slice(0, 9).map((item) => (
               <HeatmapTile key={item.symbol} item={item} />
             ))}
           </div>
         )}
       </div>
-
-      {/* Legend */}
-      <div className="flex items-center justify-center gap-3 px-4 py-1.5 border-t border-slate-700/30 shrink-0">
+ 
+      {/* Legend at the bottom with matching title color */}
+      <div className="flex items-center justify-center gap-3 px-4 py-1.5 border-t border-border/10 shrink-0 select-none">
         {[
           { label: "급등", pct: 5 }, { label: "상승", pct: 2 }, { label: "보합", pct: 0.2 },
           { label: "하락", pct: -2 }, { label: "급락", pct: -5 },
         ].map(({ label, pct }) => (
           <div key={label} className="flex items-center gap-1">
-            <div className="w-3 h-2 rounded-sm" style={{ background: getHeatBg(pct) }} />
-            <span className="text-[8px] text-slate-500">{label}</span>
+            <div className="w-3 h-2 rounded-sm border border-black/10" style={{ background: getHeatBg(pct) }} />
+            <span className="text-[9px] text-muted-foreground font-sans font-bold leading-none">{label}</span>
           </div>
         ))}
       </div>

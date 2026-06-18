@@ -61,37 +61,35 @@ export function FinlifeProductsWidget() {
     : null
 
   return (
-    <div className="w-full flex flex-col h-[360px] bg-sky-950/40 backdrop-blur-xl border border-sky-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(14,165,233,0.12)] transition-colors duration-300 hover:bg-sky-900/45 hover:border-sky-500/55">
-      <div className="flex items-center justify-between gap-2 mb-3 pb-3 border-b border-sky-500/30 shrink-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <Landmark className="w-5 h-5 text-sky-400 shrink-0" />
-          <div className="min-w-0">
-            <h2 className="text-base font-black text-white tracking-widest leading-none">은행 금리 공시</h2>
-            <p className="text-[9px] text-sky-300/80 mt-1 truncate">
-              금감원 금융상품 한눈에 · 은행(020000)
-              {monthLabel ? ` · 공시 ${monthLabel}` : ""}
-            </p>
-          </div>
+    <div className="w-full flex flex-col h-[360px] bg-card border border-border overflow-hidden transition-colors duration-300 hover:bg-neutral-50/50">
+      {/* IDE Window Header */}
+      <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
+            <Landmark className="w-3.5 h-3.5" /> 최고 금리 상품
+          </span>
         </div>
         <button
           type="button"
           onClick={load}
           disabled={loading}
-          className="p-1.5 rounded-lg border border-sky-500/30 bg-sky-950/50 text-sky-300 hover:bg-sky-900/60 hover:text-sky-100 disabled:opacity-50 transition-colors shrink-0"
+          className="p-1 hover:bg-secondary rounded transition-colors shrink-0"
           title="새로고침"
         >
-          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+          <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${loading ? "animate-spin" : ""}`} />
         </button>
       </div>
 
-      <div className="flex flex-wrap gap-1 mb-2 shrink-0">
+      <div className="flex flex-wrap gap-1 p-3 pb-1 shrink-0 select-none font-sans">
         {TABS.map((t) => (
           <button
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
-            className={`px-2 py-1 rounded-md text-[9px] font-bold transition-all ${
-              tab === t.id ? "bg-sky-500 text-white shadow" : "text-sky-300/80 hover:text-sky-100 bg-sky-950/40"
+            className={`px-2 py-0.5 border text-[9px] font-bold transition-all ${
+              tab === t.id
+                ? "bg-primary text-white border-primary"
+                : "bg-white text-muted-foreground border-border/20 hover:border-border/60"
             }`}
           >
             {t.label}
@@ -99,20 +97,20 @@ export function FinlifeProductsWidget() {
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto pr-1 min-h-0 finlife-scroll">
+      <div className="flex-1 overflow-y-auto p-3 pt-1 min-h-0 finlife-scroll">
         {data && !data.configured && (
-          <div className="text-[11px] text-sky-200/70 leading-relaxed p-1">
+          <div className="text-[11px] text-muted-foreground leading-relaxed p-1 font-mono">
             {data.message ?? "API 키를 설정해 주세요."}
           </div>
         )}
         {data?.configured && err && rows.length === 0 && (
-          <div className="text-[11px] text-amber-200/90 p-2 rounded-lg bg-amber-950/30 border border-amber-500/20">{err}</div>
+          <div className="text-[11px] text-primary p-2 border border-primary/20 bg-primary/5">{err}</div>
         )}
         {data?.configured && !err && rows.length === 0 && !loading && (
-          <div className="text-[11px] text-sky-200/50 text-center py-6">표시할 상품이 없습니다.</div>
+          <div className="text-[11px] text-muted-foreground text-center py-6 font-mono">표시할 상품이 없습니다.</div>
         )}
         {loading && (
-          <div className="flex items-center justify-center py-10 text-sky-300/60 text-xs gap-2">
+          <div className="flex items-center justify-center py-10 text-muted-foreground text-xs gap-2 font-mono">
             <RefreshCw className="w-4 h-4 animate-spin" />
             불러오는 중…
           </div>
@@ -122,20 +120,20 @@ export function FinlifeProductsWidget() {
             {rows.map((row, i) => (
               <div
                 key={`${row.bank}-${row.product}-${i}`}
-                className="flex flex-col gap-0.5 bg-sky-900/15 hover:bg-sky-900/25 px-2.5 py-2 rounded-lg border border-sky-800/30 shrink-0"
+                className="flex flex-col gap-0.5 bg-secondary/20 hover:bg-secondary/60 px-2.5 py-2 border border-border/10 shrink-0 transition-colors"
               >
                 <div className="flex justify-between items-start gap-2">
-                  <span className="font-bold text-sky-50 text-[11px] leading-tight line-clamp-2" title={row.product}>
-                    <span className="text-sky-400/90 text-[10px] mr-1">{row.bank}</span>
+                  <span className="font-bold text-foreground text-[11px] leading-tight line-clamp-2 font-sans" title={row.product}>
+                    <span className="text-primary text-[10px] font-bold mr-1.5 border border-primary/20 bg-primary/5 px-1 font-mono">{row.bank}</span>
                     {row.product}
                   </span>
                   {row.rate && (
-                    <span className="text-[11px] font-extrabold text-sky-200 whitespace-nowrap shrink-0">{row.rate}</span>
+                    <span className="text-[11px] font-extrabold text-foreground whitespace-nowrap shrink-0 font-mono">{row.rate}</span>
                   )}
                 </div>
-                <div className="flex justify-between text-[9px] text-sky-300/55">
+                <div className="flex justify-between text-[9px] text-muted-foreground font-sans select-none">
                   <span>{row.term ?? "—"}</span>
-                  <span className="text-sky-500/50">공시 기준</span>
+                  <span className="opacity-55">공시 기준</span>
                 </div>
               </div>
             ))}
@@ -143,29 +141,31 @@ export function FinlifeProductsWidget() {
         )}
       </div>
 
-      <p className="text-[8px] text-sky-500/60 mt-2 shrink-0 leading-tight">
-        출처:{" "}
-        <a
-          href="https://finlife.fss.or.kr"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline hover:text-sky-400"
-        >
-          금융감독원 금융상품통합비교공시
-        </a>
-      </p>
+      <div className="px-3 pb-2 select-none">
+        <p className="text-[8px] text-muted-foreground/60 shrink-0 leading-tight font-mono">
+          출처:{" "}
+          <a
+            href="https://finlife.fss.or.kr"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-foreground"
+          >
+            금융감독원 금융상품통합비교공시
+          </a>
+        </p>
+      </div>
 
       <style jsx>{`
         .finlife-scroll::-webkit-scrollbar {
           width: 4px;
         }
         .finlife-scroll::-webkit-scrollbar-track {
-          background: rgba(14, 165, 233, 0.06);
-          border-radius: 4px;
+          background: transparent;
+          border-radius: 0px;
         }
         .finlife-scroll::-webkit-scrollbar-thumb {
-          background: rgba(14, 165, 233, 0.35);
-          border-radius: 4px;
+          background: rgba(17, 17, 17, 0.25);
+          border-radius: 0px;
         }
       `}</style>
     </div>

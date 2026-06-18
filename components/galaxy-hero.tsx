@@ -36,24 +36,6 @@ interface PolymarketFinanceRow {
   yesPrice: number | null
 }
 
-interface VolatilityEvent {
-  market: string
-  event_time: number
-  price: number
-  threshold: number
-  breakout_excess_pct: number
-  volume_relative_pct: number
-  post_1m_window_start: number
-  post_1m_window_end: number
-  post_1m_trade_count: number
-  post_1m_volume_sum: number
-  post_1m_buy_pct_by_count: number
-  post_1m_sell_pct_by_count: number
-  post_1m_dominant_side: string
-  ob_total_bid_qty: number
-  ob_total_ask_qty: number
-  ob_snapshot_at: number
-}
 
 interface TrendItem {
   title: string
@@ -91,9 +73,9 @@ function formatVolume(v: number): string {
 
 function EmptySlot({ index, title = `EMPTY SLOT ${index}`, subtitle = 'To be filled with a chart or data' }: { index: number, title?: string, subtitle?: string }) {
   return (
-    <div className="w-full flex flex-col items-center justify-center h-[360px] bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 border-dashed rounded-2xl p-5 shadow-inner transition-colors duration-300 hover:bg-slate-800/40">
-      <span className="text-slate-500 font-bold tracking-widest text-sm">{title}</span>
-      {subtitle && <span className="text-slate-600/70 text-xs mt-2 text-center">{subtitle}</span>}
+    <div className="w-full flex flex-col items-center justify-center h-[360px] bg-white border border-border border-dashed p-5 select-none transition-colors duration-300 hover:bg-neutral-50/50">
+      <span className="text-muted-foreground font-mono font-bold tracking-widest text-xs">{title}</span>
+      {subtitle && <span className="text-muted-foreground/60 font-mono text-[10px] mt-2 text-center">{subtitle}</span>}
     </div>
   )
 }
@@ -121,7 +103,7 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "prediction" | 
   const [polys, setPolys] = useState<PolymarketRow[]>([])
   const [fedPolys, setFedPolys] = useState<PolymarketFinanceRow[]>([])
   const [polyIndex, setPolyIndex] = useState(0)
-  const [volEvents, setVolEvents] = useState<VolatilityEvent[]>([])
+
   const [trends, setTrends] = useState<TrendItem[]>([])
   const [usTrends, setUsTrends] = useState<TrendItem[]>([])
   const [trendsTab, setTrendsTab] = useState<"kr" | "us">("kr")
@@ -173,26 +155,9 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "prediction" | 
     }
   }
 
-  const fetchVolEvents = async () => {
-    try {
-      const res = await fetch("/api/volatility/today")
-      const json = await res.json()
-      if (res.ok) {
-        setVolEvents(json.items || [])
-      }
-    } catch (e) {
-      console.error("변동성 돌파 데이터 갱신 실패:", e)
-    }
-  }
 
   useEffect(() => {
     fetchData()
-    fetchVolEvents() // 초기 변동성 돌파 데이터 호출
-
-    // 10초마다 실시간 갱신(Polling)
-    const intervalId = setInterval(fetchVolEvents, 10000)
-
-    return () => clearInterval(intervalId)
   }, [])
 
   return (
@@ -233,36 +198,36 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "prediction" | 
               </div>
 
               {/* 1. 주식 데이터 */}
-            <div className="w-full flex flex-col h-[360px] bg-cyan-950/40 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(0,255,255,0.15)] transition-colors duration-300 hover:bg-cyan-900/50 hover:border-cyan-505/60">
-               <div className="flex items-center justify-between mb-4 pb-3 border-b border-cyan-500/30 shrink-0">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-cyan-400" />
-                    <h2 className="text-base font-black text-white tracking-widest">KOREA STOCKS</h2>
-                  </div>
+            <div className="w-full flex flex-col h-[360px] bg-card border border-border overflow-hidden transition-colors hover:bg-neutral-50/50">
+               <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
+                  <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
+                    <TrendingUp className="w-3.5 h-3.5" /> 국내 급등 주식
+                  </span>
                   {stockDate && (
-                    <span className="text-[10px] font-bold text-cyan-400 bg-cyan-900/50 px-2 py-0.5 rounded-full border border-cyan-500/20">
+                    <span className="stamp-red text-[9px] font-bold rounded-sm border-primary/30 text-primary bg-primary/5 px-1.5 py-0.5">
                       기준일: {stockDate}
                     </span>
                   )}
                </div>
-               <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar-cyan">
-                  <div className="flex flex-col gap-2">
+               
+               <div className="flex-1 overflow-y-auto p-3 custom-scrollbar-cyan">
+                  <div className="flex flex-col gap-1.5">
                     {stocks.map((stock, i) => (
-                      <div key={i} className="flex flex-col gap-1.5 bg-cyan-900/10 hover:bg-cyan-900/20 p-2.5 rounded shrink-0 transition-colors">
+                      <div key={i} className="flex flex-col gap-1 bg-secondary/20 hover:bg-secondary/60 p-2.5 border border-border/10 shrink-0 transition-colors">
                         <div className="flex justify-between items-center w-full">
                           {/* 종목명 */}
-                          <span className="font-bold text-cyan-50 text-[13px] truncate max-w-[130px]" title={stock.itmsNm}>{stock.rank}. {stock.itmsNm}</span>
+                          <span className="font-bold text-foreground text-[13px] truncate max-w-[130px] font-sans" title={stock.itmsNm}>{stock.rank}. {stock.itmsNm}</span>
                           
                           {/* 가격 & 등락률 */}
                           <div className="flex items-center gap-3">
-                            <span className={`text-[11px] font-bold tracking-tighter ${Number(stock.fltRt) >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                            <span className={`text-[11px] font-bold tracking-tighter font-mono ${Number(stock.fltRt) >= 0 ? "text-red-700" : "text-blue-700"}`}>
                               {Number(stock.fltRt) > 0 ? "+" : ""}{stock.fltRt}%
                             </span>
-                            <span className="font-extrabold text-cyan-50 text-[13px] text-right w-[75px]">{Number(stock.clpr).toLocaleString()}원</span>
+                            <span className="font-extrabold text-foreground text-[13px] text-right w-[75px] font-mono">{Number(stock.clpr).toLocaleString()}원</span>
                           </div>
                         </div>
                         {/* 하단 보조 지표 */}
-                        <div className="text-[10px] text-cyan-200/60 font-medium tracking-wide">
+                        <div className="text-[10px] text-muted-foreground font-medium tracking-wide">
                           거래대금: {formatAmount(Number(stock.trPrc))}원
                         </div>
                       </div>
@@ -283,31 +248,33 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "prediction" | 
           {activeTab === 'prediction' && (
             <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
               {/* Slot 1: Featured Carousel */}
-              <div className="w-full flex flex-col h-[360px] bg-fuchsia-950/40 backdrop-blur-xl border border-fuchsia-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(255,0,255,0.15)] relative overflow-hidden group">
-                 <div className="flex items-center gap-2 mb-3 pb-2 border-b border-fuchsia-500/30 shrink-0 z-10 relative">
-                    <BarChart3 className="w-5 h-5 text-fuchsia-400" />
-                    <div className="flex flex-col">
-                      <h2 className="text-base font-black text-white tracking-widest leading-none mt-1">HOT ISSUES</h2>
-                      <span className="text-[10px] text-fuchsia-400/80 mt-1">폴리마켓 주요 트렌딩 토픽</span>
-                    </div>
+              <div className="w-full flex flex-col h-[360px] bg-card border border-border relative overflow-hidden group">
+                 {/* IDE Window Header */}
+                 <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0 z-10 relative">
+                    <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
+                      <BarChart3 className="w-3.5 h-3.5" /> 실시간 핫 이슈
+                    </span>
+                    <span className="stamp-red text-[9px] font-bold rounded-sm border-primary/30 text-primary bg-primary/5 px-1.5 py-0.5">
+                      폴리마켓 트렌드
+                    </span>
                  </div>
                  
                  {polys.length > 0 ? (
-                   <div className="flex-1 flex flex-col justify-between relative z-10">
+                   <div className="flex-1 flex flex-col justify-between p-4 relative z-10">
                      <div className="flex items-start gap-4 h-full">
                        {polys[polyIndex]?.image && (
-                         <img src={polys[polyIndex].image} className="w-16 h-16 rounded-xl object-cover border border-fuchsia-500/30 hidden sm:block" alt="event" />
+                         <img src={polys[polyIndex].image} className="w-16 h-16 rounded-sm object-cover border border-border hidden sm:block" alt="event" />
                        )}
                        <div className="flex-1 min-w-0">
-                         <a href={`https://polymarket.com/event/${polys[polyIndex]?.slug}`} target="_blank" rel="noopener noreferrer" className="block mb-3 hover:opacity-80">
-                           <h3 className="text-sm font-bold text-white line-clamp-2 leading-snug">{polys[polyIndex]?.title}</h3>
+                         <a href={`https://polymarket.com/event/${polys[polyIndex]?.slug}`} target="_blank" rel="noopener noreferrer" className="block mb-3 hover:underline">
+                           <h3 className="text-sm font-bold text-foreground line-clamp-2 leading-snug font-sans">{polys[polyIndex]?.title}</h3>
                          </a>
                          
-                         <div className="flex flex-col gap-2 overflow-y-auto max-h-[160px] custom-scrollbar pr-2">
+                         <div className="flex flex-col gap-2 overflow-y-auto max-h-[150px] custom-scrollbar pr-2">
                            {polys[polyIndex]?.markets?.map((m, idx) => (
-                             <div key={idx} className="flex justify-between items-center bg-fuchsia-900/20 px-3 py-1.5 rounded-lg border border-fuchsia-800/50">
-                               <span className="text-xs text-fuchsia-100 font-medium truncate pr-2">{m.title}</span>
-                               <span className="text-xs font-bold text-fuchsia-300 bg-fuchsia-950/80 px-2 py-0.5 rounded shadow-inner whitespace-nowrap">
+                             <div key={idx} className="flex justify-between items-center bg-secondary/30 px-3 py-1.5 border border-border/10 rounded-sm">
+                               <span className="text-xs text-foreground font-medium truncate pr-2 font-sans">{m.title}</span>
+                               <span className="text-[10px] font-bold text-white bg-primary px-2 py-0.5 whitespace-nowrap font-mono select-none">
                                  {m.yesPrice !== null ? `YES ${(m.yesPrice * 100).toFixed(0)}%` : '-'}
                                </span>
                              </div>
@@ -316,69 +283,68 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "prediction" | 
                        </div>
                      </div>
                      
-                     <div className="flex justify-between items-center mt-3 pt-3 border-t border-fuchsia-500/20">
-                       <span className="text-xs font-medium text-fuchsia-200/60">Vol: {formatMarketCap(polys[polyIndex]?.volume?.toString() || '0')}</span>
+                     <div className="flex justify-between items-center mt-3 pt-3 border-t border-border/10">
+                       <span className="text-xs font-mono font-medium text-muted-foreground">Vol: {formatMarketCap(polys[polyIndex]?.volume?.toString() || '0')}</span>
                        <div className="flex gap-1.5">
                          {polys.map((_, idx) => (
-                           <div key={idx} onClick={() => setPolyIndex(idx)} className={`w-2 h-2 rounded-full cursor-pointer transition-all ${idx === polyIndex ? 'bg-fuchsia-400 w-4' : 'bg-fuchsia-900/50 hover:bg-fuchsia-400/50'}`} />
+                           <div key={idx} onClick={() => setPolyIndex(idx)} className={`w-2 h-2 cursor-pointer transition-all ${idx === polyIndex ? 'bg-primary w-4' : 'bg-muted-foreground/30 hover:bg-muted-foreground/60'}`} />
                          ))}
                        </div>
                      </div>
                      
                      {/* Arrows */}
-                     <button onClick={() => setPolyIndex(i => (i === 0 ? polys.length - 1 : i - 1))} className="absolute top-1/2 -left-3 -translate-y-1/2 p-1 bg-fuchsia-950/80 rounded-full text-fuchsia-400 opacity-0 group-hover:opacity-100 transition-opacity border border-fuchsia-500/30">
-                       <ChevronLeft className="w-5 h-5" />
+                     <button onClick={() => setPolyIndex(i => (i === 0 ? polys.length - 1 : i - 1))} className="absolute top-1/2 -left-1 -translate-y-1/2 p-1 bg-white hover:bg-neutral-50 rounded-full text-foreground opacity-0 group-hover:opacity-100 transition-opacity border border-border">
+                       <ChevronLeft className="w-4 h-4" />
                      </button>
-                     <button onClick={() => setPolyIndex(i => (i === polys.length - 1 ? 0 : i + 1))} className="absolute top-1/2 -right-3 -translate-y-1/2 p-1 bg-fuchsia-950/80 rounded-full text-fuchsia-400 opacity-0 group-hover:opacity-100 transition-opacity border border-fuchsia-500/30">
-                       <ChevronRight className="w-5 h-5" />
+                     <button onClick={() => setPolyIndex(i => (i === polys.length - 1 ? 0 : i + 1))} className="absolute top-1/2 -right-1 -translate-y-1/2 p-1 bg-white hover:bg-neutral-50 rounded-full text-foreground opacity-0 group-hover:opacity-100 transition-opacity border border-border">
+                       <ChevronRight className="w-4 h-4" />
                      </button>
                    </div>
-                 ) : (
-                   <div className="flex-1 flex items-center justify-center text-xs text-fuchsia-300/50">데이터를 불러오는 중...</div>
-                 )}
-              </div>
-
-              {/* Slot 2: Fed & Finance */}
-              <div className="w-full flex flex-col h-[360px] bg-amber-950/40 backdrop-blur-xl border border-amber-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(245,158,11,0.15)] transition-colors duration-300 hover:bg-amber-900/50 hover:border-amber-500/60">
-                 <div className="flex items-center gap-2 mb-4 pb-3 border-b border-amber-500/30 shrink-0">
-                    <Calendar className="w-5 h-5 text-amber-400" />
-                    <div className="flex flex-col">
-                      <h2 className="text-base font-black text-white tracking-widest leading-none mt-1">FED & FINANCE</h2>
-                      <span className="text-[10px] text-amber-400/80 mt-1">경제 지표 및 연준 금리 예측</span>
+                  ) : null}
+                </div>
+ 
+               {/* Slot 2: Fed & Finance */}
+               <div className="w-full flex flex-col h-[360px] bg-card border border-border overflow-hidden transition-colors hover:bg-neutral-50/50">
+                  <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
+                     <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
+                       <Calendar className="w-3.5 h-3.5" /> 연준 금리 전망
+                     </span>
+                     <span className="stamp-red text-[9px] font-bold rounded-sm border-primary/30 text-primary bg-primary/5 px-1.5 py-0.5">
+                       연준 예측 지표
+                     </span>
+                  </div>
+                  
+                  <div className="flex-1 overflow-y-auto p-3 custom-scrollbar-amber">
+                    <div className="flex flex-col gap-2">
+                      {fedPolys.length > 0 ? fedPolys.map((poly, i) => (
+                        <a 
+                          key={i} 
+                          href={`https://polymarket.com/event/${poly.slug}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="flex flex-col gap-1 shrink-0 group cursor-pointer bg-secondary/20 hover:bg-secondary/60 px-3 py-2 border border-border/10 transition-colors"
+                        >
+                          <h3 className="text-[12px] font-bold text-foreground line-clamp-2 leading-tight group-hover:text-primary transition-colors font-sans">
+                            {poly.title}
+                          </h3>
+                          <div className="flex items-center justify-between mt-1 select-none font-mono">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[9px] font-bold text-white bg-foreground px-1.5 py-0.5 rounded-sm flex-shrink-0">
+                                {poly.endDate ? new Date(poly.endDate).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : 'N/A'}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground hidden sm:inline">Vol: {formatMarketCap(poly.volume?.toString() || '0')}</span>
+                            </div>
+                            <span className="font-extrabold text-[10px] text-primary bg-primary/10 border border-primary/20 px-2 py-0.5">
+                              YES {poly.yesPrice !== null ? (poly.yesPrice * 100).toFixed(0) : '-'}%
+                            </span>
+                          </div>
+                        </a>
+                      )) : (
+                        <div className="flex items-center justify-center h-full text-muted-foreground text-[11px] p-4">데이터 로딩 중...</div>
+                      )}
                     </div>
-                 </div>
-                 
-                 <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar-amber">
-                   <div className="flex flex-col gap-2.5">
-                     {fedPolys.length > 0 ? fedPolys.map((poly, i) => (
-                       <a 
-                         key={i} 
-                         href={`https://polymarket.com/event/${poly.slug}`} 
-                         target="_blank" 
-                         rel="noopener noreferrer" 
-                         className="flex flex-col gap-1 shrink-0 group cursor-pointer bg-amber-900/10 hover:bg-amber-900/20 px-3 py-2.5 rounded-lg transition-colors border border-amber-900/30"
-                       >
-                         <h3 className="text-[12px] font-bold text-amber-50 line-clamp-2 leading-tight group-hover:text-amber-300 transition-colors">
-                           {poly.title}
-                         </h3>
-                         <div className="flex items-center justify-between mt-1">
-                           <div className="flex items-center gap-2">
-                             <span className="text-[10px] font-bold text-amber-900 bg-amber-400 px-1.5 py-0.5 rounded flex-shrink-0">
-                               {poly.endDate ? new Date(poly.endDate).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : 'N/A'}
-                             </span>
-                             <span className="text-[10px] text-amber-200/50 hidden sm:inline">Vol: {formatMarketCap(poly.volume?.toString() || '0')}</span>
-                           </div>
-                           <span className="font-extrabold text-[11px] text-amber-300 bg-amber-950/80 shadow-inner px-2 py-0.5 rounded">
-                             YES {poly.yesPrice !== null ? (poly.yesPrice * 100).toFixed(0) : '-'}%
-                           </span>
-                         </div>
-                       </a>
-                     )) : (
-                       <div className="flex items-center justify-center h-full text-amber-200/50 text-[11px] text-center p-4">데이터 로딩 중...</div>
-                     )}
-                   </div>
-                 </div>
-              </div>
+                  </div>
+               </div>
 
               {/* Fill remaining slots if 2x3 is maintained globally, but prediction is isolated here */}
               {/* Wait, the container grid is already defined outside! 
@@ -397,64 +363,63 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "prediction" | 
           {activeTab === 'news' && (
             <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
               {/* 4. Google Trends */}
-            <div className="w-full flex flex-col h-[360px] bg-rose-950/40 backdrop-blur-xl border border-rose-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(244,63,94,0.15)] transition-colors duration-300 hover:bg-rose-900/50 hover:border-rose-500/60">
-               {/* 헤더 + 탭 */}
-               <div className="flex items-center justify-between mb-4 pb-3 border-b border-rose-500/30 shrink-0">
-                 <div className="flex items-center gap-2">
-                   <Flame className="w-5 h-5 text-rose-400" />
-                   <h2 className="text-base font-black text-white tracking-widest">GOOGLE TRENDS</h2>
-                 </div>
-                 <div className="flex items-center gap-0.5 bg-rose-950/60 rounded-lg p-0.5">
-                   <button
-                     onClick={() => setTrendsTab("kr")}
-                     className={`px-2 py-1 rounded-md text-[9px] font-bold transition-all ${
-                       trendsTab === "kr"
-                         ? "bg-rose-500 text-white shadow"
-                         : "text-rose-300/70 hover:text-rose-200"
-                     }`}
-                   >
-                     🇰🇷 한국
-                   </button>
-                   <button
-                     onClick={() => setTrendsTab("us")}
-                     className={`px-2 py-1 rounded-md text-[9px] font-bold transition-all ${
-                       trendsTab === "us"
-                         ? "bg-rose-500 text-white shadow"
-                         : "text-rose-300/70 hover:text-rose-200"
-                     }`}
-                   >
-                     🇺🇸 미국
-                   </button>
-                 </div>
+             <div className="w-full flex flex-col h-[360px] bg-card border border-border overflow-hidden transition-colors hover:bg-neutral-50/50">
+               <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
+                  <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
+                    <Flame className="w-3.5 h-3.5" /> 구글 실시간 트렌드
+                  </span>
+                  
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setTrendsTab("kr")}
+                      className={`px-2 py-0.5 border text-[9px] font-bold transition-all ${
+                        trendsTab === "kr"
+                          ? "bg-primary text-white border-primary"
+                          : "bg-white text-muted-foreground border-border/20 hover:border-border/60"
+                      }`}
+                    >
+                      🇰🇷 한국
+                    </button>
+                    <button
+                      onClick={() => setTrendsTab("us")}
+                      className={`px-2 py-0.5 border text-[9px] font-bold transition-all ${
+                        trendsTab === "us"
+                          ? "bg-primary text-white border-primary"
+                          : "bg-white text-muted-foreground border-border/20 hover:border-border/60"
+                      }`}
+                    >
+                      🇺🇸 미국
+                    </button>
+                  </div>
                </div>
-
-               {/* 탭 공통 렌더 함수 */}
-               <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar-rose">
-                 {(trendsTab === "kr" ? trends : usTrends).length === 0 ? (
-                   <div className="flex items-center justify-center h-full text-rose-200/50 text-[11px] text-center p-4">트렌드 로딩 중...</div>
-                 ) : (
-                   <div className="flex flex-col gap-1.5">
-                     {(trendsTab === "kr" ? trends : usTrends).map((trend, i) => (
-                       <a
-                         key={i}
-                         href={`https://www.google.com/search?q=${encodeURIComponent(trend.title)}`}
-                         target="_blank"
-                         rel="noopener noreferrer"
-                         className="flex justify-between items-center bg-rose-900/10 hover:bg-rose-900/20 px-2.5 py-2 rounded transition-colors overflow-hidden cursor-pointer shrink-0"
-                       >
-                         <span className="font-bold text-rose-50 text-[11px] line-clamp-1 truncate max-w-[120px] lg:max-w-[160px]" title={trend.title}>
-                           <span className="text-rose-400 mr-1 opacity-80">{i+1}.</span>
-                           {trend.title}
-                         </span>
-                         <span className="text-[9px] font-bold text-rose-300/90 bg-rose-950/60 shadow-inner px-1.5 py-0.5 rounded whitespace-nowrap ml-1 flex-shrink-0">
-                           {trend.traffic}
-                         </span>
-                       </a>
-                     ))}
-                   </div>
-                 )}
+ 
+               {/* Content */}
+               <div className="flex-1 overflow-y-auto p-3 custom-scrollbar-rose">
+                  {(trendsTab === "kr" ? trends : usTrends).length === 0 ? (
+                    <div className="flex items-center justify-center h-full text-muted-foreground text-[11px] p-4 font-mono">트렌드 로딩 중...</div>
+                  ) : (
+                    <div className="flex flex-col gap-1.5">
+                      {(trendsTab === "kr" ? trends : usTrends).map((trend, i) => (
+                        <a
+                          key={i}
+                          href={`https://www.google.com/search?q=${encodeURIComponent(trend.title)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex justify-between items-center bg-secondary/20 hover:bg-secondary/60 px-3 py-2 border border-border/10 transition-colors overflow-hidden cursor-pointer shrink-0"
+                        >
+                          <span className="font-bold text-foreground text-[11px] line-clamp-1 truncate max-w-[120px] lg:max-w-[160px] font-sans" title={trend.title}>
+                            <span className="text-primary mr-1 opacity-80">{i+1}.</span>
+                            {trend.title}
+                          </span>
+                          <span className="text-[9px] font-bold text-white bg-foreground px-1.5 py-0.5 font-mono shrink-0 select-none">
+                            {trend.traffic}
+                          </span>
+                        </a>
+                      ))}
+                    </div>
+                  )}
                </div>
-            </div>
+             </div>
 
               <FinlifeProductsWidget />
               <EmptySlot index={3} />
@@ -466,69 +431,36 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "prediction" | 
         </div>
       )}
       <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar {
+        .custom-scrollbar::-webkit-scrollbar,
+        .custom-scrollbar-emerald::-webkit-scrollbar,
+        .custom-scrollbar-cyan::-webkit-scrollbar,
+        .custom-scrollbar-rose::-webkit-scrollbar,
+        .custom-scrollbar-amber::-webkit-scrollbar {
           width: 4px;
         }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(255, 0, 255, 0.05); 
-          border-radius: 4px;
+        .custom-scrollbar::-webkit-scrollbar-track,
+        .custom-scrollbar-emerald::-webkit-scrollbar-track,
+        .custom-scrollbar-cyan::-webkit-scrollbar-track,
+        .custom-scrollbar-rose::-webkit-scrollbar-track,
+        .custom-scrollbar-amber::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.02);
+          border-radius: 0px;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 0, 255, 0.3); 
-          border-radius: 4px;
+        .custom-scrollbar::-webkit-scrollbar-thumb,
+        .custom-scrollbar-emerald::-webkit-scrollbar-thumb,
+        .custom-scrollbar-cyan::-webkit-scrollbar-thumb,
+        .custom-scrollbar-rose::-webkit-scrollbar-thumb,
+        .custom-scrollbar-amber::-webkit-scrollbar-thumb {
+          background: rgba(17, 17, 17, 0.25);
+          border-radius: 0px;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 0, 255, 0.6); 
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover,
+        .custom-scrollbar-emerald::-webkit-scrollbar-thumb:hover,
+        .custom-scrollbar-cyan::-webkit-scrollbar-thumb:hover,
+        .custom-scrollbar-rose::-webkit-scrollbar-thumb:hover,
+        .custom-scrollbar-amber::-webkit-scrollbar-thumb:hover {
+          background: rgba(17, 17, 17, 0.5);
         }
-
-        .custom-scrollbar-emerald::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar-emerald::-webkit-scrollbar-track {
-          background: rgba(16, 185, 129, 0.05); 
-          border-radius: 4px;
-        }
-        .custom-scrollbar-emerald::-webkit-scrollbar-thumb {
-          background: rgba(16, 185, 129, 0.3); 
-          border-radius: 4px;
-        }
-        .custom-scrollbar-emerald::-webkit-scrollbar-thumb:hover {
-          background: rgba(16, 185, 129, 0.6); 
-        }
-
-        .custom-scrollbar-cyan::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar-cyan::-webkit-scrollbar-track {
-          background: rgba(6, 182, 212, 0.05); 
-          border-radius: 4px;
-        }
-        .custom-scrollbar-cyan::-webkit-scrollbar-thumb {
-          background: rgba(6, 182, 212, 0.3); 
-          border-radius: 4px;
-        }
-        .custom-scrollbar-cyan::-webkit-scrollbar-thumb:hover {
-          background: rgba(6, 182, 212, 0.6); 
-        }
-
-        .custom-scrollbar-rose::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar-rose::-webkit-scrollbar-track {
-          background: rgba(244, 63, 94, 0.05); 
-          border-radius: 4px;
-        }
-        .custom-scrollbar-rose::-webkit-scrollbar-thumb {
-          background: rgba(244, 63, 94, 0.3); 
-          border-radius: 4px;
-        }
-        .custom-scrollbar-rose::-webkit-scrollbar-thumb:hover {
-          background: rgba(244, 63, 94, 0.6); 
-        }
-        .custom-scrollbar-amber::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar-amber::-webkit-scrollbar-track { background: rgba(245, 158, 11, 0.05); border-radius: 4px; }
-        .custom-scrollbar-amber::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.3); border-radius: 4px; }
-        .custom-scrollbar-amber::-webkit-scrollbar-thumb:hover { background: rgba(245, 158, 11, 0.6); }
       `}</style>
     </div>
   )

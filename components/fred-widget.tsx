@@ -57,29 +57,29 @@ export function FredWidget() {
   }, [])
 
   return (
-    <div className="w-full flex flex-col h-[360px] bg-violet-950/40 backdrop-blur-xl border border-violet-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(139,92,246,0.15)] transition-colors duration-300 hover:bg-violet-900/50 hover:border-violet-500/60">
-      <div className="flex items-center justify-between mb-4 pb-3 border-b border-violet-500/30 shrink-0">
-        <div className="flex items-center gap-2">
-          <LineChart className="w-5 h-5 text-violet-400" />
-          <h2 className="text-base font-black text-white tracking-widest leading-none mt-1">MACRO INDICATORS</h2>
-        </div>
-        <button onClick={fetchFred} disabled={loading} className="p-1 hover:bg-violet-500/20 rounded transition-colors" title="새로고침">
-          <RefreshCw className={`w-3.5 h-3.5 text-violet-400/80 ${loading ? 'animate-spin' : ''}`} />
+    <div className="w-full flex flex-col h-[360px] bg-card border border-border overflow-hidden transition-colors duration-300 hover:bg-neutral-50/50">
+      {/* IDE Window Header */}
+      <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
+        <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
+          <LineChart className="w-3.5 h-3.5" /> 거시 경제 지표
+        </span>
+        <button onClick={fetchFred} disabled={loading} className="p-1 hover:bg-secondary rounded transition-colors" title="새로고침">
+          <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground/80 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar-violet relative">
+      <div className="flex-1 overflow-y-auto p-3 custom-scrollbar-violet relative">
         {loading && data.length === 0 ? (
           <div className="absolute inset-0 flex items-center justify-center">
-             <div className="w-6 h-6 border-2 border-violet-500/50 border-t-violet-300 rounded-full animate-spin"></div>
+             <div className="w-6 h-6 border-2 border-primary/50 border-t-primary rounded-full animate-spin"></div>
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <AlertCircle className="w-6 h-6 text-rose-400 mb-2" />
-            <span className="text-[11px] text-rose-200/80">{error}</span>
+            <AlertCircle className="w-6 h-6 text-primary mb-2" />
+            <span className="text-[11px] text-primary">{error}</span>
           </div>
         ) : data.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-violet-200/50 text-[11px]">데이터가 없습니다.</div>
+          <div className="flex items-center justify-center h-full text-muted-foreground text-[11px] font-mono">데이터가 없습니다.</div>
         ) : (
           <div className="flex flex-col gap-2">
             {data.map((item) => {
@@ -95,35 +95,29 @@ export function FredWidget() {
                 changeText = `${isUp ? "+" : ""}${pct.toFixed(2)}%`;
               }
 
-              // Color semantics:
-              // Unemployment, CPI, PPI going up is usually "red" for market.
-              // GDP going up is "green".
-              // Let's just stick to a consistent UP=Green, DOWN=Red to keep it simple, or neutral Violet.
-              // For consistent UI, let's use Emerald for UP, Rose for DOWN.
-              const colorClass = isUp ? "text-emerald-400" : isDown ? "text-rose-400" : "text-violet-300";
-              const bgColorClass = isUp ? "bg-emerald-950/40" : isDown ? "bg-rose-950/40" : "bg-violet-950/40";
+              const colorClass = isUp ? "text-red-700 bg-red-50 border-red-200" : isDown ? "text-blue-700 bg-blue-50 border-blue-200" : "text-foreground bg-secondary/55 border-border/10";
 
               return (
-                <div key={item.id} className="flex flex-col gap-1.5 p-2.5 bg-violet-900/20 hover:bg-violet-900/30 rounded-lg transition-colors shrink-0 border border-violet-800/40">
+                <div key={item.id} className="flex flex-col gap-1.5 p-2.5 bg-secondary/20 hover:bg-secondary/60 rounded-sm transition-colors shrink-0 border border-border/10">
                   <div className="flex justify-between items-center">
-                    <span className="font-bold text-violet-50 text-[12px]">{item.title}</span>
-                    <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded shadow-inner ${colorClass} ${bgColorClass}`}>
+                    <span className="font-bold text-foreground text-[12px] font-sans">{item.title}</span>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-sm border font-mono ${colorClass}`}>
                       {isUp ? "▲" : isDown ? "▼" : "-"} {changeText}
                     </span>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-2 mt-1">
+                  <div className="grid grid-cols-2 gap-2 mt-1 select-none font-mono">
                     {/* Previous */}
-                    <div className="flex flex-col p-1.5 rounded bg-black/20">
-                      <span className="text-[9px] text-violet-300/60 mb-0.5">이전 ({formatDate(item.previous.date)})</span>
-                      <span className="text-[11px] font-medium text-violet-200/80">
+                    <div className="flex flex-col p-1.5 rounded-sm bg-secondary/40">
+                      <span className="text-[9px] text-muted-foreground mb-0.5">이전 ({formatDate(item.previous.date)})</span>
+                      <span className="text-[11px] font-medium text-foreground/80">
                         {item.previous.value}{item.format === "percent" ? "%" : ""}
                       </span>
                     </div>
                     {/* Latest */}
-                    <div className="flex flex-col p-1.5 rounded bg-black/30 border border-violet-500/20">
-                      <span className="text-[9px] text-violet-300 mb-0.5 font-medium">최신 ({formatDate(item.latest.date)})</span>
-                      <span className="text-[12px] font-bold text-violet-100">
+                    <div className="flex flex-col p-1.5 rounded-sm bg-secondary/60 border border-border/10">
+                      <span className="text-[9px] text-muted-foreground mb-0.5 font-medium">최신 ({formatDate(item.latest.date)})</span>
+                      <span className="text-[12px] font-bold text-foreground">
                         {item.latest.value}{item.format === "percent" ? "%" : ""}
                       </span>
                     </div>
@@ -140,15 +134,15 @@ export function FredWidget() {
           width: 4px;
         }
         .custom-scrollbar-violet::-webkit-scrollbar-track {
-          background: rgba(139, 92, 246, 0.05); 
-          border-radius: 4px;
+          background: transparent; 
+          border-radius: 0px;
         }
         .custom-scrollbar-violet::-webkit-scrollbar-thumb {
-          background: rgba(139, 92, 246, 0.3); 
-          border-radius: 4px;
+          background: rgba(17, 17, 17, 0.25); 
+          border-radius: 0px;
         }
         .custom-scrollbar-violet::-webkit-scrollbar-thumb:hover {
-          background: rgba(139, 92, 246, 0.6); 
+          background: rgba(17, 17, 17, 0.5); 
         }
       `}</style>
     </div>

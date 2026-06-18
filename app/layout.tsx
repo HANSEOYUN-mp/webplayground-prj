@@ -10,7 +10,7 @@ const _jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-je
 const _dancingScript = Dancing_Script({ subsets: ["latin"], variable: "--font-dancing-script", weight: ["700"] });
 
 export const metadata: Metadata = {
-  title: 'OmniArchive',
+  title: 'Insightra',
   description: '친구와 함께 지식을 공유하고, 코드 스니펫과 아이디어를 자유롭게 나누는 플레이그라운드입니다.',
   icons: {
     icon: [
@@ -42,16 +42,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body className={`${_inter.variable} ${_jetbrainsMono.variable} ${_dancingScript.variable} font-sans antialiased text-white min-h-screen relative`}>
-        {/* 전체 사이트에 적용되는 우주/블랙홀 배경 */}
-        <div className="fixed inset-0 z-[-1]">
-          <img 
-            src="/galaxy-bg.jpg" 
-            alt="Galaxy Background" 
-            className="w-full h-full object-cover opacity-90 scale-100" 
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/80 pointer-events-none" />
-        </div>
+      <body className={`${_inter.variable} ${_jetbrainsMono.variable} ${_dancingScript.variable} font-sans antialiased text-foreground min-h-screen relative`}>
+        {/* 전체 사이트에 적용되는 한국 전통 격자 배경 */}
+        <div className="fixed inset-0 z-[-1] hanji-grid" />
         
         <AuthProvider>
           {children}
