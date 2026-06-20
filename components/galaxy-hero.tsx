@@ -7,6 +7,7 @@ import { FredWidget } from "@/components/fred-widget"
 import { TradingViewHeatmapWidget } from "@/components/tradingview-heatmap-widget"
 import { CustomHeatmapWidget } from "@/components/custom-heatmap-widget"
 import { FinlifeProductsWidget } from "@/components/finlife-products-widget"
+import { TradingViewKoreaWidget } from "@/components/tradingview-korea-widget"
 
 interface StockRow {
   rank: number
@@ -98,7 +99,7 @@ const FALLBACK_STOCKS: StockRow[] = [
   { rank: 15, itmsNm: "LG화학", clpr: "375000", fltRt: "0.2", mrktTotAmt: "26000000000000", trPrc: "110000000000" },
 ]
 
-export function GalaxyHero({ activeTab }: { activeTab: "stock" | "prediction" | "news" }) {
+export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "prediction" | "news" }) {
   const [stocks, setStocks] = useState<StockRow[]>([])
   const [polys, setPolys] = useState<PolymarketRow[]>([])
   const [fedPolys, setFedPolys] = useState<PolymarketFinanceRow[]>([])
@@ -197,51 +198,65 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "prediction" | 
                 <TradingViewHeatmapWidget />
               </div>
 
-              {/* 1. 주식 데이터 */}
-            <div className="w-full flex flex-col h-[360px] bg-card border border-border overflow-hidden transition-colors hover:bg-neutral-50/50">
-               <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
-                  <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
-                    <TrendingUp className="w-3.5 h-3.5" /> 국내 급등 주식
-                  </span>
-                  {stockDate && (
-                    <span className="stamp-red text-[9px] font-bold rounded-sm border-primary/30 text-primary bg-primary/5 px-1.5 py-0.5">
-                      기준일: {stockDate}
-                    </span>
-                  )}
-               </div>
-               
-               <div className="flex-1 overflow-y-auto p-3 custom-scrollbar-cyan">
-                  <div className="flex flex-col gap-1.5">
-                    {stocks.map((stock, i) => (
-                      <div key={i} className="flex flex-col gap-1 bg-secondary/20 hover:bg-secondary/60 p-2.5 border border-border/10 shrink-0 transition-colors">
-                        <div className="flex justify-between items-center w-full">
-                          {/* 종목명 */}
-                          <span className="font-bold text-foreground text-[13px] truncate max-w-[130px] font-sans" title={stock.itmsNm}>{stock.rank}. {stock.itmsNm}</span>
-                          
-                          {/* 가격 & 등락률 */}
-                          <div className="flex items-center gap-3">
-                            <span className={`text-[11px] font-bold tracking-tighter font-mono ${Number(stock.fltRt) >= 0 ? "text-red-700" : "text-blue-700"}`}>
-                              {Number(stock.fltRt) > 0 ? "+" : ""}{stock.fltRt}%
-                            </span>
-                            <span className="font-extrabold text-foreground text-[13px] text-right w-[75px] font-mono">{Number(stock.clpr).toLocaleString()}원</span>
-                          </div>
-                        </div>
-                        {/* 하단 보조 지표 */}
-                        <div className="text-[10px] text-muted-foreground font-medium tracking-wide">
-                          거래대금: {formatAmount(Number(stock.trPrc))}원
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-               </div>
-            </div>
-
-            
               <div className="w-full flex flex-col h-[360px]">
                 <MinskyWidget />
               </div>
               <FredWidget />
               <CustomHeatmapWidget />
+              <EmptySlot index={2} title="GLOBAL / MACRO" subtitle="추가 분석 지표 준비 중" />
+            </div>
+          )}
+
+          {activeTab === 'kr-stock' && (
+            <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+              {/* 국내 시장 요약 (KOSPI/KOSDAQ 차트) */}
+              <div className="md:col-span-2 w-full">
+                <TradingViewKoreaWidget />
+              </div>
+
+              {/* 1. 국내 급등 주식 */}
+              <div className="w-full flex flex-col h-[360px] bg-card border border-border overflow-hidden transition-colors hover:bg-neutral-50/50">
+                 <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
+                    <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
+                      <TrendingUp className="w-3.5 h-3.5" /> 국내 급등 주식
+                    </span>
+                    {stockDate && (
+                      <span className="stamp-red text-[9px] font-bold rounded-sm border-primary/30 text-primary bg-primary/5 px-1.5 py-0.5">
+                        기준일: {stockDate}
+                      </span>
+                    )}
+                 </div>
+                 
+                 <div className="flex-1 overflow-y-auto p-3 custom-scrollbar-cyan">
+                    <div className="flex flex-col gap-1.5">
+                      {stocks.map((stock, i) => (
+                        <div key={i} className="flex flex-col gap-1 bg-secondary/20 hover:bg-secondary/60 p-2.5 border border-border/10 shrink-0 transition-colors">
+                          <div className="flex justify-between items-center w-full">
+                            {/* 종목명 */}
+                            <span className="font-bold text-foreground text-[13px] truncate max-w-[130px] font-sans" title={stock.itmsNm}>{stock.rank}. {stock.itmsNm}</span>
+                            
+                            {/* 가격 & 등락률 */}
+                            <div className="flex items-center gap-3">
+                              <span className={`text-[11px] font-bold tracking-tighter font-mono ${Number(stock.fltRt) >= 0 ? "text-red-700" : "text-blue-700"}`}>
+                                {Number(stock.fltRt) > 0 ? "+" : ""}{stock.fltRt}%
+                              </span>
+                              <span className="font-extrabold text-foreground text-[13px] text-right w-[75px] font-mono">{Number(stock.clpr).toLocaleString()}원</span>
+                            </div>
+                          </div>
+                          {/* 하단 보조 지표 */}
+                          <div className="text-[10px] text-muted-foreground font-medium tracking-wide">
+                            거래대금: {formatAmount(Number(stock.trPrc))}원
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                 </div>
+              </div>
+
+              {/* 2. 빈 슬롯들 (사용자 요청: "그리고 한국주식 탭에도 빈슬롯 만들어줘") */}
+              <EmptySlot index={2} title="KOREA FINANCE" subtitle="추가 금융 정보 분석 준비 중" />
+              <EmptySlot index={3} title="KOREA MARKET" subtitle="추가 분석 모델 준비 중" />
+              <EmptySlot index={4} title="KOREA ECONOMY" subtitle="한국 거시경제 지표 연동 준비 중" />
             </div>
           )}
 

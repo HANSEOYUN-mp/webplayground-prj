@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-export type NavTab = "stock" | "prediction" | "news" | "post"
+export type NavTab = "stock" | "kr-stock" | "prediction" | "news" | "post"
 
 interface HeaderProps {
   onNewPost: () => void
@@ -54,7 +54,8 @@ export function Header({ onNewPost, searchQuery, onSearchChange, activeTab, onTa
 
         <nav className="hidden items-center gap-1 md:flex">
           {[
-            { id: "stock", label: "Stock" },
+            { id: "stock", label: "US Stock" },
+            { id: "kr-stock", label: "Korea Stock" },
             { id: "prediction", label: "Prediction" },
             { id: "news", label: "News & Trends" },
             { id: "post", label: "Post" },
@@ -144,7 +145,8 @@ export function Header({ onNewPost, searchQuery, onSearchChange, activeTab, onTa
         >
           <span>
             {[
-              { id: "stock", label: "📈 Stock" },
+              { id: "stock", label: "🇺🇸 US Stock" },
+              { id: "kr-stock", label: "🇰🇷 Korea Stock" },
               { id: "prediction", label: "🔮 Prediction" },
               { id: "news", label: "🔥 News" },
               { id: "post", label: "✏️ Post" },
@@ -158,7 +160,8 @@ export function Header({ onNewPost, searchQuery, onSearchChange, activeTab, onTa
         <div className="border-t border-border px-4 pb-4 md:hidden">
           <nav className="flex flex-col gap-1 py-2">
             {[
-              { id: "stock", label: "Stock" },
+              { id: "stock", label: "US Stock" },
+              { id: "kr-stock", label: "Korea Stock" },
               { id: "prediction", label: "Prediction" },
               { id: "news", label: "News & Trends" },
               { id: "post", label: "Post" },
