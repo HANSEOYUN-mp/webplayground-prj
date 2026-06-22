@@ -8,6 +8,8 @@ import { TradingViewHeatmapWidget } from "@/components/tradingview-heatmap-widge
 import { CustomHeatmapWidget } from "@/components/custom-heatmap-widget"
 import { FinlifeProductsWidget } from "@/components/finlife-products-widget"
 import { TradingViewKoreaWidget } from "@/components/tradingview-korea-widget"
+import { EarningsCalendarWidget } from "@/components/earnings-calendar-widget"
+
 
 interface StockRow {
   rank: number
@@ -196,6 +198,11 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "p
               {/* 미국 주식 히트맵 (슬롯 1, 2 위에 크게 배치) */}
               <div className="md:col-span-2 w-full">
                 <TradingViewHeatmapWidget />
+              </div>
+
+              {/* 실적 발표 캘린더 (히트맵 하단에 동일하게 col-span-2로 배치) */}
+              <div className="md:col-span-2 w-full">
+                <EarningsCalendarWidget />
               </div>
 
               <div className="w-full flex flex-col h-[360px]">
