@@ -4,6 +4,14 @@ import { useState, useEffect } from "react"
 import { Calendar, Search, RefreshCw, AlertCircle, Sun, Moon } from "lucide-react"
 import { ResponsiveContainer, AreaChart, Area } from "recharts"
 
+// 현지 날짜 문자열 생성 헬퍼 (YYYY-MM-DD)
+function getLocalDateString(d: Date) {
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, "0")
+  const date = String(d.getDate()).padStart(2, "0")
+  return `${year}-${month}-${date}`
+}
+
 // 투자의견 컨센서스 막대그래프 컴포넌트
 function ConsensusBar({ buy, hold, sell }: { buy: number; hold: number; sell: number }) {
   const total = buy + hold + sell
@@ -44,6 +52,22 @@ function EarningsRow({ item, idx, renderSessionBadge, renderSurpriseBadge }: Ear
   const [details, setDetails] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
+  // 현지 시간 기준 어제/오늘/내일 판단
+  const now = new Date()
+  const todayStr = getLocalDateString(now)
+
+  const yesterday = new Date()
+  yesterday.setDate(now.getDate() - 1)
+  const yesterdayStr = getLocalDateString(yesterday)
+
+  const tomorrow = new Date()
+  tomorrow.setDate(now.getDate() + 1)
+  const tomorrowStr = getLocalDateString(tomorrow)
+
+  const isToday = item.date === todayStr
+  const isYesterday = item.date === yesterdayStr
+  const isTomorrow = item.date === tomorrowStr
+
   useEffect(() => {
     let active = true
     const fetchDetails = async () => {
@@ -67,7 +91,7 @@ function EarningsRow({ item, idx, renderSessionBadge, renderSurpriseBadge }: Ear
   }, [item.symbol])
 
   return (
-    <tr className="hover:bg-secondary/20 transition-colors">
+    <tr className={`hover:bg-secondary/20 transition-colors ${isToday ? "bg-primary/5 border-l-2 border-primary" : ""}`}>
       {/* 기업명 */}
       <td className="px-4 py-2.5 font-bold text-foreground">
         <span className="font-mono text-[11.5px] mr-1.5">{item.symbol}</span>
@@ -79,7 +103,12 @@ function EarningsRow({ item, idx, renderSessionBadge, renderSurpriseBadge }: Ear
       {/* 발표 일시 */}
       <td className="px-4 py-2.5">
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[10px] text-muted-foreground">{item.date}</span>
+          <span className={`font-mono text-[10px] flex items-center gap-1 ${isToday ? "text-primary font-bold" : "text-muted-foreground"}`}>
+            {item.date}
+            {isToday && <span className="text-[9px] text-primary font-bold bg-primary/10 px-1 py-0.5 select-none rounded-none">오늘</span>}
+            {isYesterday && <span className="text-[9px] text-neutral-500 font-bold bg-neutral-100 px-1 py-0.5 select-none rounded-none">어제</span>}
+            {isTomorrow && <span className="text-[9px] text-teal-600 font-bold bg-teal-500/10 px-1 py-0.5 select-none rounded-none">내일</span>}
+          </span>
           {renderSessionBadge(item.hour)}
         </div>
       </td>
@@ -171,25 +200,49 @@ export function EarningsCalendarWidget() {
     setLoading(true)
     setError(null)
 
-    const getLocalDateString = (d: Date) => {
-      const year = d.getFullYear()
-      const month = String(d.getMonth() + 1).padStart(2, "0")
-      const date = String(d.getDate()).padStart(2, "0")
-      return `${year}-${month}-${date}`
-    }
-
     const now = new Date()
-    const fromDate = getLocalDateString(now)
-    let toDate = fromDate
+    let fromDate = ""
+    let toDate = ""
 
-    if (filter === "week") {
-      const targetDate = new Date()
-      targetDate.setDate(now.getDate() + 7)
-      toDate = getLocalDateString(targetDate)
-    } else if (filter === "month") {
-      const targetDate = new Date()
-      targetDate.setDate(now.getDate() + 30)
-      toDate = getLocalDateString(targetDate)
+    if (searchQuery.trim()) {
+      // 검색어가 있는 경우: 최근 90일 전부터 90일 후까지 조회하여 과거/미래 실적 일정을 모두 검색할 수 있도록 함
+      const pastDate = new Date()
+      pastDate.setDate(now.getDate() - 90)
+      fromDate = getLocalDateString(pastDate)
+
+      const futureDate = new Date()
+      futureDate.setDate(now.getDate() + 90)
+      toDate = getLocalDateString(futureDate)
+    } else {
+      // 검색어가 없는 경우: 각 필터마다 실적 발표 직후에도 사용자가 실적을 확인할 수 있도록 과거 범위를 포함시킴
+      if (filter === "today") {
+        // 미국 시간대 차이를 감안하여 어제부터 내일까지 조회
+        const pastDate = new Date()
+        pastDate.setDate(now.getDate() - 1)
+        fromDate = getLocalDateString(pastDate)
+
+        const futureDate = new Date()
+        futureDate.setDate(now.getDate() + 1)
+        toDate = getLocalDateString(futureDate)
+      } else if (filter === "week") {
+        // 지난 7일부터 향후 7일까지 조회
+        const pastDate = new Date()
+        pastDate.setDate(now.getDate() - 7)
+        fromDate = getLocalDateString(pastDate)
+
+        const futureDate = new Date()
+        futureDate.setDate(now.getDate() + 7)
+        toDate = getLocalDateString(futureDate)
+      } else if (filter === "month") {
+        // 지난 30일부터 향후 30일까지 조회
+        const pastDate = new Date()
+        pastDate.setDate(now.getDate() - 30)
+        fromDate = getLocalDateString(pastDate)
+
+        const futureDate = new Date()
+        futureDate.setDate(now.getDate() + 30)
+        toDate = getLocalDateString(futureDate)
+      }
     }
 
     try {

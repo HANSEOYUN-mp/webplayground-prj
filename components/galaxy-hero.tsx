@@ -9,6 +9,7 @@ import { CustomHeatmapWidget } from "@/components/custom-heatmap-widget"
 import { FinlifeProductsWidget } from "@/components/finlife-products-widget"
 import { TradingViewKoreaWidget } from "@/components/tradingview-korea-widget"
 import { EarningsCalendarWidget } from "@/components/earnings-calendar-widget"
+import { CnnTechNewsWidget } from "@/components/cnn-tech-news-widget"
 
 
 interface StockRow {
@@ -106,6 +107,7 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "p
   const [polys, setPolys] = useState<PolymarketRow[]>([])
   const [fedPolys, setFedPolys] = useState<PolymarketFinanceRow[]>([])
   const [polyIndex, setPolyIndex] = useState(0)
+  const [stockSubView, setStockSubView] = useState<"main" | "minsky" | "fred">("main")
 
   const [trends, setTrends] = useState<TrendItem[]>([])
   const [usTrends, setUsTrends] = useState<TrendItem[]>([])
@@ -163,6 +165,10 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "p
     fetchData()
   }, [])
 
+  useEffect(() => {
+    setStockSubView("main")
+  }, [activeTab])
+
   return (
     <div className="relative w-full min-h-[600px] mt-2 mb-8">
       {/* 로딩 / 에러 처리 */}
@@ -195,22 +201,94 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "p
         <div className="w-full max-w-7xl mx-auto z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
           {activeTab === 'stock' && (
             <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-              {/* 미국 주식 히트맵 (슬롯 1, 2 위에 크게 배치) */}
-              <div className="md:col-span-2 w-full">
-                <TradingViewHeatmapWidget />
-              </div>
+              {stockSubView === "main" ? (
+                <>
+                  {/* 미국 주식 히트맵 (슬롯 1, 2 위에 크게 배치) */}
+                  <div className="md:col-span-2 w-full">
+                    <TradingViewHeatmapWidget />
+                  </div>
 
-              {/* 실적 발표 캘린더 (히트맵 하단에 동일하게 col-span-2로 배치) */}
-              <div className="md:col-span-2 w-full">
-                <EarningsCalendarWidget />
-              </div>
+                  {/* 실적 발표 캘린더 (히트맵 하단에 동일하게 col-span-2로 배치) */}
+                  <div className="md:col-span-2 w-full">
+                    <EarningsCalendarWidget />
+                  </div>
 
-              <div className="w-full flex flex-col h-[360px]">
-                <MinskyWidget />
-              </div>
-              <FredWidget />
-              <CustomHeatmapWidget />
-              <EmptySlot index={2} title="GLOBAL / MACRO" subtitle="추가 분석 지표 준비 중" />
+                  {/* 글로벌 거시 경제 지표 슬롯 (웹앱 테마 유지 & 3버튼 구성) */}
+                  <div className="w-full flex flex-col h-[360px] bg-card border border-border rounded-none overflow-hidden transition-colors hover:bg-neutral-50/50">
+                    {/* 헤더 */}
+                    <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
+                      <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
+                        <BarChart3 className="w-3.5 h-3.5 text-primary" /> 글로벌 거시 경제 지표
+                      </span>
+                    </div>
+                    {/* 본문 콘텐츠 */}
+                    <div className="flex-1 p-5 flex flex-col justify-between">
+                      <div>
+                        <p className="text-[11.5px] text-muted-foreground leading-relaxed font-sans mb-4">
+                          글로벌 시장 및 거시 경제의 주요 지표 대시보드를 선택해 이동할 수 있습니다.
+                        </p>
+                      </div>
+
+                      {/* 3개 버튼 배치 */}
+                      <div className="flex flex-col gap-3 flex-1 justify-center">
+                        {/* 첫번째: 공포 탐욕지수 */}
+                        <button 
+                          onClick={() => setStockSubView("minsky")}
+                          className="w-full py-2.5 bg-primary text-primary-foreground font-bold text-[11px] hover:bg-primary/90 transition-colors flex items-center justify-between px-4 rounded-none font-sans select-none"
+                        >
+                          <span className="flex items-center gap-1.5"><Flame className="w-3.5 h-3.5 animate-pulse text-amber-300" /> 공포 탐욕 지수 (CNN)</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+
+                        {/* 두번째: 거시경제 지표 */}
+                        <button 
+                          onClick={() => setStockSubView("fred")}
+                          className="w-full py-2.5 bg-primary text-primary-foreground font-bold text-[11px] hover:bg-primary/90 transition-colors flex items-center justify-between px-4 rounded-none font-sans select-none"
+                        >
+                          <span className="flex items-center gap-1.5"><BarChart3 className="w-3.5 h-3.5 text-indigo-300" /> 미국 거시경제 지표 (FRED)</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+
+                        {/* 세번째: 빈 버튼 */}
+                        <button 
+                          disabled
+                          className="w-full py-2.5 bg-secondary/40 text-muted-foreground/30 border border-dashed border-border/80 font-bold text-[11px] flex items-center justify-between px-4 rounded-none font-sans cursor-not-allowed select-none"
+                        >
+                          <span className="flex items-center gap-1.5 text-muted-foreground/30">- 준비 중인 지표 -</span>
+                          <ChevronRight className="w-3.5 h-3.5 opacity-0" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <CustomHeatmapWidget />
+                  <CnnTechNewsWidget />
+                </>
+              ) : (
+                <>
+                  {/* 돌아가기 버튼 */}
+                  <div className="md:col-span-2 flex items-center mb-2">
+                    <button 
+                      onClick={() => setStockSubView("main")}
+                      className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors bg-secondary border border-border px-3 py-1.5 select-none"
+                    >
+                      <ChevronLeft className="w-4 h-4" /> 미국 주식 메인으로 돌아가기
+                    </button>
+                  </div>
+
+                  {stockSubView === "minsky" ? (
+                    /* 공포 탐욕지수 상세 뷰 */
+                    <div className="md:col-span-2 w-full flex flex-col">
+                      <MinskyWidget className="h-auto" />
+                    </div>
+                  ) : (
+                    /* 거시경제 지표 상세 뷰 */
+                    <div className="md:col-span-2 w-full flex flex-col">
+                      <FredWidget />
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           )}
 
