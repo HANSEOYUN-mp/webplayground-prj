@@ -10,6 +10,8 @@ import { FinlifeProductsWidget } from "@/components/finlife-products-widget"
 import { TradingViewKoreaWidget } from "@/components/tradingview-korea-widget"
 import { EarningsCalendarWidget } from "@/components/earnings-calendar-widget"
 import { CnnTechNewsWidget } from "@/components/cnn-tech-news-widget"
+import { UsTechMoversWidget } from "@/components/us-tech-movers-widget"
+import { CnnBeforeTheBellWidget } from "@/components/cnn-before-the-bell-widget"
 
 
 interface StockRow {
@@ -203,6 +205,11 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "p
             <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
               {stockSubView === "main" ? (
                 <>
+                  {/* CNN Before the Bell 개장 전 핵심 요약 */}
+                  <div className="md:col-span-2 w-full">
+                    <CnnBeforeTheBellWidget />
+                  </div>
+
                   {/* 미국 주식 히트맵 (슬롯 1, 2 위에 크게 배치) */}
                   <div className="md:col-span-2 w-full">
                     <TradingViewHeatmapWidget />
@@ -263,6 +270,7 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "p
 
                   <CustomHeatmapWidget />
                   <CnnTechNewsWidget />
+                  <UsTechMoversWidget />
                 </>
               ) : (
                 <>
