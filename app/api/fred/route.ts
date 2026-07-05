@@ -22,7 +22,11 @@ export async function GET() {
   try {
     const results = await Promise.all(
       SERIES.map(async (s) => {
-        const url = `https://api.stlouisfed.org/fred/series/observations?series_id=${s.id}&api_key=${FRED_API_KEY}&file_type=json&sort_order=desc&limit=10`;
+        const isGDP = s.id === "A191RL1Q225SBEA";
+        const freq = isGDP ? "q" : "m";
+        // limit 20을 주어 결측치가 있더라도 충분한 개수를 확보하도록 함
+        const url = `https://api.stlouisfed.org/fred/series/observations?series_id=${s.id}&api_key=${FRED_API_KEY}&file_type=json&sort_order=desc&limit=20&frequency=${freq}&aggregation_method=avg`;
+        
         const res = await fetch(url);
         if (!res.ok) {
           console.error(`Failed to fetch ${s.id}`);
@@ -31,12 +35,21 @@ export async function GET() {
         const data = await res.json();
         
         // FRED 데이터에서 "." 으로 표시되는 결측치 필터링
-        const validObservations = data.observations.filter((obs: any) => obs.value !== ".");
+        const validObservations = data.observations.filter((obs: any) => obs.value !== "." && obs.value !== undefined && obs.value !== null);
         
-        // 최신 2개 데이터 추출
-        if (validObservations.length >= 2) {
-          const latest = validObservations[0];
-          const previous = validObservations[1];
+        // 필요한 갯수 선택 (GDP는 4개 분기, 나머지는 12개 월)
+        const targetCount = isGDP ? 4 : 12;
+        const finalObs = validObservations.slice(0, targetCount);
+        
+        if (finalObs.length >= 2) {
+          const latest = finalObs[0];
+          const previous = finalObs[1];
+          
+          // 라인 차트에 렌더링할 연대기 순(오래된 순) 데이터 구성
+          const history = finalObs.map((obs: any) => ({
+            date: obs.date,
+            value: parseFloat(obs.value)
+          })).reverse();
           
           return {
             id: s.id,
@@ -49,7 +62,8 @@ export async function GET() {
             previous: {
               date: previous.date,
               value: parseFloat(previous.value)
-            }
+            },
+            history
           };
         }
         return null;

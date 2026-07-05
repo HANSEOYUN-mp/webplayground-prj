@@ -21,7 +21,12 @@ interface ApiResponse {
   postmarket: MoversData;
 }
 
-export function UsTechMoversWidget() {
+interface UsTechMoversWidgetProps {
+  isDetailed?: boolean;
+  onEnterDetail?: () => void;
+}
+
+export function UsTechMoversWidget({ isDetailed = false, onEnterDetail }: UsTechMoversWidgetProps) {
   const [data, setData] = useState<ApiResponse | null>(null)
   const [activeTab, setActiveTab] = useState<"premarket" | "regular" | "postmarket">("regular")
   const [loading, setLoading] = useState(true)
@@ -39,9 +44,6 @@ export function UsTechMoversWidget() {
       // Auto-detect tab based on current NY time if possible
       // But default to regular or premarket
       const hour = new Date().getUTCHours() // UTC hour
-      // Premarket is roughly 8:00 to 13:30 UTC (4:00 to 9:30 AM EST)
-      // Regular is 13:30 to 20:00 UTC (9:30 AM to 4:00 PM EST)
-      // Postmarket is 20:00 to 0:00 UTC (4:00 PM to 8:00 PM EST)
       if (hour >= 8 && hour < 13) {
         setActiveTab("premarket")
       } else if (hour >= 20 || hour < 1) {
@@ -63,17 +65,30 @@ export function UsTechMoversWidget() {
   const currentData = data ? data[activeTab] : null
 
   return (
-    <div className="w-full flex flex-col h-[360px] bg-card border border-border rounded-none overflow-hidden transition-colors duration-300 hover:bg-neutral-50/50 relative">
+    <div className={`w-full flex flex-col bg-card border border-border rounded-none overflow-hidden transition-colors duration-300 hover:bg-neutral-50/50 relative ${isDetailed ? 'h-auto pb-4' : 'h-[360px]'}`}>
       {/* Widget Header */}
-      <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
-        <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1.5">
+      <div 
+        onClick={!isDetailed ? onEnterDetail : undefined}
+        className={`flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0 ${!isDetailed && onEnterDetail ? 'cursor-pointer hover:bg-secondary transition-colors group' : ''}`}
+      >
+        <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1.5 select-none">
           <BarChart3 className="w-3.5 h-3.5 text-muted-foreground" /> US Tech Movers
+          {!isDetailed && onEnterDetail && (
+            <span className="text-[9.5px] text-primary/75 dark:text-primary-foreground/75 font-normal ml-1.5 group-hover:underline flex items-center gap-0.5">
+              (상세보기)
+            </span>
+          )}
+          {isDetailed && (
+            <span className="text-[9.5px] text-muted-foreground/80 font-normal ml-1.5 select-none">
+              (실시간 시세 분석 - Top 20)
+            </span>
+          )}
         </span>
         <div className="flex items-center gap-2">
           {/* Market Status Tabs */}
           <div className="flex items-center gap-1 bg-background/50 border border-border p-0.5 rounded-none select-none">
             <button
-              onClick={() => setActiveTab("premarket")}
+              onClick={(e) => { e.stopPropagation(); setActiveTab("premarket"); }}
               className={`px-1.5 py-0.5 text-[8.5px] font-bold transition-all rounded-none ${
                 activeTab === "premarket"
                   ? "bg-primary text-white"
@@ -83,7 +98,7 @@ export function UsTechMoversWidget() {
               PRE
             </button>
             <button
-              onClick={() => setActiveTab("regular")}
+              onClick={(e) => { e.stopPropagation(); setActiveTab("regular"); }}
               className={`px-1.5 py-0.5 text-[8.5px] font-bold transition-all rounded-none ${
                 activeTab === "regular"
                   ? "bg-primary text-white"
@@ -93,7 +108,7 @@ export function UsTechMoversWidget() {
               REG
             </button>
             <button
-              onClick={() => setActiveTab("postmarket")}
+              onClick={(e) => { e.stopPropagation(); setActiveTab("postmarket"); }}
               className={`px-1.5 py-0.5 text-[8.5px] font-bold transition-all rounded-none ${
                 activeTab === "postmarket"
                   ? "bg-primary text-white"
@@ -105,24 +120,24 @@ export function UsTechMoversWidget() {
           </div>
           
           <button 
-            onClick={fetchMovers} 
+            onClick={(e) => { e.stopPropagation(); fetchMovers(); }} 
             disabled={loading}
             className="p-1 hover:bg-secondary rounded-sm transition-colors disabled:opacity-50"
             title="새로고침"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground/80 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
 
       {/* Widget Body */}
       {loading ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-5">
+        <div className="flex-1 flex flex-col items-center justify-center p-5 min-h-[250px]">
           <div className="w-5 h-5 border-2 border-primary/45 border-t-primary rounded-full animate-spin mb-3"></div>
           <span className="text-muted-foreground text-[10px] font-mono">시세 분석 중...</span>
         </div>
       ) : error ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-5 text-center">
+        <div className="flex-1 flex flex-col items-center justify-center p-5 text-center min-h-[250px]">
           <AlertCircle className="w-5 h-5 text-red-500 mb-2" />
           <span className="text-[11px] text-muted-foreground font-medium mb-3">{error}</span>
           <button 
@@ -133,23 +148,23 @@ export function UsTechMoversWidget() {
           </button>
         </div>
       ) : !currentData ? (
-        <div className="flex-1 flex items-center justify-center p-5 text-muted-foreground text-[11px] font-mono">
+        <div className="flex-1 flex items-center justify-center p-5 text-muted-foreground text-[11px] font-mono min-h-[250px]">
           표시할 데이터가 없습니다.
         </div>
       ) : (
-        <div className="flex-1 flex flex-col p-3 gap-2 overflow-y-auto custom-scrollbar-movers">
+        <div className={`flex-1 p-3.5 ${isDetailed ? "flex flex-col md:flex-row gap-6 h-auto" : "flex flex-col gap-2 overflow-y-auto custom-scrollbar-movers"}`}>
           {/* Top Gainers */}
-          <div className="flex flex-col">
-            <span className="text-[9px] font-bold text-emerald-600 tracking-wider flex items-center gap-1 mb-1 border-b border-emerald-500/10 pb-0.5 select-none uppercase">
-              <TrendingUp className="w-3 h-3" /> Top Gainers
+          <div className="flex-1 flex flex-col">
+            <span className="text-[10px] font-bold text-emerald-600 tracking-wider flex items-center gap-1 mb-1.5 border-b border-emerald-500/20 pb-1 select-none uppercase">
+              <TrendingUp className="w-3.5 h-3.5" /> Top Gainers
             </span>
             <div className="flex flex-col gap-1">
-              {currentData.gainers.map((stock, i) => (
-                <div key={stock.symbol} className="flex items-center justify-between py-1 px-1.5 hover:bg-secondary/35 transition-colors">
+              {currentData.gainers.slice(0, isDetailed ? 20 : 5).map((stock, i) => (
+                <div key={stock.symbol} className="flex items-center justify-between py-1.5 px-2 hover:bg-secondary/35 transition-colors border-b border-border/5">
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="text-[10px] text-muted-foreground font-mono font-bold select-none">{i + 1}.</span>
                     <span className="text-[11.5px] font-extrabold text-foreground font-sans">{stock.symbol}</span>
-                    <span className="text-[10px] text-muted-foreground truncate hidden sm:inline">{stock.name}</span>
+                    <span className="text-[10px] text-muted-foreground truncate hidden sm:inline max-w-[150px]">{stock.name}</span>
                   </div>
                   <div className="flex items-center gap-2 font-mono text-right shrink-0">
                     <span className="text-[11.5px] font-bold text-emerald-600">
@@ -165,17 +180,17 @@ export function UsTechMoversWidget() {
           </div>
 
           {/* Top Losers */}
-          <div className="flex flex-col mt-1">
-            <span className="text-[9px] font-bold text-rose-600 tracking-wider flex items-center gap-1 mb-1 border-b border-rose-500/10 pb-0.5 select-none uppercase">
-              <TrendingDown className="w-3 h-3" /> Top Losers
+          <div className={`flex-1 flex flex-col ${!isDetailed ? "mt-1.5" : ""}`}>
+            <span className="text-[10px] font-bold text-rose-600 tracking-wider flex items-center gap-1 mb-1.5 border-b border-rose-500/20 pb-1 select-none uppercase">
+              <TrendingDown className="w-3.5 h-3.5" /> Top Losers
             </span>
             <div className="flex flex-col gap-1">
-              {currentData.losers.map((stock, i) => (
-                <div key={stock.symbol} className="flex items-center justify-between py-1 px-1.5 hover:bg-secondary/35 transition-colors">
+              {currentData.losers.slice(0, isDetailed ? 20 : 5).map((stock, i) => (
+                <div key={stock.symbol} className="flex items-center justify-between py-1.5 px-2 hover:bg-secondary/35 transition-colors border-b border-border/5">
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="text-[10px] text-muted-foreground font-mono font-bold select-none">{i + 1}.</span>
                     <span className="text-[11.5px] font-extrabold text-foreground font-sans">{stock.symbol}</span>
-                    <span className="text-[10px] text-muted-foreground truncate hidden sm:inline">{stock.name}</span>
+                    <span className="text-[10px] text-muted-foreground truncate hidden sm:inline max-w-[150px]">{stock.name}</span>
                   </div>
                   <div className="flex items-center gap-2 font-mono text-right shrink-0">
                     <span className="text-[11.5px] font-bold text-rose-600">

@@ -12,6 +12,8 @@ import { EarningsCalendarWidget } from "@/components/earnings-calendar-widget"
 import { CnnTechNewsWidget } from "@/components/cnn-tech-news-widget"
 import { UsTechMoversWidget } from "@/components/us-tech-movers-widget"
 import { CnnBeforeTheBellWidget } from "@/components/cnn-before-the-bell-widget"
+import { TechVsNasdaqWidget } from "@/components/tech-vs-nasdaq-widget"
+import { AssetsCompareWidget } from "@/components/assets-compare-widget"
 
 
 interface StockRow {
@@ -109,7 +111,7 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "p
   const [polys, setPolys] = useState<PolymarketRow[]>([])
   const [fedPolys, setFedPolys] = useState<PolymarketFinanceRow[]>([])
   const [polyIndex, setPolyIndex] = useState(0)
-  const [stockSubView, setStockSubView] = useState<"main" | "minsky" | "fred">("main")
+  const [stockSubView, setStockSubView] = useState<"main" | "minsky" | "fred" | "movers" | "compare">("main")
 
   const [trends, setTrends] = useState<TrendItem[]>([])
   const [usTrends, setUsTrends] = useState<TrendItem[]>([])
@@ -256,13 +258,13 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "p
                           <ChevronRight className="w-3.5 h-3.5" />
                         </button>
 
-                        {/* 세번째: 빈 버튼 */}
+                        {/* 세번째: 미국 주식시장 거시흐름 */}
                         <button 
-                          disabled
-                          className="w-full py-2.5 bg-secondary/40 text-muted-foreground/30 border border-dashed border-border/80 font-bold text-[11px] flex items-center justify-between px-4 rounded-none font-sans cursor-not-allowed select-none"
+                          onClick={() => setStockSubView("compare")}
+                          className="w-full py-2.5 bg-primary text-primary-foreground font-bold text-[11px] hover:bg-primary/90 transition-colors flex items-center justify-between px-4 rounded-none font-sans select-none"
                         >
-                          <span className="flex items-center gap-1.5 text-muted-foreground/30">- 준비 중인 지표 -</span>
-                          <ChevronRight className="w-3.5 h-3.5 opacity-0" />
+                          <span className="flex items-center gap-1.5"><TrendingUp className="w-3.5 h-3.5 text-emerald-300 animate-pulse" /> 미국 주식시장 거시흐름</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
@@ -270,7 +272,7 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "p
 
                   <CustomHeatmapWidget />
                   <CnnTechNewsWidget />
-                  <UsTechMoversWidget />
+                  <UsTechMoversWidget onEnterDetail={() => setStockSubView("movers")} />
                 </>
               ) : (
                 <>
@@ -289,10 +291,21 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "p
                     <div className="md:col-span-2 w-full flex flex-col">
                       <MinskyWidget className="h-auto" />
                     </div>
-                  ) : (
+                  ) : stockSubView === "fred" ? (
                     /* 거시경제 지표 상세 뷰 */
                     <div className="md:col-span-2 w-full flex flex-col">
                       <FredWidget />
+                    </div>
+                  ) : stockSubView === "movers" ? (
+                    /* US Tech Movers 상세 뷰 */
+                    <div className="md:col-span-2 w-full flex flex-col">
+                      <UsTechMoversWidget isDetailed={true} />
+                    </div>
+                  ) : (
+                    /* 미국 주식시장 거시흐름 상세 뷰 */
+                    <div className="md:col-span-2 w-full flex flex-col gap-6">
+                      <TechVsNasdaqWidget />
+                      <AssetsCompareWidget />
                     </div>
                   )}
                 </>

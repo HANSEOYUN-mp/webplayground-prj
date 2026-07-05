@@ -3,10 +3,12 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 const TECH_SYMBOLS = [
-  'AAPL', 'MSFT', 'NVDA', 'AVGO', 'META', 'TSLA', 'AMD', 'QCOM', 'ADBE', 'CRM', 
-  'TXN', 'AMAT', 'MU', 'INTC', 'LRCX', 'PANW', 'CSCO', 'ORCL', 'ASML', 'ADI', 
-  'NXPI', 'KLAC', 'SNPS', 'CDNS', 'MSI', 'FTNT', 'CRWD', 'NOW', 'PLTR', 'TEAM', 
-  'WDAY', 'SNOW', 'MDB', 'NET', 'ZS', 'OKTA', 'DDOG', 'ANET'
+  'AAPL', 'MSFT', 'NVDA', 'GOOGL', 'AMZN', 'META', 'TSLA', 'TSM', 'AVGO', 'ASML',
+  'ARM', 'AMD', 'QCOM', 'INTC', 'MU', 'TXN', 'AMAT', 'LRCX', 'KLAC', 'ADI',
+  'NXPI', 'ORCL', 'IBM', 'DELL', 'SMCI', 'CSCO', 'ADBE', 'CRM', 'INTU', 'NOW',
+  'PLTR', 'PANW', 'CRWD', 'FTNT', 'ANET', 'SNPS', 'CDNS', 'MSI', 'UBER', 'NFLX',
+  'SHOP', 'COIN', 'PYPL', 'SQ', 'TEAM', 'WDAY', 'SNOW', 'MDB', 'NET', 'ZS',
+  'OKTA', 'DDOG'
 ];
 
 interface CNBCQuote {
@@ -86,7 +88,7 @@ export async function GET() {
       const sorted = [...processed].sort((a, b) => b[key].changePercent - a[key].changePercent);
       
       // Gainers: sorted descending (highest positive first)
-      const gainers = sorted.slice(0, 4).map(item => ({
+      const gainers = sorted.slice(0, 20).map(item => ({
         symbol: item.symbol,
         name: item.name,
         price: item[key].price,
@@ -96,7 +98,7 @@ export async function GET() {
       // Losers: sorted ascending (lowest negative first)
       const losers = [...processed]
         .sort((a, b) => a[key].changePercent - b[key].changePercent)
-        .slice(0, 4)
+        .slice(0, 20)
         .map(item => ({
           symbol: item.symbol,
           name: item.name,
