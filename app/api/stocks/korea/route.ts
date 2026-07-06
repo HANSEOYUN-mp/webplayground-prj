@@ -7,7 +7,9 @@ const TICKERS: Record<string, string> = {
   KOSPI: '^KS11',
   KOSDAQ: '^KQ11',
   SAMSUNG: '005930.KS',
-  HYNIX: '000660.KS'
+  HYNIX: '000660.KS',
+  GOLD: 'GC=F',
+  EXCHANGE: 'KRW=X'
 };
 
 async function fetchKoreaTickerData(ticker: string) {

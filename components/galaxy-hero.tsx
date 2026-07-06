@@ -14,7 +14,8 @@ import { UsTechMoversWidget } from "@/components/us-tech-movers-widget"
 import { CnnBeforeTheBellWidget } from "@/components/cnn-before-the-bell-widget"
 import { TechVsNasdaqWidget } from "@/components/tech-vs-nasdaq-widget"
 import { AssetsCompareWidget } from "@/components/assets-compare-widget"
-
+import { Ush2EventsWidget } from "@/components/ush2-events-widget"
+import { EtfPerformanceWidget } from "@/components/etf-performance-widget"
 
 interface StockRow {
   rank: number
@@ -106,7 +107,7 @@ const FALLBACK_STOCKS: StockRow[] = [
   { rank: 15, itmsNm: "LG화학", clpr: "375000", fltRt: "0.2", mrktTotAmt: "26000000000000", trPrc: "110000000000" },
 ]
 
-export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "prediction" | "news" }) {
+export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "news" }) {
   const [stocks, setStocks] = useState<StockRow[]>([])
   const [polys, setPolys] = useState<PolymarketRow[]>([])
   const [fedPolys, setFedPolys] = useState<PolymarketFinanceRow[]>([])
@@ -164,7 +165,6 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "p
     }
   }
 
-
   useEffect(() => {
     fetchData()
   }, [])
@@ -207,6 +207,11 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "p
             <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
               {stockSubView === "main" ? (
                 <>
+                  {/* 미국 하반기 주식시장 주요 일정 */}
+                  <div className="md:col-span-2 w-full">
+                    <Ush2EventsWidget />
+                  </div>
+
                   {/* CNN Before the Bell 개장 전 핵심 요약 */}
                   <div className="md:col-span-2 w-full">
                     <CnnBeforeTheBellWidget />
@@ -304,6 +309,7 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "p
                   ) : (
                     /* 미국 주식시장 거시흐름 상세 뷰 */
                     <div className="md:col-span-2 w-full flex flex-col gap-6">
+                      <EtfPerformanceWidget />
                       <TechVsNasdaqWidget />
                       <AssetsCompareWidget />
                     </div>
@@ -366,9 +372,71 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "p
             </div>
           )}
 
-          {activeTab === 'prediction' && (
+          {activeTab === 'news' && (
             <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-              {/* Slot 1: Featured Carousel */}
+              {/* 4. Google Trends */}
+             <div className="w-full flex flex-col h-[360px] bg-card border border-border overflow-hidden transition-colors hover:bg-neutral-50/50">
+               <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
+                  <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
+                    <Flame className="w-3.5 h-3.5 animate-pulse text-primary" /> 구글 실시간 트렌드
+                  </span>
+                  
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setTrendsTab("kr")}
+                      className={`px-2 py-0.5 border text-[9px] font-bold transition-all ${
+                        trendsTab === "kr"
+                          ? "bg-primary text-white border-primary"
+                          : "bg-white text-muted-foreground border-border/20 hover:border-border/60"
+                      }`}
+                    >
+                      🇰🇷 한국
+                    </button>
+                    <button
+                      onClick={() => setTrendsTab("us")}
+                      className={`px-2 py-0.5 border text-[9px] font-bold transition-all ${
+                        trendsTab === "us"
+                          ? "bg-primary text-white border-primary"
+                          : "bg-white text-muted-foreground border-border/20 hover:border-border/60"
+                      }`}
+                    >
+                      🇺🇸 미국
+                    </button>
+                  </div>
+               </div>
+ 
+               {/* Content */}
+               <div className="flex-1 overflow-y-auto p-3 custom-scrollbar-rose">
+                  {(trendsTab === "kr" ? trends : usTrends).length === 0 ? (
+                    <div className="flex items-center justify-center h-full text-muted-foreground text-[11px] p-4 font-mono">트렌드 로딩 중...</div>
+                  ) : (
+                    <div className="flex flex-col gap-1.5">
+                      {(trendsTab === "kr" ? trends : usTrends).map((trend, i) => (
+                        <a
+                          key={i}
+                          href={`https://www.google.com/search?q=${encodeURIComponent(trend.title)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex justify-between items-center bg-secondary/20 hover:bg-secondary/60 px-3 py-2 border border-border/10 transition-colors"
+                        >
+                          <span className="font-bold text-foreground text-[11px] line-clamp-1 truncate max-w-[120px] lg:max-w-[160px] font-sans" title={trend.title}>
+                            <span className="text-primary mr-1 opacity-80">{i+1}.</span>
+                            {trend.title}
+                          </span>
+                          <span className="text-[9px] font-bold text-white bg-foreground px-1.5 py-0.5 font-mono shrink-0 select-none">
+                            {trend.traffic}
+                          </span>
+                        </a>
+                      ))}
+                    </div>
+                  )}
+               </div>
+             </div>
+
+              {/* 금융 상품 금리 비교 */}
+              <FinlifeProductsWidget />
+
+              {/* 실시간 핫 이슈 */}
               <div className="w-full flex flex-col h-[360px] bg-card border border-border relative overflow-hidden group">
                  {/* IDE Window Header */}
                  <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0 z-10 relative">
@@ -422,129 +490,52 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "p
                      </button>
                    </div>
                   ) : null}
-                </div>
- 
-               {/* Slot 2: Fed & Finance */}
-               <div className="w-full flex flex-col h-[360px] bg-card border border-border overflow-hidden transition-colors hover:bg-neutral-50/50">
-                  <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
-                     <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
-                       <Calendar className="w-3.5 h-3.5" /> 연준 금리 전망
-                     </span>
-                     <span className="stamp-red text-[9px] font-bold rounded-sm border-primary/30 text-primary bg-primary/5 px-1.5 py-0.5">
-                       연준 예측 지표
-                     </span>
-                  </div>
-                  
-                  <div className="flex-1 overflow-y-auto p-3 custom-scrollbar-amber">
-                    <div className="flex flex-col gap-2">
-                      {fedPolys.length > 0 ? fedPolys.map((poly, i) => (
-                        <a 
-                          key={i} 
-                          href={`https://polymarket.com/event/${poly.slug}`} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="flex flex-col gap-1 shrink-0 group cursor-pointer bg-secondary/20 hover:bg-secondary/60 px-3 py-2 border border-border/10 transition-colors"
-                        >
-                          <h3 className="text-[12px] font-bold text-foreground line-clamp-2 leading-tight group-hover:text-primary transition-colors font-sans">
-                            {poly.title}
-                          </h3>
-                          <div className="flex items-center justify-between mt-1 select-none font-mono">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[9px] font-bold text-white bg-foreground px-1.5 py-0.5 rounded-sm flex-shrink-0">
-                                {poly.endDate ? new Date(poly.endDate).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : 'N/A'}
-                              </span>
-                              <span className="text-[10px] text-muted-foreground hidden sm:inline">Vol: {formatMarketCap(poly.volume?.toString() || '0')}</span>
-                            </div>
-                            <span className="font-extrabold text-[10px] text-primary bg-primary/10 border border-primary/20 px-2 py-0.5">
-                              YES {poly.yesPrice !== null ? (poly.yesPrice * 100).toFixed(0) : '-'}%
-                            </span>
-                          </div>
-                        </a>
-                      )) : (
-                        <div className="flex items-center justify-center h-full text-muted-foreground text-[11px] p-4">데이터 로딩 중...</div>
-                      )}
-                    </div>
-                  </div>
                </div>
 
-              {/* Fill remaining slots if 2x3 is maintained globally, but prediction is isolated here */}
-              {/* Wait, the container grid is already defined outside! 
-                  The prediction block itself only renders its own fragments.
-                  I should render the remaining empty slots to match the global layout.
-                  Wait, lg:col-span-3 spans the entire row. But we can just use EmptySlot for the rest.
-              */}
-              <div className="hidden lg:block lg:col-span-1">
-                <EmptySlot index={3} />
+              {/* 연준 금리 전망 */}
+              <div className="w-full flex flex-col h-[360px] bg-card border border-border overflow-hidden transition-colors hover:bg-neutral-50/50">
+                 <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
+                    <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5" /> 연준 금리 전망
+                    </span>
+                    <span className="stamp-red text-[9px] font-bold rounded-sm border-primary/30 text-primary bg-primary/5 px-1.5 py-0.5">
+                      연준 예측 지표
+                    </span>
+                 </div>
+                 
+                 <div className="flex-1 overflow-y-auto p-3 custom-scrollbar-amber">
+                   <div className="flex flex-col gap-2">
+                     {fedPolys.length > 0 ? fedPolys.map((poly, i) => (
+                       <a 
+                         key={i} 
+                         href={`https://polymarket.com/event/${poly.slug}`} 
+                         target="_blank" 
+                         rel="noopener noreferrer" 
+                         className="flex flex-col gap-1 shrink-0 group cursor-pointer bg-secondary/20 hover:bg-secondary/60 px-3 py-2 border border-border/10 transition-colors"
+                       >
+                         <h3 className="text-[12px] font-bold text-foreground line-clamp-2 leading-tight group-hover:text-primary transition-colors font-sans">
+                           {poly.title}
+                         </h3>
+                         <div className="flex items-center justify-between mt-1 select-none font-mono">
+                           <div className="flex items-center gap-2">
+                             <span className="text-[9px] font-bold text-white bg-foreground px-1.5 py-0.5 rounded-sm flex-shrink-0">
+                               {poly.endDate ? new Date(poly.endDate).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : 'N/A'}
+                             </span>
+                             <span className="text-[10px] text-muted-foreground hidden sm:inline">Vol: {formatMarketCap(poly.volume?.toString() || '0')}</span>
+                           </div>
+                           <span className="font-extrabold text-[10px] text-primary bg-primary/10 border border-primary/20 px-2 py-0.5">
+                             YES {poly.yesPrice !== null ? (poly.yesPrice * 100).toFixed(0) : '-'}%
+                           </span>
+                         </div>
+                       </a>
+                     )) : (
+                       <div className="flex items-center justify-center h-full text-muted-foreground text-[11px] p-4">데이터 로딩 중...</div>
+                     )}
+                   </div>
+                 </div>
               </div>
-              <EmptySlot index={4} />
-              <EmptySlot index={5} />
-              <EmptySlot index={6} />
-            </div>
-          )}
-          {activeTab === 'news' && (
-            <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-              {/* 4. Google Trends */}
-             <div className="w-full flex flex-col h-[360px] bg-card border border-border overflow-hidden transition-colors hover:bg-neutral-50/50">
-               <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
-                  <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
-                    <Flame className="w-3.5 h-3.5" /> 구글 실시간 트렌드
-                  </span>
-                  
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => setTrendsTab("kr")}
-                      className={`px-2 py-0.5 border text-[9px] font-bold transition-all ${
-                        trendsTab === "kr"
-                          ? "bg-primary text-white border-primary"
-                          : "bg-white text-muted-foreground border-border/20 hover:border-border/60"
-                      }`}
-                    >
-                      🇰🇷 한국
-                    </button>
-                    <button
-                      onClick={() => setTrendsTab("us")}
-                      className={`px-2 py-0.5 border text-[9px] font-bold transition-all ${
-                        trendsTab === "us"
-                          ? "bg-primary text-white border-primary"
-                          : "bg-white text-muted-foreground border-border/20 hover:border-border/60"
-                      }`}
-                    >
-                      🇺🇸 미국
-                    </button>
-                  </div>
-               </div>
- 
-               {/* Content */}
-               <div className="flex-1 overflow-y-auto p-3 custom-scrollbar-rose">
-                  {(trendsTab === "kr" ? trends : usTrends).length === 0 ? (
-                    <div className="flex items-center justify-center h-full text-muted-foreground text-[11px] p-4 font-mono">트렌드 로딩 중...</div>
-                  ) : (
-                    <div className="flex flex-col gap-1.5">
-                      {(trendsTab === "kr" ? trends : usTrends).map((trend, i) => (
-                        <a
-                          key={i}
-                          href={`https://www.google.com/search?q=${encodeURIComponent(trend.title)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex justify-between items-center bg-secondary/20 hover:bg-secondary/60 px-3 py-2 border border-border/10 transition-colors overflow-hidden cursor-pointer shrink-0"
-                        >
-                          <span className="font-bold text-foreground text-[11px] line-clamp-1 truncate max-w-[120px] lg:max-w-[160px] font-sans" title={trend.title}>
-                            <span className="text-primary mr-1 opacity-80">{i+1}.</span>
-                            {trend.title}
-                          </span>
-                          <span className="text-[9px] font-bold text-white bg-foreground px-1.5 py-0.5 font-mono shrink-0 select-none">
-                            {trend.traffic}
-                          </span>
-                        </a>
-                      ))}
-                    </div>
-                  )}
-               </div>
-             </div>
 
-              <FinlifeProductsWidget />
-              <EmptySlot index={3} />
-              <EmptySlot index={4} />
+              {/* 빈 슬롯 2개 */}
               <EmptySlot index={5} />
               <EmptySlot index={6} />
             </div>

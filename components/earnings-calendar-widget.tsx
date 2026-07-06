@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, ReactNode } from "react"
 import { Calendar, Search, RefreshCw, AlertCircle, Sun, Moon } from "lucide-react"
 import { ResponsiveContainer, AreaChart, Area } from "recharts"
 
@@ -44,8 +44,8 @@ function ConsensusBar({ buy, hold, sell }: { buy: number; hold: number; sell: nu
 interface EarningsRowProps {
   item: any
   idx: number
-  renderSessionBadge: (hour: string) => JSX.Element
-  renderSurpriseBadge: (actual: number | null, estimate: number | null) => JSX.Element
+  renderSessionBadge: (hour: string) => ReactNode
+  renderSurpriseBadge: (actual: number | null, estimate: number | null) => ReactNode
 }
 
 function EarningsRow({ item, idx, renderSessionBadge, renderSurpriseBadge }: EarningsRowProps) {
@@ -276,13 +276,13 @@ export function EarningsCalendarWidget() {
     if (isBmo) {
       return (
         <span className="inline-flex items-center gap-1 text-[9px] font-bold bg-amber-500/10 text-amber-700 border border-amber-500/20 px-1.5 py-0.5 select-none font-sans leading-none">
-          <Sun className="w-2.5 h-2.5 text-amber-600" /> 晨 BMO
+          <Sun className="w-2.5 h-2.5 text-amber-600" /> 장전 BMO
         </span>
       )
     }
     return (
       <span className="inline-flex items-center gap-1 text-[9px] font-bold bg-slate-900 text-white border border-slate-900 px-1.5 py-0.5 select-none font-sans leading-none">
-        <Moon className="w-2.5 h-2.5 text-slate-300" /> 暮 AMC
+        <Moon className="w-2.5 h-2.5 text-slate-300" /> 장후 AMC
       </span>
     )
   }
@@ -296,14 +296,14 @@ export function EarningsCalendarWidget() {
     if (isBeat) {
       return (
         <span className="stamp-red text-[8px] font-black scale-90 select-none">
-          盈 +{diffPercent.toFixed(1)}%
+          상회 +{diffPercent.toFixed(1)}%
         </span>
       )
     }
 
     return (
       <span className="inline-flex items-center justify-center border border-foreground bg-secondary text-foreground text-[8px] font-bold px-1 py-0.5 scale-90 select-none">
-        虧 {diffPercent.toFixed(1)}%
+        하회 {diffPercent.toFixed(1)}%
       </span>
     )
   }

@@ -22,16 +22,32 @@ interface KoreaMarketData {
   KOSDAQ?: TickerData
   SAMSUNG?: TickerData
   HYNIX?: TickerData
+  GOLD?: TickerData
+  EXCHANGE?: TickerData
 }
 
-type TabType = "KOSPI" | "KOSDAQ" | "SAMSUNG" | "HYNIX"
+type TabType = "KOSPI" | "KOSDAQ" | "SAMSUNG" | "HYNIX" | "GOLD" | "EXCHANGE"
 
-function formatNumber(val: number, isCurrency: boolean = false) {
+function formatNumber(val: number, tab: TabType, currency: string = "KRW") {
   if (val === undefined || val === null) return "-"
-  if (isCurrency) {
-    return new Intl.NumberFormat("ko-KR", { style: "currency", currency: "KRW" }).format(val)
+  if (tab === "KOSPI" || tab === "KOSDAQ") {
+    return new Intl.NumberFormat("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val)
   }
-  return new Intl.NumberFormat("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val)
+  if (tab === "GOLD") {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(val)
+  }
+  if (tab === "EXCHANGE") {
+    return new Intl.NumberFormat("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + "원"
+  }
+  // Stocks (SAMSUNG, HYNIX) are in KRW (no decimals)
+  return new Intl.NumberFormat("ko-KR", { style: "currency", currency: "KRW", maximumFractionDigits: 0 }).format(val)
+}
+
+function getTooltipLabel(tab: TabType) {
+  if (tab === "GOLD") return "금 시세"
+  if (tab === "EXCHANGE") return "환율"
+  if (tab === "SAMSUNG" || tab === "HYNIX") return "주가"
+  return "지수"
 }
 
 function formatDate(dateStr: string) {
@@ -91,7 +107,9 @@ export function TradingViewKoreaWidget() {
     KOSPI: "코스피 (KOSPI)",
     KOSDAQ: "코스닥 (KOSDAQ)",
     SAMSUNG: "삼성전자",
-    HYNIX: "SK하이닉스"
+    HYNIX: "SK하이닉스",
+    GOLD: "금 (GOLD)",
+    EXCHANGE: "원/달러 환율"
   }
 
   return (
@@ -99,7 +117,7 @@ export function TradingViewKoreaWidget() {
       {/* Header */}
       <div className="flex items-center justify-between bg-secondary/50 px-4 py-2.5 border-b border-border shrink-0">
         <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1.5 select-none font-sans">
-          <TrendingUp className="w-3.5 h-3.5 text-primary" /> 국내 시장 요약 (KOSPI / KOSDAQ / 대형주)
+          <TrendingUp className="w-3.5 h-3.5 text-primary" /> 국내 시장 및 주요 지표 요약
         </span>
         <button onClick={fetchData} disabled={loading} className="p-1 hover:bg-secondary rounded transition-colors" title="새로고침">
           <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground/80 ${loading ? 'animate-spin' : ''}`} />
@@ -107,12 +125,12 @@ export function TradingViewKoreaWidget() {
       </div>
 
       {/* Tabs */}
-      <div className="flex bg-secondary/20 border-b border-border/60 p-1 gap-1 shrink-0">
-        {(["KOSPI", "KOSDAQ", "SAMSUNG", "HYNIX"] as TabType[]).map((tab) => (
+      <div className="flex overflow-x-auto bg-secondary/20 border-b border-border/60 p-1 gap-1 shrink-0 scrollbar-none select-none">
+        {(["KOSPI", "KOSDAQ", "SAMSUNG", "HYNIX", "GOLD", "EXCHANGE"] as TabType[]).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-3 py-1 text-[10px] font-bold transition-all rounded-none font-sans ${
+            className={`px-3 py-1 text-[10px] font-bold transition-all rounded-none font-sans whitespace-nowrap ${
               activeTab === tab
                 ? "bg-primary text-white"
                 : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
@@ -148,7 +166,7 @@ export function TradingViewKoreaWidget() {
             <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 border-b border-border/10 pb-4 shrink-0">
               <div className="flex items-baseline gap-2.5">
                 <span className="text-[26px] font-black text-foreground font-mono leading-none tracking-tight">
-                  {formatNumber(selectedData.currentPrice, isCompany)}
+                  {formatNumber(selectedData.currentPrice, activeTab, selectedData.currency)}
                 </span>
                 <span className={`text-[12.5px] font-black font-mono flex items-center gap-0.5 ${isUp ? 'text-red-500' : 'text-blue-500'}`}>
                   {isUp ? '▲' : '▼'} {Math.abs(selectedData.change)} ({selectedData.changePercent >= 0 ? '+' : ''}{selectedData.changePercent.toFixed(2)}%)
@@ -159,11 +177,11 @@ export function TradingViewKoreaWidget() {
               <div className="flex gap-4 text-[9.5px] text-muted-foreground font-sans bg-secondary/10 px-3 py-1.5 border border-border/10">
                 <div>
                   <span className="opacity-80">52주 최고: </span>
-                  <span className="font-bold font-mono text-foreground">{formatNumber(selectedData.high52w, isCompany)}</span>
+                  <span className="font-bold font-mono text-foreground">{formatNumber(selectedData.high52w, activeTab, selectedData.currency)}</span>
                 </div>
                 <div className="border-l border-border/20 pl-4">
                   <span className="opacity-80">52주 최저: </span>
-                  <span className="font-bold font-mono text-foreground">{formatNumber(selectedData.low52w, isCompany)}</span>
+                  <span className="font-bold font-mono text-foreground">{formatNumber(selectedData.low52w, activeTab, selectedData.currency)}</span>
                 </div>
               </div>
             </div>
@@ -171,7 +189,7 @@ export function TradingViewKoreaWidget() {
             {/* 1-Year Area Chart */}
             <div className="flex-1 w-full bg-neutral-900/5 dark:bg-black/20 border border-border/10 p-2.5 rounded-sm relative min-h-[220px]">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={selectedData.history} margin={{ top: 10, right: 5, left: -20, bottom: 5 }}>
+                <AreaChart data={selectedData.history} margin={{ top: 10, right: 5, left: 15, bottom: 5 }}>
                   <defs>
                     <linearGradient id={`grad-korea-${activeTab}`} x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor={isUp ? "#ef4444" : "#3b82f6"} stopOpacity={0.12} />
@@ -191,7 +209,7 @@ export function TradingViewKoreaWidget() {
                     tick={{ fontSize: 8, fill: "var(--muted-foreground)" }}
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(val) => formatNumber(val)}
+                    tickFormatter={(val) => formatNumber(val, activeTab, selectedData.currency)}
                   />
                   <Tooltip
                     contentStyle={{
@@ -205,8 +223,8 @@ export function TradingViewKoreaWidget() {
                     }}
                     labelFormatter={(label) => `날짜: ${formatDate(label)}`}
                     formatter={(value: any) => [
-                      formatNumber(value, isCompany),
-                      isCompany ? "주가" : "지수"
+                      formatNumber(value, activeTab, selectedData.currency),
+                      getTooltipLabel(activeTab)
                     ]}
                   />
                   <Area

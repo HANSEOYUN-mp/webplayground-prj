@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-export type NavTab = "stock" | "kr-stock" | "prediction" | "news" | "post"
+export type NavTab = "stock" | "kr-stock" | "news" | "post"
 
 interface HeaderProps {
   onNewPost: () => void
@@ -56,7 +56,6 @@ export function Header({ onNewPost, searchQuery, onSearchChange, activeTab, onTa
           {[
             { id: "stock", label: "US Stock" },
             { id: "kr-stock", label: "Korea Stock" },
-            { id: "prediction", label: "Prediction" },
             { id: "news", label: "News & Trends" },
             { id: "post", label: "Post" },
           ].map((tab) => (
@@ -147,7 +146,6 @@ export function Header({ onNewPost, searchQuery, onSearchChange, activeTab, onTa
             {[
               { id: "stock", label: "🇺🇸 US Stock" },
               { id: "kr-stock", label: "🇰🇷 Korea Stock" },
-              { id: "prediction", label: "🔮 Prediction" },
               { id: "news", label: "🔥 News" },
               { id: "post", label: "✏️ Post" },
             ].find((t) => t.id === activeTab)?.label ?? "메뉴"}
@@ -162,7 +160,6 @@ export function Header({ onNewPost, searchQuery, onSearchChange, activeTab, onTa
             {[
               { id: "stock", label: "US Stock" },
               { id: "kr-stock", label: "Korea Stock" },
-              { id: "prediction", label: "Prediction" },
               { id: "news", label: "News & Trends" },
               { id: "post", label: "Post" },
             ].map((tab) => (
