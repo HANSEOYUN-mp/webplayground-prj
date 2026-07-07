@@ -96,9 +96,12 @@ function getCalendarDays(year: number, month: number) {
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"]
 
 const VIEW_PAIRS = [
-  { label: "7~8월", months: [6, 7] },
-  { label: "9~10월", months: [8, 9] },
-  { label: "11~12월", months: [10, 11] }
+  { label: "7월", months: [6] },
+  { label: "8월", months: [7] },
+  { label: "9월", months: [8] },
+  { label: "10월", months: [9] },
+  { label: "11월", months: [10] },
+  { label: "12월", months: [11] }
 ]
 
 export function Ush2EventsWidget() {
@@ -113,13 +116,9 @@ export function Ush2EventsWidget() {
     
     // 오늘 날짜의 월에 따라 기본 페어 인덱스 설정 (7~8월 / 9~10월 / 11~12월)
     const currentMonth = targetDate.getMonth() // 0-based
-    if (currentMonth === 8 || currentMonth === 9) { // 9월, 10월
-      setActivePairIdx(1)
-    } else if (currentMonth === 10 || currentMonth === 11) { // 11월, 12월
-      setActivePairIdx(2)
-    } else {
-      setActivePairIdx(0)
-    }
+    // 7월(6)→0, 8월(7)→1, 9월(8)→2, 10월(9)→3, 11월(10)→4, 12월(11)→5
+    const monthToIdx: Record<number, number> = { 6: 0, 7: 1, 8: 2, 9: 3, 10: 4, 11: 5 }
+    setActivePairIdx(monthToIdx[currentMonth] ?? 0)
   }, [])
 
   if (!today) return null
@@ -133,20 +132,20 @@ export function Ush2EventsWidget() {
   const renderedMonths = MONTHLY_DATA.filter(m => currentPair.months.includes(m.month))
 
   return (
-    <div className="w-full flex flex-col h-[520px] bg-card border border-border rounded-none overflow-hidden transition-colors duration-300 hover:bg-neutral-50/50 relative">
+    <div className="w-full flex flex-col h-auto md:h-[360px] bg-card border border-border rounded-none overflow-hidden transition-colors duration-300 hover:bg-neutral-50/50 relative">
       {/* 위젯 헤더 */}
-      <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0 select-none">
+      <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
         <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1.5">
           <Calendar className="w-3.5 h-3.5 text-primary" /> 2026년 하반기 미국주식 주요 일정
         </span>
-        <div className="flex items-center gap-2 select-none">
+        <div className="flex items-center gap-1.5 flex-wrap justify-end">
           <span className="stamp-red text-[8px] font-extrabold flex items-center gap-1">
             <Sparkles className="w-2.5 h-2.5 animate-pulse text-primary" />
             오늘: {today.getFullYear()}.{String(today.getMonth() + 1).padStart(2, '0')}.{String(today.getDate()).padStart(2, '0')}
           </span>
 
-          {/* 하반기 페어 탭 이동 필터 */}
-          <div className="flex items-center border border-border bg-card p-0.5">
+          {/* 하반기 탭 이동 필터 */}
+          <div className="flex flex-wrap items-center border border-border bg-card p-0.5">
             {VIEW_PAIRS.map((pair, idx) => (
               <button
                 key={pair.label}
@@ -164,15 +163,15 @@ export function Ush2EventsWidget() {
         </div>
       </div>
 
-      {/* 달력 컨텐츠 영역 (2개 달 꽉 차게 렌더링) */}
-      <div className="flex-1 p-4 grid grid-cols-1 md:grid-cols-2 gap-4 bg-background overflow-hidden select-none">
+      {/* 달력 컨텐츠 영역 */}
+      <div className="flex-1 p-2 grid grid-cols-1 gap-2 bg-background overflow-y-auto">
         {renderedMonths.map((item) => {
           const days = getCalendarDays(2026, item.month)
           
           return (
             <div 
               key={item.monthName}
-              className="flex flex-col bg-secondary/5 border border-border/10 rounded-sm p-3 h-full overflow-hidden"
+              className="flex flex-col bg-secondary/5 border border-border/10 rounded-sm p-2 md:p-3 h-full"
             >
               {/* 월 타이틀 및 미정 일정 배너 */}
               <div className="flex justify-between items-center mb-2 border-b border-border/10 pb-1 shrink-0">
@@ -187,7 +186,7 @@ export function Ush2EventsWidget() {
               </div>
 
               {/* 요일 헤더 */}
-              <div className="grid grid-cols-7 gap-0 text-center mb-1 text-muted-foreground/60 text-[9px] font-bold shrink-0">
+              <div className="grid grid-cols-7 gap-0 text-center mb-1 text-muted-foreground/60 text-[9px] font-bold shrink-0 select-none">
                 {WEEKDAYS.map((w, idx) => (
                   <span key={idx} className={idx === 0 ? "text-rose-500/80" : idx === 6 ? "text-blue-500/80" : ""}>
                     {w}
@@ -214,7 +213,7 @@ export function Ush2EventsWidget() {
                     return (
                       <div 
                         key={`day-${day}`}
-                        className={`border-r border-b border-border/10 flex flex-col p-0.5 relative justify-between min-h-[52px] ${
+                        className={`border-r border-b border-border/10 flex flex-col p-0.5 relative justify-between min-h-[34px] select-none ${
                           isToday ? "bg-cyan-500/5 ring-1 ring-cyan-500/20" : ""
                         }`}
                       >

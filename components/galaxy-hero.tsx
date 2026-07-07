@@ -59,6 +59,14 @@ function formatAmount(amt: number) {
   return `${man.toLocaleString()}만`;
 }
 
+/** 억 단위만 표시 (만 단위 생략) */
+function formatAmountEok(amt: number) {
+  const eok = Math.floor(amt / 100000000);
+  if (eok > 0) return `${eok}억`;
+  const man = Math.floor(amt / 10000);
+  return `${man}만`;
+}
+
 function formatTime(ts: number) {
   const d = new Date(ts);
   return d.toLocaleTimeString("ko-KR", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
@@ -105,6 +113,11 @@ const FALLBACK_STOCKS: StockRow[] = [
   { rank: 13, itmsNm: "셀트리온", clpr: "185000", fltRt: "2.3", mrktTotAmt: "41000000000000", trPrc: "130000000000" },
   { rank: 14, itmsNm: "포스코홀딩스", clpr: "360000", fltRt: "-1.5", mrktTotAmt: "29000000000000", trPrc: "120000000000" },
   { rank: 15, itmsNm: "LG화학", clpr: "375000", fltRt: "0.2", mrktTotAmt: "26000000000000", trPrc: "110000000000" },
+  { rank: 16, itmsNm: "삼성SDI", clpr: "320000", fltRt: "-1.2", mrktTotAmt: "22000000000000", trPrc: "100000000000" },
+  { rank: 17, itmsNm: "카카오뱅크", clpr: "28000", fltRt: "0.7", mrktTotAmt: "13000000000000", trPrc: "90000000000" },
+  { rank: 18, itmsNm: "크래프톤", clpr: "290000", fltRt: "3.2", mrktTotAmt: "14000000000000", trPrc: "80000000000" },
+  { rank: 19, itmsNm: "한화에어로스페이스", clpr: "430000", fltRt: "-0.5", mrktTotAmt: "18000000000000", trPrc: "75000000000" },
+  { rank: 20, itmsNm: "두산로보틱스", clpr: "68000", fltRt: "6.1", mrktTotAmt: "6000000000000", trPrc: "70000000000" },
 ]
 
 export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "news" }) {
@@ -141,7 +154,7 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
 
       if (!stockRes.ok || !polyRes.ok || !trendsRes.ok) throw new Error("데이터 조회 실패")
 
-      let fetchedStocks = stockJson.items?.slice(0, 15) || []
+      let fetchedStocks = stockJson.items?.slice(0, 20) || []
       if (fetchedStocks.length === 0) {
         fetchedStocks = FALLBACK_STOCKS
         setStockDate("현재(Fallback)")
@@ -207,13 +220,9 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
             <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
               {stockSubView === "main" ? (
                 <>
-                  {/* 미국 하반기 주식시장 주요 일정 */}
-                  <div className="md:col-span-2 w-full">
+                  {/* 맨 위 양옆 나란히: 하반기 일정 + CNN Before the Bell (모바일: 세로 스택, md+: 나란히) */}
+                  <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
                     <Ush2EventsWidget />
-                  </div>
-
-                  {/* CNN Before the Bell 개장 전 핵심 요약 */}
-                  <div className="md:col-span-2 w-full">
                     <CnnBeforeTheBellWidget />
                   </div>
 
@@ -326,46 +335,101 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
                 <TradingViewKoreaWidget />
               </div>
 
-              {/* 1. 국내 급등 주식 */}
-              <div className="w-full flex flex-col h-[360px] bg-card border border-border overflow-hidden transition-colors hover:bg-neutral-50/50">
-                 <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
-                    <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
-                      <TrendingUp className="w-3.5 h-3.5" /> 국내 급등 주식
+              {/* 거래대금 TOP 20 — 1~10위 왼쪽, 11~20위 오른쪽 */}
+              <div className="md:col-span-2 w-full flex flex-col h-auto md:h-[520px] bg-card border border-border overflow-hidden transition-colors hover:bg-neutral-50/50">
+                <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
+                  <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
+                    <TrendingUp className="w-3.5 h-3.5 text-primary" /> 거래대금 TOP 20
+                  </span>
+                  {stockDate && (
+                    <span className="stamp-red text-[9px] font-bold rounded-sm border-primary/30 text-primary bg-primary/5 px-1.5 py-0.5">
+                      기준일: {stockDate}
                     </span>
-                    {stockDate && (
-                      <span className="stamp-red text-[9px] font-bold rounded-sm border-primary/30 text-primary bg-primary/5 px-1.5 py-0.5">
-                        기준일: {stockDate}
-                      </span>
-                    )}
-                 </div>
-                 
-                 <div className="flex-1 overflow-y-auto p-3 custom-scrollbar-cyan">
-                    <div className="flex flex-col gap-1.5">
-                      {stocks.map((stock, i) => (
-                        <div key={i} className="flex flex-col gap-1 bg-secondary/20 hover:bg-secondary/60 p-2.5 border border-border/10 shrink-0 transition-colors">
-                          <div className="flex justify-between items-center w-full">
-                            {/* 종목명 */}
-                            <span className="font-bold text-foreground text-[13px] truncate max-w-[130px] font-sans" title={stock.itmsNm}>{stock.rank}. {stock.itmsNm}</span>
-                            
-                            {/* 가격 & 등락률 */}
-                            <div className="flex items-center gap-3">
-                              <span className={`text-[11px] font-bold tracking-tighter font-mono ${Number(stock.fltRt) >= 0 ? "text-red-700" : "text-blue-700"}`}>
-                                {Number(stock.fltRt) > 0 ? "+" : ""}{stock.fltRt}%
-                              </span>
-                              <span className="font-extrabold text-foreground text-[13px] text-right w-[75px] font-mono">{Number(stock.clpr).toLocaleString()}원</span>
-                            </div>
-                          </div>
-                          {/* 하단 보조 지표 */}
-                          <div className="text-[10px] text-muted-foreground font-medium tracking-wide">
-                            거래대금: {formatAmount(Number(stock.trPrc))}원
-                          </div>
-                        </div>
-                      ))}
+                  )}
+                </div>
+
+                {/* 컨럼 레이블 헤더 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 divide-x divide-border/10 shrink-0 border-b border-border/10 bg-secondary/30">
+                  {[0, 1].map((col) => (
+                    <div key={col} className={`flex items-center gap-1.5 px-3 py-1.5 ${col === 1 ? 'hidden md:flex' : ''}`}>
+                      <span className="w-5 shrink-0" />
+                      <span className="flex-1 text-[9px] font-bold text-muted-foreground/60 tracking-wider">종목</span>
+                      <span className="w-[46px] text-right text-[9px] font-bold text-muted-foreground/60 shrink-0">등락</span>
+                      <span className="w-[66px] text-right text-[9px] font-bold text-muted-foreground/60 shrink-0">주가</span>
+                      <span className="w-[44px] text-right text-[9px] font-bold text-muted-foreground/60 shrink-0">거래대금</span>
+                      <span className="w-[40px] text-right text-[9px] font-bold text-muted-foreground/60 shrink-0">%/시총</span>
                     </div>
-                 </div>
+                  ))}
+                </div>
+
+                <div className="flex-1 overflow-hidden">
+                  <div className="grid grid-cols-1 md:grid-cols-2 divide-x divide-border/10 h-full">
+                    {/* 1~10위 */}
+                    <div className="flex flex-col h-full divide-y divide-border/5">
+                      {stocks.slice(0, 10).map((stock, i) => {
+                        const isUp = Number(stock.fltRt) >= 0
+                        const fltColor = isUp ? "text-red-600" : "text-blue-600"
+                        const trColor = isUp ? "text-red-500" : "text-blue-500"
+                        const rowBg = isUp ? "hover:bg-red-50/50" : "hover:bg-blue-50/50"
+                        const ratio = Number(stock.mrktTotAmt) > 0
+                          ? ((Number(stock.trPrc) / Number(stock.mrktTotAmt)) * 100).toFixed(1)
+                          : "-"
+                        return (
+                          <div key={i} className={`flex-1 flex items-center gap-1.5 px-3 transition-colors ${rowBg}`}>
+                            <span className="text-[10px] font-extrabold font-mono text-muted-foreground/40 w-5 shrink-0 text-right">{stock.rank}</span>
+                            <span className="flex-1 font-bold text-foreground text-[13px] truncate font-sans min-w-0" title={stock.itmsNm}>{stock.itmsNm}</span>
+                            <span className={`text-[11px] font-extrabold font-mono w-[46px] text-right shrink-0 ${fltColor}`}>
+                              {Number(stock.fltRt) > 0 ? "+" : ""}{stock.fltRt}%
+                            </span>
+                            <span className="text-[11px] font-bold font-mono text-foreground w-[66px] text-right shrink-0">
+                              {Number(stock.clpr).toLocaleString()}
+                            </span>
+                            <span className={`text-[10.5px] font-bold font-mono w-[44px] text-right shrink-0 ${trColor}`}>
+                              {formatAmountEok(Number(stock.trPrc))}
+                            </span>
+                            <span className="text-[10px] font-mono text-muted-foreground/70 w-[40px] text-right shrink-0">
+                              {ratio}%
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    {/* 11~20위 */}
+                    <div className="flex flex-col h-full divide-y divide-border/5">
+                      {stocks.slice(10, 20).map((stock, i) => {
+                        const isUp = Number(stock.fltRt) >= 0
+                        const fltColor = isUp ? "text-red-600" : "text-blue-600"
+                        const trColor = isUp ? "text-red-500" : "text-blue-500"
+                        const rowBg = isUp ? "hover:bg-red-50/50" : "hover:bg-blue-50/50"
+                        const ratio = Number(stock.mrktTotAmt) > 0
+                          ? ((Number(stock.trPrc) / Number(stock.mrktTotAmt)) * 100).toFixed(1)
+                          : "-"
+                        return (
+                          <div key={i} className={`flex-1 flex items-center gap-1.5 px-3 transition-colors ${rowBg}`}>
+                            <span className="text-[10px] font-extrabold font-mono text-muted-foreground/40 w-5 shrink-0 text-right">{stock.rank}</span>
+                            <span className="flex-1 font-bold text-foreground text-[13px] truncate font-sans min-w-0" title={stock.itmsNm}>{stock.itmsNm}</span>
+                            <span className={`text-[11px] font-extrabold font-mono w-[46px] text-right shrink-0 ${fltColor}`}>
+                              {Number(stock.fltRt) > 0 ? "+" : ""}{stock.fltRt}%
+                            </span>
+                            <span className="text-[11px] font-bold font-mono text-foreground w-[66px] text-right shrink-0">
+                              {Number(stock.clpr).toLocaleString()}
+                            </span>
+                            <span className={`text-[10.5px] font-bold font-mono w-[44px] text-right shrink-0 ${trColor}`}>
+                              {formatAmountEok(Number(stock.trPrc))}
+                            </span>
+                            <span className="text-[10px] font-mono text-muted-foreground/70 w-[40px] text-right shrink-0">
+                              {ratio}%
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* 2. 빈 슬롯들 (사용자 요청: "그리고 한국주식 탭에도 빈슬롯 만들어줘") */}
+              {/* 빈 슬롯들 */}
               <EmptySlot index={2} title="KOREA FINANCE" subtitle="추가 금융 정보 분석 준비 중" />
               <EmptySlot index={3} title="KOREA MARKET" subtitle="추가 분석 모델 준비 중" />
               <EmptySlot index={4} title="KOREA ECONOMY" subtitle="한국 거시경제 지표 연동 준비 중" />

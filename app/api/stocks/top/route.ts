@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 
+export const dynamic = "force-dynamic"
+
 const BASE_URL = "https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/getStockPriceInfo"
 
 /** API 응답 item 타입 (주식시세) */
@@ -101,17 +103,17 @@ export async function GET() {
     }
   }
 
-  // 거래대금(trPrc) 내림차순 정렬 후 상위 15
+  // 거래대금(trPrc) 내림차순 정렬 후 상위 20
   const sorted = [...all].sort((a, b) => {
     const prcA = Number(a.trPrc ?? 0)
     const prcB = Number(b.trPrc ?? 0)
     return prcB - prcA
   })
-  const top15 = sorted.slice(0, 15)
+  const top20 = sorted.slice(0, 20)
 
   return NextResponse.json({
     basDt: finalBasDt || "N/A",
-    items: top15.map((item, i) => ({
+    items: top20.map((item, i) => ({
       rank: i + 1,
       itmsNm: item.itmsNm ?? "-",
       mrktCtg: item.mrktCtg ?? "-",
