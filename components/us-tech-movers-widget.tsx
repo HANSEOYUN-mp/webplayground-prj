@@ -29,6 +29,7 @@ interface UsTechMoversWidgetProps {
 export function UsTechMoversWidget({ isDetailed = false, onEnterDetail }: UsTechMoversWidgetProps) {
   const [data, setData] = useState<ApiResponse | null>(null)
   const [activeTab, setActiveTab] = useState<"premarket" | "regular" | "postmarket">("regular")
+  const [isExpanded, setIsExpanded] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -85,6 +86,14 @@ export function UsTechMoversWidget({ isDetailed = false, onEnterDetail }: UsTech
           )}
         </span>
         <div className="flex items-center gap-2">
+          {isDetailed && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
+              className="px-2 py-0.5 text-[8.5px] font-extrabold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-none transition-colors select-none mr-1"
+            >
+              {isExpanded ? "접기 ▲" : "펼치기 ▼"}
+            </button>
+          )}
           {/* Market Status Tabs */}
           <div className="flex items-center gap-1 bg-background/50 border border-border p-0.5 rounded-none select-none">
             <button
@@ -159,7 +168,7 @@ export function UsTechMoversWidget({ isDetailed = false, onEnterDetail }: UsTech
               <TrendingUp className="w-3.5 h-3.5" /> Top Gainers
             </span>
             <div className="flex flex-col gap-1">
-              {currentData.gainers.slice(0, isDetailed ? 20 : 5).map((stock, i) => (
+              {currentData.gainers.slice(0, isDetailed ? (isExpanded ? 20 : 5) : 5).map((stock, i) => (
                 <div key={stock.symbol} className="flex items-center justify-between py-1.5 px-2 hover:bg-secondary/35 transition-colors border-b border-border/5">
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="text-[10px] text-muted-foreground font-mono font-bold select-none">{i + 1}.</span>
@@ -185,7 +194,7 @@ export function UsTechMoversWidget({ isDetailed = false, onEnterDetail }: UsTech
               <TrendingDown className="w-3.5 h-3.5" /> Top Losers
             </span>
             <div className="flex flex-col gap-1">
-              {currentData.losers.slice(0, isDetailed ? 20 : 5).map((stock, i) => (
+              {currentData.losers.slice(0, isDetailed ? (isExpanded ? 20 : 5) : 5).map((stock, i) => (
                 <div key={stock.symbol} className="flex items-center justify-between py-1.5 px-2 hover:bg-secondary/35 transition-colors border-b border-border/5">
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="text-[10px] text-muted-foreground font-mono font-bold select-none">{i + 1}.</span>

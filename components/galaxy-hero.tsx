@@ -125,7 +125,7 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
   const [polys, setPolys] = useState<PolymarketRow[]>([])
   const [fedPolys, setFedPolys] = useState<PolymarketFinanceRow[]>([])
   const [polyIndex, setPolyIndex] = useState(0)
-  const [stockSubView, setStockSubView] = useState<"main" | "minsky" | "fred" | "movers" | "compare">("main")
+  const [stockSubView, setStockSubView] = useState<"main" | "minsky" | "fred" | "compare">("main")
 
   const [trends, setTrends] = useState<TrendItem[]>([])
   const [usTrends, setUsTrends] = useState<TrendItem[]>([])
@@ -236,6 +236,11 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
                     <EarningsCalendarWidget />
                   </div>
 
+                  {/* US Tech Movers (상세보기를 밖에서 보이도록 col-span-2 크기로 꺼냄) */}
+                  <div className="md:col-span-2 w-full">
+                    <UsTechMoversWidget isDetailed={true} />
+                  </div>
+
                   {/* 글로벌 거시 경제 지표 슬롯 (웹앱 테마 유지 & 3버튼 구성) */}
                   <div className="w-full flex flex-col h-[360px] bg-card border border-border rounded-none overflow-hidden transition-colors hover:bg-neutral-50/50">
                     {/* 헤더 */}
@@ -286,7 +291,6 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
 
                   <CustomHeatmapWidget />
                   <CnnTechNewsWidget />
-                  <UsTechMoversWidget onEnterDetail={() => setStockSubView("movers")} />
                 </>
               ) : (
                 <>
@@ -309,11 +313,6 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
                     /* 거시경제 지표 상세 뷰 */
                     <div className="md:col-span-2 w-full flex flex-col">
                       <FredWidget />
-                    </div>
-                  ) : stockSubView === "movers" ? (
-                    /* US Tech Movers 상세 뷰 */
-                    <div className="md:col-span-2 w-full flex flex-col">
-                      <UsTechMoversWidget isDetailed={true} />
                     </div>
                   ) : (
                     /* 미국 주식시장 거시흐름 상세 뷰 */
