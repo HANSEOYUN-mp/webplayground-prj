@@ -14,6 +14,26 @@ export function TradingViewHeatmapWidget() {
   const containerRef = useRef<HTMLDivElement>(null)
   const [marketStatus, setMarketStatus] = useState<MarketStatus | null>(null)
   const [isExpanded, setIsExpanded] = useState(false)
+  const [theme, setTheme] = useState<"light" | "dark">("light")
+
+  useEffect(() => {
+    // 1. 초기 테마 상태 확인
+    const isDark = document.documentElement.classList.contains("dark")
+    setTheme(isDark ? "dark" : "light")
+
+    // 2. MutationObserver를 사용하여 다크모드 class 토글 실시간 감지
+    const observer = new MutationObserver(() => {
+      const isDarkNow = document.documentElement.classList.contains("dark")
+      setTheme(isDarkNow ? "dark" : "light")
+    })
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    })
+
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     // 미국 시장 상태 및 시간 계산
@@ -80,7 +100,6 @@ export function TradingViewHeatmapWidget() {
     script.src = "https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js"
     script.async = true
 
-    // TradingView 위젯 설정 (JSON은 script 태그 내부 텍스트로 삽입)
     script.innerHTML = JSON.stringify({
       exchanges: [],
       dataSource: "SPX500",
@@ -89,7 +108,7 @@ export function TradingViewHeatmapWidget() {
       blockColor: "change",
       locale: "en",
       symbolUrl: "",
-      colorTheme: "light",
+      colorTheme: theme,
       hasTopBar: true,
       isDataSetEnabled: true,
       isZoomEnabled: true,
@@ -104,7 +123,7 @@ export function TradingViewHeatmapWidget() {
     return () => {
       if (container) container.innerHTML = ""
     }
-  }, [isExpanded])
+  }, [isExpanded, theme])
 
   return (
     <div className={`w-full bg-card border border-border overflow-hidden transition-all duration-300 hover:bg-neutral-50/50 flex flex-col ${isExpanded ? "h-[520px]" : "h-[37px]"}`}>

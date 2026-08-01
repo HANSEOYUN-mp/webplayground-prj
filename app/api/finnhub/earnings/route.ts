@@ -15,11 +15,22 @@ const MAJOR_US_STOCKS = new Set([
   "VRT", "SMCI", "DELL", "HPE", "IONQ"
 ]);
 
+// 인메모리 캐시 선언
+const cacheMap = new Map<string, { data: any; expiry: number }>()
+const CACHE_TTL = 45000 // 45초
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const from = searchParams.get('from');
   const to = searchParams.get('to');
   const symbol = searchParams.get('symbol');
+
+  // 캐시 키 생성 및 조회
+  const cacheKey = `${from || ""}_${to || ""}_${symbol || ""}`
+  const cached = cacheMap.get(cacheKey)
+  if (cached && cached.expiry > Date.now()) {
+    return NextResponse.json(cached.data)
+  }
 
   if (!from || !to) {
     return NextResponse.json({ error: "from 및 to 날짜 파라미터가 필요합니다. (YYYY-MM-DD)" }, { status: 400 });
@@ -103,7 +114,15 @@ export async function GET(request: Request) {
     // 날짜순으로 정렬
     list.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    return NextResponse.json({ items: list });
+    const resultData = { items: list };
+
+    // 캐시에 데이터 적재 (TTL: 45초)
+    cacheMap.set(cacheKey, {
+      data: resultData,
+      expiry: Date.now() + CACHE_TTL
+    });
+
+    return NextResponse.json(resultData);
   } catch (error: any) {
     console.error("Finnhub Earnings API Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -73,7 +73,7 @@ function HeatmapTile({ item }: { item: HeatmapItem }) {
 
   return (
     <div
-      className="flex flex-col items-center justify-center gap-1.5 rounded-none transition-all duration-300 hover:scale-[1.02] cursor-default p-2.5 h-full select-none"
+      className="flex flex-col items-center justify-center gap-1 md:gap-1.5 rounded-none transition-all duration-300 hover:scale-[1.02] cursor-default p-1.5 md:p-2.5 h-full select-none"
       style={{
         background: getTileBg(colorPct),
         border: `1.5px solid ${getTileBorder(colorPct)}`,
@@ -81,26 +81,26 @@ function HeatmapTile({ item }: { item: HeatmapItem }) {
       title={`${item.name}\n현재가: ${formatPrice(item.price, item.symbol)}\n변동: ${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%${isInverted ? " (역방향 지표)" : ""}`}
     >
       {/* 아이콘 + 심볼 */}
-      <div className="flex items-center gap-1">
-        <span className="text-sm leading-none">{meta.icon}</span>
-        <span className="text-foreground font-mono font-extrabold text-xs tracking-wider leading-none">
+      <div className="flex items-center gap-0.5 md:gap-1">
+        <span className="text-xs md:text-sm leading-none">{meta.icon}</span>
+        <span className="text-foreground font-mono font-extrabold text-[9px] md:text-xs tracking-wider leading-none">
           {item.symbol}
         </span>
       </div>
 
       {/* 등락률 */}
-      <div className={`flex items-center gap-1 text-sm font-mono leading-none ${getTileTextColor(colorPct)}`}>
-        <span className="text-[10px]">{isUp ? "▲" : "▼"}</span>
+      <div className={`flex items-center gap-0.5 md:gap-1 text-[10px] md:text-sm font-mono leading-none ${getTileTextColor(colorPct)}`}>
+        <span className="text-[8px] md:text-[10px]">{isUp ? "▲" : "▼"}</span>
         <span>{Math.abs(pct).toFixed(2)}%</span>
       </div>
 
       {/* 현재가 */}
-      <span className="text-foreground/80 text-[10px] font-mono font-bold leading-none">
+      <span className="text-foreground/80 text-[8.5px] md:text-[10px] font-mono font-bold leading-none">
         {formatPrice(item.price, item.symbol)}
       </span>
 
       {/* 자산 설명 */}
-      <span className="text-muted-foreground text-[9px] font-sans leading-none truncate max-w-full hidden sm:block">
+      <span className="text-muted-foreground text-[8px] md:text-[9px] font-sans leading-none truncate max-w-full hidden sm:block">
         {meta.desc}
       </span>
     </div>
