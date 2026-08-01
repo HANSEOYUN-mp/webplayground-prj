@@ -195,6 +195,7 @@ export function EarningsCalendarWidget() {
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<"today" | "week" | "month">("week")
   const [searchQuery, setSearchQuery] = useState("")
+  const [isExpanded, setIsExpanded] = useState(false)
 
   const fetchEarnings = async () => {
     setLoading(true)
@@ -309,7 +310,7 @@ export function EarningsCalendarWidget() {
   }
 
   return (
-    <div className="w-full flex flex-col h-[400px] bg-card border border-border rounded-none overflow-hidden transition-all">
+    <div className={`w-full flex flex-col bg-card border border-border rounded-none overflow-hidden transition-all ${isExpanded ? "h-[750px] pb-4" : "h-[400px]"}`}>
       {/* 위젯 헤더 */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-secondary px-4 py-2.5 border-b border-border gap-2 shrink-0">
         <span className="text-[11px] font-bold text-foreground tracking-wider flex items-center gap-1.5 font-sans">
@@ -318,6 +319,13 @@ export function EarningsCalendarWidget() {
 
         {/* 필터 및 검색 바 */}
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="px-2 py-0.5 text-[8.5px] font-extrabold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-none transition-colors select-none mr-1"
+          >
+            {isExpanded ? "접기 ▲" : "펼치기 ▼"}
+          </button>
+
           <div className="flex items-center border border-border bg-card p-0.5">
             {(["today", "week", "month"] as const).map((type) => (
               <button
