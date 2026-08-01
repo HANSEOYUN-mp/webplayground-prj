@@ -38,8 +38,8 @@ export function CnnBeforeTheBellWidget() {
     <div className="w-full flex flex-col h-auto md:h-[360px] bg-card border border-border rounded-none overflow-hidden transition-colors duration-300 hover:bg-neutral-50/50 relative">
       {/* Widget Header */}
       <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
-        <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1.5">
-          <Newspaper className="w-3.5 h-3.5 text-primary" /> CNN Before the Bell
+        <span className="text-[11px] font-bold text-black dark:text-white tracking-wider flex items-center gap-1.5 font-sans">
+          <Newspaper className="w-3.5 h-3.5 text-black dark:text-white" /> CNN Before the Bell
         </span>
         <div className="flex items-center gap-2">
           <span className="stamp-red text-[9px] font-bold rounded-sm border-primary/30 text-primary bg-primary/5 px-1.5 py-0.5 select-none">

@@ -78,8 +78,8 @@ export function TechVsNasdaqWidget() {
     <div className="w-full flex flex-col h-auto bg-card border border-border overflow-hidden transition-colors duration-300 hover:bg-neutral-50/50">
       {/* Widget Header */}
       <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
-        <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1.5 select-none">
-          <TrendingUp className="w-3.5 h-3.5 text-primary" /> MAGS vs 나스닥 올해(YTD) 수익률 추이
+        <span className="text-[11px] font-bold text-black dark:text-white tracking-wider flex items-center gap-1.5 select-none font-sans">
+          <TrendingUp className="w-3.5 h-3.5 text-black dark:text-white" /> MAGS vs 나스닥 올해(YTD) 수익률 추이
         </span>
         <button onClick={fetchData} disabled={loading} className="p-1 hover:bg-secondary rounded transition-colors" title="새로고침">
           <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground/80 ${loading ? 'animate-spin' : ''}`} />

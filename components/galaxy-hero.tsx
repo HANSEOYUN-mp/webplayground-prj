@@ -241,56 +241,63 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
                     <UsTechMoversWidget isDetailed={true} />
                   </div>
 
-                  {/* 글로벌 거시 경제 지표 슬롯 (웹앱 테마 유지 & 3버튼 구성) */}
-                  <div className="w-full flex flex-col h-[360px] bg-card border border-border rounded-none overflow-hidden transition-colors hover:bg-neutral-50/50">
-                    {/* 헤더 */}
-                    <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
-                      <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
-                        <BarChart3 className="w-3.5 h-3.5 text-primary" /> 글로벌 거시 경제 지표
-                      </span>
-                    </div>
-                    {/* 본문 콘텐츠 */}
-                    <div className="flex-1 p-5 flex flex-col justify-between">
-                      <div>
-                        <p className="text-[11.5px] text-muted-foreground leading-relaxed font-sans mb-4">
-                          글로벌 시장 및 거시 경제의 주요 지표 대시보드를 선택해 이동할 수 있습니다.
-                        </p>
-                      </div>
-
-                      {/* 3개 버튼 배치 */}
-                      <div className="flex flex-col gap-3 flex-1 justify-center">
-                        {/* 첫번째: 공포 탐욕지수 */}
-                        <button 
-                          onClick={() => setStockSubView("minsky")}
-                          className="w-full py-2.5 bg-primary text-primary-foreground font-bold text-[11px] hover:bg-primary/90 transition-colors flex items-center justify-between px-4 rounded-none font-sans select-none"
-                        >
-                          <span className="flex items-center gap-1.5"><Flame className="w-3.5 h-3.5 animate-pulse text-amber-300" /> 공포 탐욕 지수 (CNN)</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
-
-                        {/* 두번째: 거시경제 지표 */}
-                        <button 
-                          onClick={() => setStockSubView("fred")}
-                          className="w-full py-2.5 bg-primary text-primary-foreground font-bold text-[11px] hover:bg-primary/90 transition-colors flex items-center justify-between px-4 rounded-none font-sans select-none"
-                        >
-                          <span className="flex items-center gap-1.5"><BarChart3 className="w-3.5 h-3.5 text-indigo-300" /> 미국 거시경제 지표 (FRED)</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
-
-                        {/* 세번째: 미국 주식시장 거시흐름 */}
-                        <button 
-                          onClick={() => setStockSubView("compare")}
-                          className="w-full py-2.5 bg-primary text-primary-foreground font-bold text-[11px] hover:bg-primary/90 transition-colors flex items-center justify-between px-4 rounded-none font-sans select-none"
-                        >
-                          <span className="flex items-center gap-1.5"><TrendingUp className="w-3.5 h-3.5 text-emerald-300 animate-pulse" /> 미국 주식시장 거시흐름</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
+                  {/* MONEY FLOW MATRIX (2열 크게 배치) */}
+                  <div className="md:col-span-2 w-full">
+                    <CustomHeatmapWidget />
                   </div>
 
-                  <CustomHeatmapWidget />
-                  <CnnTechNewsWidget />
+                  {/* 글로벌 거시 경제 지표와 CNN Tech News 를 양옆으로 나란히 배치 */}
+                  <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                    {/* 글로벌 거시 경제 지표 슬롯 (웹앱 테마 유지 & 3버튼 구성) */}
+                    <div className="w-full flex flex-col h-[360px] bg-card border border-border rounded-none overflow-hidden transition-colors hover:bg-neutral-50/50">
+                      {/* 헤더 */}
+                      <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
+                        <span className="text-[11px] font-bold text-black dark:text-white tracking-wider flex items-center gap-1.5 font-sans">
+                          <BarChart3 className="w-3.5 h-3.5 text-black dark:text-white" /> 글로벌 거시 경제 지표
+                        </span>
+                      </div>
+                      {/* 본문 콘텐츠 */}
+                      <div className="flex-1 p-5 flex flex-col justify-between">
+                        <div>
+                          <p className="text-[11.5px] text-muted-foreground leading-relaxed font-sans mb-4">
+                            글로벌 시장 및 거시 경제의 주요 지표 대시보드를 선택해 이동할 수 있습니다.
+                          </p>
+                        </div>
+
+                        {/* 3개 버튼 배치 */}
+                        <div className="flex flex-col gap-3 flex-1 justify-center">
+                          {/* 첫번째: 공포 탐욕지수 */}
+                          <button 
+                            onClick={() => setStockSubView("minsky")}
+                            className="w-full py-2.5 bg-primary text-primary-foreground font-bold text-[11px] hover:bg-primary/90 transition-colors flex items-center justify-between px-4 rounded-none font-sans select-none"
+                          >
+                            <span className="flex items-center gap-1.5"><Flame className="w-3.5 h-3.5 animate-pulse text-amber-300" /> 공포 탐욕 지수 (CNN)</span>
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* 두번째: 거시경제 지표 */}
+                          <button 
+                            onClick={() => setStockSubView("fred")}
+                            className="w-full py-2.5 bg-primary text-primary-foreground font-bold text-[11px] hover:bg-primary/90 transition-colors flex items-center justify-between px-4 rounded-none font-sans select-none"
+                          >
+                            <span className="flex items-center gap-1.5"><BarChart3 className="w-3.5 h-3.5 text-indigo-300" /> 미국 거시경제 지표 (FRED)</span>
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* 세번째: 미국 주식시장 거시흐름 */}
+                          <button 
+                            onClick={() => setStockSubView("compare")}
+                            className="w-full py-2.5 bg-primary text-primary-foreground font-bold text-[11px] hover:bg-primary/90 transition-colors flex items-center justify-between px-4 rounded-none font-sans select-none"
+                          >
+                            <span className="flex items-center gap-1.5"><TrendingUp className="w-3.5 h-3.5 text-emerald-300 animate-pulse" /> 미국 주식시장 거시흐름</span>
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <CnnTechNewsWidget />
+                  </div>
                 </>
               ) : (
                 <>

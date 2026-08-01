@@ -66,14 +66,18 @@ export function UsTechMoversWidget({ isDetailed = false, onEnterDetail }: UsTech
   const currentData = data ? data[activeTab] : null
 
   return (
-    <div className={`w-full flex flex-col bg-card border border-border rounded-none overflow-hidden transition-colors duration-300 hover:bg-neutral-50/50 relative ${isDetailed ? 'h-auto pb-4' : 'h-[360px]'}`}>
+    <div className={`w-full flex flex-col bg-card border border-border rounded-none overflow-hidden transition-colors duration-300 hover:bg-neutral-50/50 relative ${
+      isDetailed 
+        ? (isExpanded ? 'h-[750px] pb-4' : 'h-[280px]') 
+        : 'h-[360px]'
+    }`}>
       {/* Widget Header */}
       <div 
         onClick={!isDetailed ? onEnterDetail : undefined}
         className={`flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0 ${!isDetailed && onEnterDetail ? 'cursor-pointer hover:bg-secondary transition-colors group' : ''}`}
       >
-        <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1.5 select-none">
-          <BarChart3 className="w-3.5 h-3.5 text-muted-foreground" /> US Tech Movers
+        <span className="text-[11px] font-bold text-black dark:text-white tracking-wider flex items-center gap-1.5 select-none font-sans">
+          <BarChart3 className="w-3.5 h-3.5 text-black dark:text-white" /> US Tech Movers
           {!isDetailed && onEnterDetail && (
             <span className="text-[9.5px] text-primary/75 dark:text-primary-foreground/75 font-normal ml-1.5 group-hover:underline flex items-center gap-0.5">
               (상세보기)
@@ -161,7 +165,11 @@ export function UsTechMoversWidget({ isDetailed = false, onEnterDetail }: UsTech
           표시할 데이터가 없습니다.
         </div>
       ) : (
-        <div className={`flex-1 p-3.5 ${isDetailed ? "flex flex-col md:flex-row gap-6 h-auto" : "flex flex-col gap-2 overflow-y-auto custom-scrollbar-movers"}`}>
+        <div className={`flex-1 p-3.5 ${
+          isDetailed 
+            ? "flex flex-col md:flex-row gap-6 overflow-y-auto custom-scrollbar-movers" 
+            : "flex flex-col gap-2 overflow-y-auto custom-scrollbar-movers"
+        }`}>
           {/* Top Gainers */}
           <div className="flex-1 flex flex-col">
             <span className="text-[10px] font-bold text-emerald-600 tracking-wider flex items-center gap-1 mb-1.5 border-b border-emerald-500/20 pb-1 select-none uppercase">

@@ -31,18 +31,69 @@ export async function GET(request: Request) {
   }
 
   try {
-    let url = `https://finnhub.io/api/v1/calendar/earnings?from=${from}&to=${to}&token=${apiKey}`;
-    if (symbol) {
-      url += `&symbol=${symbol.toUpperCase()}`;
-    }
+    const now = new Date();
+    const getLocalDateString = (d: Date) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const date = String(d.getDate()).padStart(2, "0");
+      return `${year}-${month}-${date}`;
+    };
+    const todayStr = getLocalDateString(now);
 
-    const response = await fetch(url, { next: { revalidate: 3600 } }); // 1시간 캐싱
-    if (!response.ok) {
-      throw new Error(`Finnhub API 응답 에러: ${response.status}`);
-    }
+    const isPast = (dateStr: string) => dateStr < todayStr;
+    const isFutureOrToday = (dateStr: string) => dateStr >= todayStr;
 
-    const data = await response.json();
-    let list = data.earningsCalendar || [];
+    let list: any[] = [];
+
+    // 만약 특정 심볼을 조회하거나, 요청 범위가 전부 과거이거나, 전부 미래인 경우는 단일 API 호출
+    if (symbol || (isPast(from) && isPast(to)) || (isFutureOrToday(from) && isFutureOrToday(to))) {
+      let url = `https://finnhub.io/api/v1/calendar/earnings?from=${from}&to=${to}&token=${apiKey}`;
+      if (symbol) {
+        url += `&symbol=${symbol.toUpperCase()}`;
+      }
+
+      const response = await fetch(url, { next: { revalidate: 3600 } });
+      if (!response.ok) {
+        throw new Error(`Finnhub API 응답 에러: ${response.status}`);
+      }
+
+      const data = await response.json();
+      list = data.earningsCalendar || [];
+    } else {
+      // 범위가 과거와 미래에 모두 걸쳐 있는 경우 (from < today <= to)
+      // Finnhub 무료 API 정책상 과거와 미래가 혼재된 범위로 호출하면 과거 데이터를 누락시키므로,
+      // 과거와 미래 영역을 쪼개서 병렬 요청한 후 병합함.
+      const yesterday = new Date(now);
+      yesterday.setDate(now.getDate() - 1);
+      const yesterdayStr = getLocalDateString(yesterday);
+
+      const pastUrl = `https://finnhub.io/api/v1/calendar/earnings?from=${from}&to=${yesterdayStr}&token=${apiKey}`;
+      const futureUrl = `https://finnhub.io/api/v1/calendar/earnings?from=${todayStr}&to=${to}&token=${apiKey}`;
+
+      const [pastRes, futureRes] = await Promise.all([
+        fetch(pastUrl, { next: { revalidate: 3600 } }),
+        fetch(futureUrl, { next: { revalidate: 3600 } })
+      ]);
+
+      let pastData: any = {};
+      let futureData: any = {};
+
+      if (pastRes.ok) {
+        pastData = await pastRes.json();
+      } else {
+        console.error("Finnhub Past Earnings API Error:", pastRes.status);
+      }
+
+      if (futureRes.ok) {
+        futureData = await futureRes.json();
+      } else {
+        console.error("Finnhub Future Earnings API Error:", futureRes.status);
+      }
+
+      const pastList = pastData.earningsCalendar || [];
+      const futureList = futureData.earningsCalendar || [];
+      list = [...pastList, ...futureList];
+    }
 
     // 개별 심볼 조회가 아닐 경우 주요 종목들만 필터링
     if (!symbol) {

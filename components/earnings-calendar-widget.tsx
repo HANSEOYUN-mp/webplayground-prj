@@ -193,7 +193,7 @@ export function EarningsCalendarWidget() {
   const [earnings, setEarnings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [filter, setFilter] = useState<"today" | "week" | "month">("week")
+  const [filter, setFilter] = useState<"today" | "past_week" | "future_week" | "month">("future_week")
   const [searchQuery, setSearchQuery] = useState("")
   const [isExpanded, setIsExpanded] = useState(false)
 
@@ -225,20 +225,25 @@ export function EarningsCalendarWidget() {
         const futureDate = new Date()
         futureDate.setDate(now.getDate() + 1)
         toDate = getLocalDateString(futureDate)
-      } else if (filter === "week") {
-        // 지난 7일부터 향후 7일까지 조회
+      } else if (filter === "past_week") {
+        // 지난 7일 (7일 전부터 어제까지)
         const pastDate = new Date()
         pastDate.setDate(now.getDate() - 7)
         fromDate = getLocalDateString(pastDate)
+
+        const yesterday = new Date()
+        yesterday.setDate(now.getDate() - 1)
+        toDate = getLocalDateString(yesterday)
+      } else if (filter === "future_week") {
+        // 향후 7일 (오늘부터 7일 후까지)
+        fromDate = getLocalDateString(now)
 
         const futureDate = new Date()
         futureDate.setDate(now.getDate() + 7)
         toDate = getLocalDateString(futureDate)
       } else if (filter === "month") {
-        // 지난 30일부터 향후 30일까지 조회
-        const pastDate = new Date()
-        pastDate.setDate(now.getDate() - 30)
-        fromDate = getLocalDateString(pastDate)
+        // 오늘부터 향후 30일까지 조회 (미래 실적 일정만 노출)
+        fromDate = getLocalDateString(now)
 
         const futureDate = new Date()
         futureDate.setDate(now.getDate() + 30)
@@ -310,11 +315,11 @@ export function EarningsCalendarWidget() {
   }
 
   return (
-    <div className={`w-full flex flex-col bg-card border border-border rounded-none overflow-hidden transition-all ${isExpanded ? "h-[750px] pb-4" : "h-[400px]"}`}>
+    <div className={`w-full flex flex-col bg-card border border-border rounded-none overflow-hidden transition-all ${isExpanded ? "h-[750px] pb-4" : "h-[280px]"}`}>
       {/* 위젯 헤더 */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-secondary px-4 py-2.5 border-b border-border gap-2 shrink-0">
-        <span className="text-[11px] font-bold text-foreground tracking-wider flex items-center gap-1.5 font-sans">
-          <Calendar className="w-3.5 h-3.5 text-primary" /> 글로벌 주요 기업 실적 발표 일정
+        <span className="text-[11px] font-bold text-black dark:text-white tracking-wider flex items-center gap-1.5 font-sans">
+          <Calendar className="w-3.5 h-3.5 text-black dark:text-white" /> 글로벌 주요 기업 실적 발표 일정
         </span>
 
         {/* 필터 및 검색 바 */}
@@ -327,7 +332,7 @@ export function EarningsCalendarWidget() {
           </button>
 
           <div className="flex items-center border border-border bg-card p-0.5">
-            {(["today", "week", "month"] as const).map((type) => (
+            {(["today", "past_week", "future_week", "month"] as const).map((type) => (
               <button
                 key={type}
                 onClick={() => setFilter(type)}
@@ -337,7 +342,13 @@ export function EarningsCalendarWidget() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {type === "today" ? "오늘" : type === "week" ? "7일 내" : "30일 내"}
+                {type === "today" 
+                  ? "오늘" 
+                  : type === "past_week" 
+                  ? "7일 과거" 
+                  : type === "future_week" 
+                  ? "7일 미래" 
+                  : "30일 내"}
               </button>
             ))}
           </div>
