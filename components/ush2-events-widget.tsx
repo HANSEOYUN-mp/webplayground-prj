@@ -136,7 +136,7 @@ export function Ush2EventsWidget() {
       {/* 위젯 헤더 */}
       <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
         <span className="text-[11px] font-bold text-black dark:text-white tracking-wider flex items-center gap-1.5 font-sans">
-          <Calendar className="w-3.5 h-3.5 text-black dark:text-white" /> 2026년 하반기 미국주식 주요 일정
+          <Calendar className="w-3.5 h-3.5 text-black dark:text-white" /> 2026 main schedule
         </span>
         <div className="flex items-center gap-1.5 flex-wrap justify-end">
           <span className="stamp-red text-[8px] font-extrabold flex items-center gap-1">

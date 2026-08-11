@@ -16,6 +16,7 @@ import { TechVsNasdaqWidget } from "@/components/tech-vs-nasdaq-widget"
 import { AssetsCompareWidget } from "@/components/assets-compare-widget"
 import { Ush2EventsWidget } from "@/components/ush2-events-widget"
 import { EtfPerformanceWidget } from "@/components/etf-performance-widget"
+import { KoreaRatioWidget } from "@/components/korea-ratio-widget"
 
 interface StockRow {
   rank: number
@@ -433,6 +434,11 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* 반도체 투톱(삼성전자 & SK하이닉스) KOSPI 지분율 분석 슬롯 */}
+              <div className="md:col-span-2 w-full">
+                <KoreaRatioWidget />
               </div>
 
               {/* 빈 슬롯들 */}
