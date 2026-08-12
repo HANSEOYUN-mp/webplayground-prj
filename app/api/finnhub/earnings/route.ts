@@ -11,8 +11,9 @@ const MAJOR_US_STOCKS = new Set([
   "RTX", "BA", "UPS", "FDX", "WM", "NOC", "GD", "MMM", "T", "VZ",
   "TMUS", "CMCSA", "CHTR", "PG", "CL", "EL", "ORCL", "CRM", "ADBE", "INTU",
   "NOW", "WDAY", "SNPS", "CDNS", "ROP", "MCHP", "ON", "ANET", "MSTR", "COIN",
-  "SOFI", "PLTR", "SQ", "SHOP", "SE", "MELI", "UBER", "LYFT", "ABNB", "BKNG",
-  "VRT", "SMCI", "DELL", "HPE", "IONQ", "RKLB"
+  "SOFI", "SQ", "SHOP", "SE", "MELI", "UBER", "LYFT", "ABNB", "BKNG",
+  "VRT", "SMCI", "DELL", "HPE", "IONQ", "RKLB", "CRWV", "IREN", "SPCX", "HIMS",
+  "NBIS", "MRVL", "COHR", "ALAB", "LITE", "SMR", "OKLO", "BE"
 ]);
 
 // 인메모리 캐시 선언

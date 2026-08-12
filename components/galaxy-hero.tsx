@@ -8,6 +8,7 @@ import { TradingViewHeatmapWidget } from "@/components/tradingview-heatmap-widge
 import { CustomHeatmapWidget } from "@/components/custom-heatmap-widget"
 import { FinlifeProductsWidget } from "@/components/finlife-products-widget"
 import { TradingViewKoreaWidget } from "@/components/tradingview-korea-widget"
+import { TradingViewUSWidget } from "@/components/tradingview-us-widget"
 import { EarningsCalendarWidget } from "@/components/earnings-calendar-widget"
 import { CnnTechNewsWidget } from "@/components/cnn-tech-news-widget"
 import { UsTechMoversWidget } from "@/components/us-tech-movers-widget"
@@ -17,6 +18,7 @@ import { AssetsCompareWidget } from "@/components/assets-compare-widget"
 import { Ush2EventsWidget } from "@/components/ush2-events-widget"
 import { EtfPerformanceWidget } from "@/components/etf-performance-widget"
 import { KoreaRatioWidget } from "@/components/korea-ratio-widget"
+import KoreaSectorFlowWidget from "@/components/korea-sector-flow-widget"
 
 interface StockRow {
   rank: number
@@ -132,6 +134,7 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
   const [usTrends, setUsTrends] = useState<TrendItem[]>([])
   const [trendsTab, setTrendsTab] = useState<"kr" | "us">("kr")
   const [stockDate, setStockDate] = useState<string>("로딩중...")
+  const [isTop20Expanded, setIsTop20Expanded] = useState(true)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -230,6 +233,11 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
                   {/* 미국 주식 히트맵 (슬롯 1, 2 위에 크게 배치) */}
                   <div className="md:col-span-2 w-full">
                     <TradingViewHeatmapWidget />
+                  </div>
+
+                  {/* 미국 시장 및 주요 지표 요약 (Major US ETFs) */}
+                  <div className="md:col-span-2 w-full">
+                    <TradingViewUSWidget />
                   </div>
 
                   {/* 실적 발표 캘린더 (히트맵 하단에 동일하게 col-span-2로 배치) */}
@@ -342,107 +350,125 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
                 <TradingViewKoreaWidget />
               </div>
 
-              {/* 거래대금 TOP 20 — 1~10위 왼쪽, 11~20위 오른쪽 */}
-              <div className="md:col-span-2 w-full flex flex-col h-auto md:h-[520px] bg-card border border-border overflow-hidden transition-colors hover:bg-neutral-50/50">
-                <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
-                  <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
-                    <TrendingUp className="w-3.5 h-3.5 text-primary" /> 거래대금 TOP 20
-                  </span>
-                  {stockDate && (
-                    <span className="stamp-red text-[9px] font-bold rounded-sm border-primary/30 text-primary bg-primary/5 px-1.5 py-0.5">
-                      기준일: {stockDate}
-                    </span>
-                  )}
-                </div>
-
-                {/* 컨럼 레이블 헤더 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 divide-x divide-border/10 shrink-0 border-b border-border/10 bg-secondary/30">
-                  {[0, 1].map((col) => (
-                    <div key={col} className={`flex items-center gap-1.5 px-3 py-1.5 ${col === 1 ? 'hidden md:flex' : ''}`}>
-                      <span className="w-5 shrink-0" />
-                      <span className="flex-1 text-[9px] font-bold text-muted-foreground/60 tracking-wider">종목</span>
-                      <span className="w-[46px] text-right text-[9px] font-bold text-muted-foreground/60 shrink-0">등락</span>
-                      <span className="w-[66px] text-right text-[9px] font-bold text-muted-foreground/60 shrink-0">주가</span>
-                      <span className="w-[44px] text-right text-[9px] font-bold text-muted-foreground/60 shrink-0">거래대금</span>
-                      <span className="w-[40px] text-right text-[9px] font-bold text-muted-foreground/60 shrink-0">%/시총</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex-1 overflow-hidden">
-                  <div className="grid grid-cols-1 md:grid-cols-2 divide-x divide-border/10 h-full">
-                    {/* 1~10위 */}
-                    <div className="flex flex-col h-full divide-y divide-border/5">
-                      {stocks.slice(0, 10).map((stock, i) => {
-                        const isUp = Number(stock.fltRt) >= 0
-                        const fltColor = isUp ? "text-red-600" : "text-blue-600"
-                        const trColor = isUp ? "text-red-500" : "text-blue-500"
-                        const rowBg = isUp ? "hover:bg-red-50/50" : "hover:bg-blue-50/50"
-                        const ratio = Number(stock.mrktTotAmt) > 0
-                          ? ((Number(stock.trPrc) / Number(stock.mrktTotAmt)) * 100).toFixed(1)
-                          : "-"
-                        return (
-                          <div key={i} className={`flex-1 flex items-center gap-1.5 px-3 transition-colors ${rowBg}`}>
-                            <span className="text-[10px] font-extrabold font-mono text-muted-foreground/40 w-5 shrink-0 text-right">{stock.rank}</span>
-                            <span className="flex-1 font-bold text-foreground text-[13px] truncate font-sans min-w-0" title={stock.itmsNm}>{stock.itmsNm}</span>
-                            <span className={`text-[11px] font-extrabold font-mono w-[46px] text-right shrink-0 ${fltColor}`}>
-                              {Number(stock.fltRt) > 0 ? "+" : ""}{stock.fltRt}%
-                            </span>
-                            <span className="text-[11px] font-bold font-mono text-foreground w-[66px] text-right shrink-0">
-                              {Number(stock.clpr).toLocaleString()}
-                            </span>
-                            <span className={`text-[10.5px] font-bold font-mono w-[44px] text-right shrink-0 ${trColor}`}>
-                              {formatAmountEok(Number(stock.trPrc))}
-                            </span>
-                            <span className="text-[10px] font-mono text-muted-foreground/70 w-[40px] text-right shrink-0">
-                              {ratio}%
-                            </span>
-                          </div>
-                        )
-                      })}
-                    </div>
-
-                    {/* 11~20위 */}
-                    <div className="flex flex-col h-full divide-y divide-border/5">
-                      {stocks.slice(10, 20).map((stock, i) => {
-                        const isUp = Number(stock.fltRt) >= 0
-                        const fltColor = isUp ? "text-red-600" : "text-blue-600"
-                        const trColor = isUp ? "text-red-500" : "text-blue-500"
-                        const rowBg = isUp ? "hover:bg-red-50/50" : "hover:bg-blue-50/50"
-                        const ratio = Number(stock.mrktTotAmt) > 0
-                          ? ((Number(stock.trPrc) / Number(stock.mrktTotAmt)) * 100).toFixed(1)
-                          : "-"
-                        return (
-                          <div key={i} className={`flex-1 flex items-center gap-1.5 px-3 transition-colors ${rowBg}`}>
-                            <span className="text-[10px] font-extrabold font-mono text-muted-foreground/40 w-5 shrink-0 text-right">{stock.rank}</span>
-                            <span className="flex-1 font-bold text-foreground text-[13px] truncate font-sans min-w-0" title={stock.itmsNm}>{stock.itmsNm}</span>
-                            <span className={`text-[11px] font-extrabold font-mono w-[46px] text-right shrink-0 ${fltColor}`}>
-                              {Number(stock.fltRt) > 0 ? "+" : ""}{stock.fltRt}%
-                            </span>
-                            <span className="text-[11px] font-bold font-mono text-foreground w-[66px] text-right shrink-0">
-                              {Number(stock.clpr).toLocaleString()}
-                            </span>
-                            <span className={`text-[10.5px] font-bold font-mono w-[44px] text-right shrink-0 ${trColor}`}>
-                              {formatAmountEok(Number(stock.trPrc))}
-                            </span>
-                            <span className="text-[10px] font-mono text-muted-foreground/70 w-[40px] text-right shrink-0">
-                              {ratio}%
-                            </span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               {/* 반도체 투톱(삼성전자 & SK하이닉스) KOSPI 지분율 분석 슬롯 */}
-              <div className="md:col-span-2 w-full">
+              <div className="w-full">
                 <KoreaRatioWidget />
               </div>
 
+              {/* 주요 섹터별 거래대금 흐름 분석 슬롯 */}
+              <div className="w-full">
+                <KoreaSectorFlowWidget />
+              </div>
+
+              {/* 거래대금 TOP 20 — 1~10위 왼쪽, 11~20위 오른쪽 */}
+              <div className={`md:col-span-2 w-full flex flex-col bg-card border border-border overflow-hidden transition-all duration-300 hover:bg-neutral-50/50 ${isTop20Expanded ? 'h-auto md:h-[520px]' : 'h-[37px]'}`}>
+                <div className={`flex items-center justify-between bg-secondary/50 px-4 py-2 ${isTop20Expanded ? 'border-b border-border' : ''} shrink-0`}>
+                  <span className="text-[11px] font-bold text-black dark:text-white tracking-wider flex items-center gap-1 font-sans">
+                    <TrendingUp className="w-3.5 h-3.5 text-black dark:text-white" /> 거래대금 TOP 20
+                  </span>
+                  
+                  <div className="flex items-center gap-3">
+                    {isTop20Expanded && stockDate && (
+                      <span className="stamp-red text-[9px] font-bold rounded-sm border-primary/30 text-primary bg-primary/5 px-1.5 py-0.5 select-none">
+                        기준일: {stockDate}
+                      </span>
+                    )}
+
+                    <button
+                      onClick={() => setIsTop20Expanded(!isTop20Expanded)}
+                      className="px-2 py-0.5 text-[8.5px] font-extrabold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-none transition-colors select-none mr-1"
+                    >
+                      {isTop20Expanded ? "접기 ▲" : "펼치기 ▼"}
+                    </button>
+                  </div>
+                </div>
+
+                {isTop20Expanded && (
+                  <>
+                    {/* 컨럼 레이블 헤더 */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 divide-x divide-border/10 shrink-0 border-b border-border/10 bg-secondary/30">
+                      {[0, 1].map((col) => (
+                        <div key={col} className={`flex items-center gap-1.5 px-3 py-1.5 ${col === 1 ? 'hidden md:flex' : ''}`}>
+                          <span className="w-5 shrink-0" />
+                          <span className="flex-1 text-[9px] font-bold text-muted-foreground/60 tracking-wider">종목</span>
+                          <span className="w-[46px] text-right text-[9px] font-bold text-muted-foreground/60 shrink-0">등락</span>
+                          <span className="w-[66px] text-right text-[9px] font-bold text-muted-foreground/60 shrink-0">주가</span>
+                          <span className="w-[44px] text-right text-[9px] font-bold text-muted-foreground/60 shrink-0">거래대금</span>
+                          <span className="w-[40px] text-right text-[9px] font-bold text-muted-foreground/60 shrink-0">%/시총</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex-1 overflow-hidden">
+                      <div className="grid grid-cols-1 md:grid-cols-2 divide-x divide-border/10 h-full">
+                        {/* 1~10위 */}
+                        <div className="flex flex-col h-full divide-y divide-border/5">
+                          {stocks.slice(0, 10).map((stock, i) => {
+                            const isUp = Number(stock.fltRt) >= 0
+                            const fltColor = isUp ? "text-red-600" : "text-blue-600"
+                            const trColor = isUp ? "text-red-500" : "text-blue-500"
+                            const rowBg = isUp ? "hover:bg-red-50/50" : "hover:bg-blue-50/50"
+                            const ratio = Number(stock.mrktTotAmt) > 0
+                              ? ((Number(stock.trPrc) / Number(stock.mrktTotAmt)) * 100).toFixed(1)
+                              : "-"
+                            return (
+                              <div key={i} className={`flex-1 flex items-center gap-1.5 px-3 transition-colors ${rowBg}`}>
+                                <span className="text-[10px] font-extrabold font-mono text-muted-foreground/40 w-5 shrink-0 text-right">{stock.rank}</span>
+                                <span className="flex-1 font-bold text-foreground text-[13px] truncate font-sans min-w-0" title={stock.itmsNm}>{stock.itmsNm}</span>
+                                <span className={`text-[11px] font-extrabold font-mono w-[46px] text-right shrink-0 ${fltColor}`}>
+                                  {Number(stock.fltRt) > 0 ? "+" : ""}{stock.fltRt}%
+                                </span>
+                                <span className="text-[11px] font-bold font-mono text-foreground w-[66px] text-right shrink-0">
+                                  {Number(stock.clpr).toLocaleString()}
+                                </span>
+                                <span className={`text-[10.5px] font-bold font-mono w-[44px] text-right shrink-0 ${trColor}`}>
+                                  {formatAmountEok(Number(stock.trPrc))}
+                                </span>
+                                <span className="text-[10px] font-mono text-muted-foreground/70 w-[40px] text-right shrink-0">
+                                  {ratio}%
+                                </span>
+                              </div>
+                            )
+                          })}
+                        </div>
+
+                        {/* 11~20위 */}
+                        <div className="flex flex-col h-full divide-y divide-border/5">
+                          {stocks.slice(10, 20).map((stock, i) => {
+                            const isUp = Number(stock.fltRt) >= 0
+                            const fltColor = isUp ? "text-red-600" : "text-blue-600"
+                            const trColor = isUp ? "text-red-500" : "text-blue-500"
+                            const rowBg = isUp ? "hover:bg-red-50/50" : "hover:bg-blue-50/50"
+                            const ratio = Number(stock.mrktTotAmt) > 0
+                              ? ((Number(stock.trPrc) / Number(stock.mrktTotAmt)) * 100).toFixed(1)
+                              : "-"
+                            return (
+                              <div key={i} className={`flex-1 flex items-center gap-1.5 px-3 transition-colors ${rowBg}`}>
+                                <span className="text-[10px] font-extrabold font-mono text-muted-foreground/40 w-5 shrink-0 text-right">{stock.rank}</span>
+                                <span className="flex-1 font-bold text-foreground text-[13px] truncate font-sans min-w-0" title={stock.itmsNm}>{stock.itmsNm}</span>
+                                <span className={`text-[11px] font-extrabold font-mono w-[46px] text-right shrink-0 ${fltColor}`}>
+                                  {Number(stock.fltRt) > 0 ? "+" : ""}{stock.fltRt}%
+                                </span>
+                                <span className="text-[11px] font-bold font-mono text-foreground w-[66px] text-right shrink-0">
+                                  {Number(stock.clpr).toLocaleString()}
+                                </span>
+                                <span className={`text-[10.5px] font-bold font-mono w-[44px] text-right shrink-0 ${trColor}`}>
+                                  {formatAmountEok(Number(stock.trPrc))}
+                                </span>
+                                <span className="text-[10px] font-mono text-muted-foreground/70 w-[40px] text-right shrink-0">
+                                  {ratio}%
+                                </span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
               {/* 빈 슬롯들 */}
-              <EmptySlot index={2} title="KOREA FINANCE" subtitle="추가 금융 정보 분석 준비 중" />
               <EmptySlot index={3} title="KOREA MARKET" subtitle="추가 분석 모델 준비 중" />
               <EmptySlot index={4} title="KOREA ECONOMY" subtitle="한국 거시경제 지표 연동 준비 중" />
             </div>

@@ -186,21 +186,21 @@ async function fetchNaverFallback() {
   }
 
   const samsungPrice = parseFloat(samsungStock.closePriceRaw);
-  const samsungVolume = parseFloat(samsungStock.accumulatedTradingVolumeRaw);
+  const samsungVolumeShares = parseFloat(samsungStock.accumulatedTradingVolumeRaw);
   const samsungCap = parseFloat(samsungStock.marketValueRaw);
 
   const hynixPrice = parseFloat(hynixStock.closePriceRaw);
-  const hynixVolume = parseFloat(hynixStock.accumulatedTradingVolumeRaw);
+  const hynixVolumeShares = parseFloat(hynixStock.accumulatedTradingVolumeRaw);
   const hynixCap = parseFloat(hynixStock.marketValueRaw);
 
   return {
     kospiIndex,
     totalVolumeAmount: cleanValue,
     samsungPrice,
-    samsungVolume,
+    samsungVolume: samsungPrice * samsungVolumeShares,
     samsungCap,
     hynixPrice,
-    hynixVolume,
+    hynixVolume: hynixPrice * hynixVolumeShares,
     hynixCap,
   };
 }

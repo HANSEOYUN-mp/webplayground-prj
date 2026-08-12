@@ -10,3 +10,5 @@ node_modules/
 bot/node_modules/
 bot/.env
 .DS_Store
+scratch/
+kis_token.json
