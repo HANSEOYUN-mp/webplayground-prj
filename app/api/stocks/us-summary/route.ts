@@ -47,8 +47,9 @@ async function fetchUSTickerData(ticker: string) {
 
   if (validCloses.length === 0) throw new Error(`No valid close prices for ${ticker}`);
 
-  const currentPrice = validCloses[validCloses.length - 1];
-  const prevClose = validCloses.length > 1 ? validCloses[validCloses.length - 2] : (result.meta?.chartPreviousClose || currentPrice);
+  // 실시간 현재가 정합성 우선 적용
+  const currentPrice = result.meta?.regularMarketPrice || validCloses[validCloses.length - 1];
+  const prevClose = result.meta?.previousClose || (validCloses.length > 1 ? validCloses[validCloses.length - 2] : (result.meta?.chartPreviousClose || currentPrice));
   const change = currentPrice - prevClose;
   const changePercent = (change / prevClose) * 100;
   
@@ -68,12 +69,27 @@ async function fetchUSTickerData(ticker: string) {
   };
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const data: Record<string, any> = {};
-    for (const [key, ticker] of Object.entries(TICKERS)) {
+    const { searchParams } = new URL(request.url);
+    const ticker = searchParams.get('ticker')?.toUpperCase().trim();
+
+    // 단일 티커 검색 요청인 경우
+    if (ticker) {
       try {
-        data[key] = await fetchUSTickerData(ticker);
+        const singleData = await fetchUSTickerData(ticker);
+        return NextResponse.json({ singleData });
+      } catch (err: any) {
+        console.error(`Failed to fetch US stock data for single search ${ticker}:`, err.message);
+        return NextResponse.json({ error: `종목 코드(${ticker})를 찾을 수 없거나 데이터 수집에 실패했습니다.` }, { status: 404 });
+      }
+    }
+
+    // 기본 전체 ETF 요약 요청인 경우
+    const data: Record<string, any> = {};
+    for (const [key, tkr] of Object.entries(TICKERS)) {
+      try {
+        data[key] = await fetchUSTickerData(tkr);
       } catch (err: any) {
         console.error(`Failed to fetch US stock data for ${key}:`, err.message);
         data[key] = { error: err.message || "Failed to load" };

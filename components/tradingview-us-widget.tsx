@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { TrendingUp, RefreshCw, AlertCircle, Calendar } from "lucide-react"
+import { TrendingUp, RefreshCw, AlertCircle, Calendar, Search, X } from "lucide-react"
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts"
 
 interface TickerData {
@@ -27,7 +27,7 @@ interface USMarketData {
   TECL?: TickerData
 }
 
-type TabType = "SPY" | "QQQ" | "QLD" | "SCHD" | "JEPI" | "SOXX" | "TECL"
+type TabType = "SPY" | "QQQ" | "QLD" | "SCHD" | "JEPI" | "SOXX" | "TECL" | "SEARCH"
 
 function formatNumber(val: number, tab: TabType, currency: string = "USD") {
   if (val === undefined || val === null) return "-"
@@ -47,6 +47,7 @@ function formatDate(dateStr: string) {
   return dateStr;
 }
 
+// 꺾은선 차트 X축 날짜 포맷 (YY.MM)
 function formatChartDate(dateStr: string) {
   if (!dateStr) return "";
   const parts = dateStr.split("-");
@@ -63,6 +64,12 @@ export function TradingViewUSWidget() {
   const [error, setError] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
+
+  // 검색 관련 상태
+  const [searchTicker, setSearchTicker] = useState("")
+  const [searchedData, setSearchedData] = useState<TickerData | null>(null)
+  const [searchError, setSearchError] = useState<string | null>(null)
+  const [searchLoading, setSearchLoading] = useState(false)
 
   const fetchData = async () => {
     setLoading(true)
@@ -81,6 +88,44 @@ export function TradingViewUSWidget() {
     } finally {
       setLoading(false)
     }
+  };
+
+  // 단일 미국 종목/ETF 실시간 검색 함수
+  const handleSearch = async () => {
+    const query = searchTicker.toUpperCase().trim()
+    if (!query) return
+
+    setSearchLoading(true)
+    setSearchError(null)
+    try {
+      const res = await fetch(`/api/stocks/us-summary?ticker=${query}`)
+      const json = await res.json().catch(() => ({}))
+      
+      if (!res.ok) {
+        throw new Error(json.error || "종목 정보를 조회하지 못했습니다.")
+      }
+
+      if (json.singleData) {
+        setSearchedData(json.singleData)
+        setActiveTab("SEARCH")
+      } else {
+        throw new Error("올바른 종목 데이터가 반환되지 않았습니다.")
+      }
+    } catch (err: any) {
+      setSearchError(err.message || "종목 코드를 찾을 수 없거나 데이터 수집 실패")
+      setSearchedData(null)
+      setActiveTab("SEARCH")
+    } finally {
+      setSearchLoading(false)
+    }
+  }
+
+  // 검색 초기화 함수
+  const handleClearSearch = () => {
+    setSearchedData(null)
+    setSearchTicker("")
+    setSearchError(null)
+    setActiveTab("SPY")
   }
 
   useEffect(() => {
@@ -88,11 +133,15 @@ export function TradingViewUSWidget() {
     fetchData()
   }, [])
 
-  const selectedData = data?.[activeTab]
+  // 활성화된 탭의 시세 데이터 매핑
+  const selectedData = activeTab === "SEARCH" 
+    ? searchedData 
+    : data?.[activeTab as Exclude<TabType, "SEARCH">]
+
   const isUp = (selectedData?.change ?? 0) >= 0
   const latestDate = selectedData?.history?.[selectedData.history.length - 1]?.date
 
-  const tabLabels: Record<TabType, string> = {
+  const tabLabels: Record<Exclude<TabType, "SEARCH">, string> = {
     SPY: "SPY (S&P 500)",
     QQQ: "QQQ (나스닥 100)",
     QLD: "QLD (나스닥 2배)",
@@ -103,12 +152,12 @@ export function TradingViewUSWidget() {
   }
 
   return (
-    <div className={`w-full bg-card border border-border overflow-hidden transition-all duration-300 hover:bg-neutral-50/50 flex flex-col ${isExpanded ? "h-[520px]" : "h-[37px]"}`}>
+    <div className={`w-full bg-card border border-border overflow-hidden transition-all duration-300 hover:bg-neutral-50/50 flex flex-col ${isExpanded ? "h-[560px]" : "h-[37px]"}`}>
       {/* Header */}
       <div className={`flex items-center justify-between bg-secondary/50 px-4 py-2 ${isExpanded ? "border-b border-border" : ""} shrink-0`}>
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-bold text-black dark:text-white tracking-wider flex items-center gap-1.5 font-sans">
-            <TrendingUp className="w-3.5 h-3.5 text-black dark:text-white" /> Major US ETFs
+            <TrendingUp className="w-3.5 h-3.5 text-black dark:text-white" /> Major US ETFs & Stocks
           </span>
         </div>
         
@@ -136,32 +185,88 @@ export function TradingViewUSWidget() {
 
       {/* Tabs */}
       {isExpanded && (
-        <div className="flex overflow-x-auto bg-secondary/20 border-b border-border/60 p-1 gap-1 shrink-0 scrollbar-none select-none">
-          {(["SPY", "QQQ", "QLD", "SCHD", "JEPI", "SOXX", "TECL"] as TabType[]).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-3 py-1 text-[10px] font-bold transition-all rounded-none font-sans whitespace-nowrap ${
-                activeTab === tab
-                  ? "bg-primary text-white"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
-              }`}
-            >
-              {tabLabels[tab]}
-            </button>
-          ))}
+        <div className="flex overflow-x-auto bg-secondary/20 border-b border-border/60 p-1 gap-1 shrink-0 scrollbar-none select-none items-center justify-between">
+          <div className="flex gap-1 overflow-x-auto scrollbar-none">
+            {(["SPY", "QQQ", "QLD", "SCHD", "JEPI", "SOXX", "TECL"] as Exclude<TabType, "SEARCH">[]).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-3 py-1 text-[10px] font-bold transition-all rounded-none font-sans whitespace-nowrap ${
+                  activeTab === tab
+                    ? "bg-primary text-white"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
+                }`}
+              >
+                {tabLabels[tab]}
+              </button>
+            ))}
+            
+            {/* 동적 검색 결과 탭 */}
+            {searchedData && (
+              <div className="flex items-center gap-0.5 bg-primary/10 border border-primary/20 pl-2.5 pr-1.5 py-0.5">
+                <button
+                  onClick={() => setActiveTab("SEARCH")}
+                  className={`text-[10px] font-bold font-sans whitespace-nowrap ${
+                    activeTab === "SEARCH" ? "text-primary font-black" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {searchedData.symbol} (검색결과)
+                </button>
+                <button
+                  onClick={handleClearSearch}
+                  className="p-0.5 text-muted-foreground hover:text-primary transition-colors"
+                  title="검색 지우기"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Ticker Search Bar */}
+      {isExpanded && (
+        <div className="flex px-4 py-1.5 border-b border-border/40 gap-2 items-center bg-secondary/10 shrink-0 select-none">
+          <Search className="w-3.5 h-3.5 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="미국 주식/ETF 티커 입력 (예: TSLA, NVDA, AAPL, UPRO)"
+            value={searchTicker}
+            onChange={(e) => setSearchTicker(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            className="flex-1 bg-background border border-border px-2.5 py-1 text-[11px] font-medium placeholder-muted-foreground outline-none focus:border-primary font-mono uppercase"
+          />
+          <button
+            onClick={handleSearch}
+            disabled={searchLoading}
+            className="px-3 py-1 bg-primary text-white text-[10px] font-bold hover:bg-primary/90 transition-colors shrink-0"
+          >
+            {searchLoading ? "조회 중..." : "조회"}
+          </button>
         </div>
       )}
 
       {/* Content */}
       {isExpanded && (
         <div className="flex-1 p-5 relative overflow-hidden bg-card flex flex-col justify-between">
-          {!mounted || (loading && !data) ? (
+          {!mounted || (loading && !data && activeTab !== "SEARCH") || (searchLoading && activeTab === "SEARCH") ? (
             <div className="flex flex-col items-center justify-center h-full">
               <div className="w-6 h-6 border-2 border-primary/50 border-t-primary rounded-full animate-spin mb-3"></div>
               <span className="text-muted-foreground text-[10px] font-mono">시세 데이터 수집 중...</span>
             </div>
-          ) : error ? (
+          ) : activeTab === "SEARCH" && searchError ? (
+            <div className="flex flex-col items-center justify-center h-full text-center p-4">
+              <AlertCircle className="w-6 h-6 text-primary mb-2" />
+              <span className="text-[11px] font-bold text-primary max-w-[280px] leading-relaxed">{searchError}</span>
+              <button 
+                onClick={handleClearSearch} 
+                className="mt-4 text-[10px] font-bold bg-secondary hover:bg-secondary/80 border border-border px-3.5 py-1.5 transition-all"
+              >
+                기본 화면으로 돌아가기
+              </button>
+            </div>
+          ) : error && activeTab !== "SEARCH" ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <AlertCircle className="w-6 h-6 text-primary mb-2" />
               <span className="text-[11px] text-primary">{error}</span>
@@ -253,9 +358,14 @@ export function TradingViewUSWidget() {
               </div>
 
               {/* Footer Notes */}
-              <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground shrink-0 border-t border-border/10 pt-2 font-mono">
-                <Calendar className="w-3.5 h-3.5" />
-                <span>최근 1년 종가 기준 차트 • 5분 캐시 갱신 • 데이터 출처: Yahoo Finance</span>
+              <div className="flex items-center justify-between text-[9px] text-muted-foreground shrink-0 border-t border-border/10 pt-2 font-mono">
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>최근 1년 종가 기준 차트 • 5분 캐시 갱신 • 데이터 출처: Yahoo Finance</span>
+                </div>
+                {activeTab === "SEARCH" && (
+                  <span className="text-primary font-bold">임시 검색 모드 활성화</span>
+                )}
               </div>
 
             </div>
