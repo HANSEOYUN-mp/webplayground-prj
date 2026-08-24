@@ -38,10 +38,14 @@ export function KoreaRatioWidget() {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
-  const fetchData = async () => {
+  const fetchData = async (isManual: boolean = false) => {
     try {
       setIsRefreshing(true);
-      const res = await fetch('/api/stocks/korea/ratio');
+      const url = isManual 
+        ? `/api/stocks/korea/ratio?bypassCache=true&t=${Date.now()}` 
+        : `/api/stocks/korea/ratio?t=${Date.now()}`;
+      
+      const res = await fetch(url, isManual ? { cache: 'no-store' } : undefined);
       if (!res.ok) {
         throw new Error('API 응답에 실패했습니다.');
       }
@@ -60,11 +64,11 @@ export function KoreaRatioWidget() {
   };
 
   useEffect(() => {
-    fetchData();
+    fetchData(false);
 
     // 1시간 주기 자동 업데이트 (3600000 ms)
     const interval = setInterval(() => {
-      fetchData();
+      fetchData(false);
     }, 3600000);
 
     return () => clearInterval(interval);
@@ -91,7 +95,7 @@ export function KoreaRatioWidget() {
           <Cpu className="w-3.5 h-3.5 text-black dark:text-white" /> KOSPI 반도체 투톱 지분율 분석
         </span>
         <button 
-          onClick={fetchData} 
+          onClick={() => fetchData(true)} 
           disabled={isRefreshing}
           className={`p-1 text-muted-foreground hover:text-black dark:hover:text-white transition-colors duration-200 ${isRefreshing ? 'animate-spin' : ''}`}
           title="새로고침"
@@ -111,7 +115,7 @@ export function KoreaRatioWidget() {
           <div className="flex-1 flex flex-col items-center justify-center gap-2 text-red-500 p-4">
             <AlertCircle className="w-6 h-6" />
             <span className="text-[11px] text-center font-sans">{error}</span>
-            <button onClick={fetchData} className="mt-2 px-3 py-1 bg-red-50 hover:bg-red-100 border border-red-200 text-[10px] font-bold transition-colors">
+            <button onClick={() => fetchData(true)} className="mt-2 px-3 py-1 bg-red-50 hover:bg-red-100 border border-red-200 text-[10px] font-bold transition-colors">
               다시 시도
             </button>
           </div>

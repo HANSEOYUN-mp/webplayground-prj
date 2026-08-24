@@ -73,9 +73,6 @@ export async function GET() {
     return NextResponse.json({ items })
   } catch (e) {
     console.error("Polymarket finance fetch error", e)
-    return NextResponse.json(
-      { error: "Fetch failed" },
-      { status: 500 }
-    )
+    return NextResponse.json({ items: [], error: "Fetch failed" })
   }
 }

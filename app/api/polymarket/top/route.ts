@@ -20,10 +20,8 @@ export async function GET() {
     if (!res.ok) {
       const text = await res.text()
       console.error("Polymarket API", res.status, text)
-      return NextResponse.json(
-        { error: `Polymarket API 오류 (${res.status})` },
-        { status: 502 }
-      )
+      // 해외 IP 차단(451) 발생 시 502로 대시보드 전체를 죽이지 않고 빈 배열 리턴으로 살림
+      return NextResponse.json({ items: [], error: `Polymarket API 차단 (${res.status})` })
     }
     const raw = await res.json()
     if (!Array.isArray(raw)) {
@@ -63,9 +61,6 @@ export async function GET() {
     return NextResponse.json({ items })
   } catch (e) {
     console.error("Polymarket fetch error", e)
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "조회 실패" },
-      { status: 500 }
-    )
+    return NextResponse.json({ items: [], error: e instanceof Error ? e.message : "조회 실패" })
   }
 }

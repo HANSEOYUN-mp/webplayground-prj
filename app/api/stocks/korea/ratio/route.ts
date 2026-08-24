@@ -7,20 +7,31 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 export const dynamic = 'force-dynamic';
 
-// 환경변수 큰따옴표(") 정제 처리 (Next.js env 파싱 에러 방지)
-const KIS_APPKEY = (process.env.KIS_APPKEY || '').replace(/^"|"$/g, '');
-const KIS_APPSECRET = (process.env.KIS_APPSECRET || '').replace(/^"|"$/g, '');
-const KIS_URL = (process.env.KIS_URL || 'https://openapi.koreainvestment.com').replace(/^"|"$/g, '');
+// 한국투자증권 보안 방화벽 우회용 표준 브라우저 User-Agent
+const BROWSER_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
-// 인메모리 AccessToken 캐시
+// 1. 인메모리 AccessToken 캐시
 let cachedToken: string | null = null;
 let tokenExpiry = 0;
+
+// 2. 인메모리 데이터 캐시 (한투 API 과호출 방지용 - 기본 1시간 캐시 적용)
+let cachedStockData: any = null;
+let stockDataExpiry = 0;
+const DATA_CACHE_DURATION = 60 * 60 * 1000; // 1시간 (3,600,000 ms) 기본 캐시 적용
 
 const TOKEN_CACHE_FILE = path.join(process.cwd(), 'scratch', 'kis_token.json');
 
 // KOSPI 기준 상수 (지수 2,650 기준 약 2,150조 원으로 실시간 비례 보정 계산)
 const KOSPI_BASE_INDEX = 2650.00;
 const KOSPI_BASE_CAP = 2150000000000000; // 2,150조 원
+
+// 매 요청시점마다 최신 환경변수 값을 다이내믹하게 추출 (Next.js 캐싱 꼬임 방지)
+function getKisEnv() {
+  const appKey = (process.env.KIS_APP_KEY || process.env.KIS_APPKEY || '').replace(/^"|"$/g, '');
+  const appSecret = (process.env.KIS_APP_SECRET || process.env.KIS_APPSECRET || '').replace(/^"|"$/g, '');
+  const url = (process.env.KIS_URL_BASE || process.env.KIS_URL || 'https://openapi.koreainvestment.com:9443').replace(/^"|"$/g, '');
+  return { appKey, appSecret, url };
+}
 
 async function getAccessToken() {
   const now = Date.now();
@@ -42,19 +53,22 @@ async function getAccessToken() {
     console.error('토큰 파일 캐시 읽기 실패:', e);
   }
 
-  if (!KIS_APPKEY || !KIS_APPSECRET) {
+  const { appKey, appSecret, url } = getKisEnv();
+
+  if (!appKey || !appSecret) {
     throw new Error('KIS_APPKEY 또는 KIS_APPSECRET 환경 변수가 설정되지 않았습니다.');
   }
 
-  const response = await fetch(`${KIS_URL}/oauth2/tokenP`, {
+  const response = await fetch(`${url}/oauth2/tokenP`, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
+      'User-Agent': BROWSER_USER_AGENT,
     },
     body: JSON.stringify({
       grant_type: 'client_credentials',
-      appkey: KIS_APPKEY,
-      appsecret: KIS_APPSECRET,
+      appkey: appKey,
+      appsecret: appSecret,
     }),
   });
 
@@ -87,23 +101,26 @@ async function getAccessToken() {
 }
 
 async function fetchStockPrice(symbol: string, token: string) {
-  if (!KIS_APPKEY || !KIS_APPSECRET) {
+  const { appKey, appSecret, url } = getKisEnv();
+
+  if (!appKey || !appSecret) {
     throw new Error('KIS_APPKEY 또는 KIS_APPSECRET 환경 변수가 설정되지 않았습니다.');
   }
 
-  const isVts = KIS_URL.includes('vts');
-  const trId = isVts ? 'VTTC8001R' : 'FHP81010000';
+  const isVts = url.includes('vts');
+  const trId = isVts ? 'VTTC8001R' : 'FHKST01010100';
 
   const res = await fetch(
-    `${KIS_URL}/uapi/domestic-stock/v1/quotations/inquire-price?fid_cond_mrkt_div_code=J&fid_input_iscd=${symbol}`,
+    `${url}/uapi/domestic-stock/v1/quotations/inquire-price?FID_COND_MRKT_DIV_CODE=J&FID_INPUT_ISCD=${symbol}`,
     {
       headers: {
         'content-type': 'application/json; charset=utf-8',
         'authorization': `Bearer ${token}`,
-        'appkey': KIS_APPKEY,
-        'appsecret': KIS_APPSECRET,
+        'appKey': appKey,
+        'appSecret': appSecret,
         'tr_id': trId,
-        'custtype': 'P', // 개인고객 구분 헤더 추가
+        'custtype': 'P',
+        'User-Agent': BROWSER_USER_AGENT,
       },
     }
   );
@@ -121,23 +138,25 @@ async function fetchStockPrice(symbol: string, token: string) {
 }
 
 async function fetchKospiIndex(token: string) {
-  if (!KIS_APPKEY || !KIS_APPSECRET) {
+  const { appKey, appSecret, url } = getKisEnv();
+
+  if (!appKey || !appSecret) {
     throw new Error('KIS_APPKEY 또는 KIS_APPSECRET 환경 변수가 설정되지 않았습니다.');
   }
 
-  // 업종 지수 조회의 경우 모의투자 환경에서도 실전투자용 FHP81040000 tr_id를 공용으로 사용합니다.
   const trId = 'FHP81040000';
 
   const res = await fetch(
-    `${KIS_URL}/uapi/domestic-stock/v1/quotations/inquire-index-price?fid_cond_mrkt_div_code=U&fid_input_iscd=0001`,
+    `${url}/uapi/domestic-stock/v1/quotations/inquire-index-price?FID_COND_MRKT_DIV_CODE=U&FID_INPUT_ISCD=0001`,
     {
       headers: {
         'content-type': 'application/json; charset=utf-8',
         'authorization': `Bearer ${token}`,
-        'appkey': KIS_APPKEY,
-        'appsecret': KIS_APPSECRET,
+        'appKey': appKey,
+        'appSecret': appSecret,
         'tr_id': trId,
-        'custtype': 'P', // 개인고객 구분 헤더 추가
+        'custtype': 'P',
+        'User-Agent': BROWSER_USER_AGENT,
       },
     }
   );
@@ -158,7 +177,7 @@ async function fetchKospiIndex(token: string) {
 async function fetchNaverFallback() {
   const res = await fetch('https://m.stock.naver.com/api/index/KOSPI/integration', {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      'User-Agent': BROWSER_USER_AGENT
     }
   });
   if (!res.ok) {
@@ -167,17 +186,13 @@ async function fetchNaverFallback() {
 
   const json = await res.json();
   
-  // KOSPI 거래대금 획득
   const tradingValueInfo = json.totalInfos.find((info: any) => info.code === 'accumulatedTradingValue');
   const rawTradingValueText = tradingValueInfo?.value || '0';
-  // "49,567,651백만" -> 49,567,651 * 1,000,000
   const cleanValue = parseFloat(rawTradingValueText.replace(/[^0-9]/g, '')) * 1000000;
 
-  // KOSPI 지수 획득
   const rawIndexText = json.totalInfos.find((info: any) => info.code === 'lastClosePrice')?.value || '2650.00';
   const kospiIndex = parseFloat(rawIndexText.replace(/,/g, ''));
 
-  // 삼성전자 & SK하이닉스 획득
   const samsungStock = json.enrollStocks.find((stock: any) => stock.itemCode === '005930');
   const hynixStock = json.enrollStocks.find((stock: any) => stock.itemCode === '000660');
 
@@ -186,74 +201,129 @@ async function fetchNaverFallback() {
   }
 
   const samsungPrice = parseFloat(samsungStock.closePriceRaw);
-  const samsungVolumeShares = parseFloat(samsungStock.accumulatedTradingVolumeRaw);
+  const samsungVolume = parseFloat(samsungStock.accumulatedTradingVolumeRaw);
   const samsungCap = parseFloat(samsungStock.marketValueRaw);
 
   const hynixPrice = parseFloat(hynixStock.closePriceRaw);
-  const hynixVolumeShares = parseFloat(hynixStock.accumulatedTradingVolumeRaw);
+  const hynixVolume = parseFloat(hynixStock.accumulatedTradingVolumeRaw);
   const hynixCap = parseFloat(hynixStock.marketValueRaw);
 
   return {
     kospiIndex,
     totalVolumeAmount: cleanValue,
     samsungPrice,
-    samsungVolume: samsungPrice * samsungVolumeShares,
-    samsungCap,
-    hynixPrice,
-    hynixVolume: hynixPrice * hynixVolumeShares,
-    hynixCap,
-  };
-}
-
-export async function GET() {
-  let useFallback = false;
-  let rawData: any = null;
-
-  try {
-    const token = await getAccessToken();
-
-    // 1. 한국투자증권 API 시도
-    const [samsungData, hynixData, kospiData] = await Promise.all([
-      fetchStockPrice('005930', token),
-      fetchStockPrice('000660', token),
-      fetchKospiIndex(token),
-    ]);
-
-    rawData = {
-      kospiIndex: parseFloat(kospiData.bstp_nmix_prpr),
-      totalVolumeAmount: parseFloat(kospiData.acml_tr_pbmn),
-      samsungPrice: parseFloat(samsungData.stck_prpr),
-      samsungVolume: parseFloat(samsungData.acml_tr_pbmn),
-      samsungCap: parseFloat(samsungData.stck_prpr) * parseFloat(samsungData.lstn_stcn),
-      hynixPrice: parseFloat(hynixData.stck_prpr),
-      hynixVolume: parseFloat(hynixData.acml_tr_pbmn),
-      hynixCap: parseFloat(hynixData.stck_prpr) * parseFloat(hynixData.lstn_stcn),
-    };
-  } catch (err: any) {
-    console.warn('KIS API 연동 실패 (네이버 금융 실시간 폴백 가동):', err.message);
-    useFallback = true;
-  }
-
-  // 2. KIS 실패 시 또는 예외 시 네이버 금융 폴백 실행
-  if (useFallback || !rawData) {
-    try {
-      rawData = await fetchNaverFallback();
-    } catch (fallbackErr: any) {
-      console.error('KOSPI Ratio 백업 폴백 실행 최종 실패:', fallbackErr.message);
-      return NextResponse.json({ error: '한국투자증권 API 및 네이버 백업 금융망 호출에 모두 실패했습니다.' }, { status: 500 });
-    }
-  }
-
-  const {
-    kospiIndex,
-    totalVolumeAmount,
-    samsungPrice,
     samsungVolume,
     samsungCap,
     hynixPrice,
     hynixVolume,
     hynixCap,
-  } = rawData;
+  };
+}
+
+export async function GET(request: Request) {
+  const now = Date.now();
+
+  // 수동 새로고침 여부 파싱 (?bypassCache=true)
+  const { searchParams } = new URL(request.url);
+  const bypassCache = searchParams.get('bypassCache') === 'true';
+
+  // 캐시 무시 플래그가 없고 캐시가 유효하면 즉시 캐시 리턴 (일반 마운트 시 1시간 캐시 적용)
+  if (!bypassCache && cachedStockData && now < stockDataExpiry) {
+    return NextResponse.json(cachedStockData);
+  }
+
+  let token: string | null = null;
+  
+  let samsungRaw: any = null;
+  let hynixRaw: any = null;
+  let kospiRaw: any = null;
+  
+  let isSamsungFallback = false;
+  let isHynixFallback = false;
+  let isKospiFallback = false;
+
+  // 1. 한국투자증권 API 개별 호출 시도 (하나가 죽어도 나머지는 연동 가능하게 보장)
+  try {
+    token = await getAccessToken();
+  } catch (err: any) {
+    console.warn('KIS 토큰 발급 실패 (전체 네이버 폴백 가동):', err.message);
+  }
+
+  if (token) {
+    // 삼성전자 조회
+    try {
+      samsungRaw = await fetchStockPrice('005930', token);
+    } catch (err: any) {
+      console.warn('KIS 삼성전자 시세 조회 실패:', err.message);
+      isSamsungFallback = true;
+    }
+
+    // SK하이닉스 조회
+    try {
+      hynixRaw = await fetchStockPrice('000660', token);
+    } catch (err: any) {
+      console.warn('KIS SK하이닉스 시세 조회 실패:', err.message);
+      isHynixFallback = true;
+    }
+
+    // KOSPI 지수 조회
+    try {
+      kospiRaw = await fetchKospiIndex(token);
+    } catch (err: any) {
+      console.warn('KIS KOSPI 지수 조회 실패:', err.message);
+      isKospiFallback = true;
+    }
+  } else {
+    isSamsungFallback = true;
+    isHynixFallback = true;
+    isKospiFallback = true;
+  }
+
+  // 2. 만약 누락된 데이터가 하나라도 있다면 백업망(네이버) 데이터 호출
+  let naverData: any = null;
+  if (isSamsungFallback || isHynixFallback || isKospiFallback) {
+    try {
+      naverData = await fetchNaverFallback();
+    } catch (err: any) {
+      console.error('KOSPI Ratio 네이버 백업 호출 최종 실패:', err.message);
+      if (!samsungRaw || !hynixRaw || !kospiRaw) {
+        return NextResponse.json({ error: '한국투자증권 API 및 네이버 백업 금융망 호출에 모두 실패했습니다.' }, { status: 500 });
+      }
+    }
+  }
+
+  // 3. 하이브리드 조합 데이터 조립
+  const kospiIndex = !isKospiFallback && kospiRaw 
+    ? parseFloat(kospiRaw.bstp_nmix_prpr) 
+    : (naverData ? naverData.kospiIndex : 2650.00);
+
+  const totalVolumeAmount = !isKospiFallback && kospiRaw
+    ? parseFloat(kospiRaw.acml_tr_pbmn)
+    : (naverData ? naverData.totalVolumeAmount : 0);
+
+  const samsungPrice = !isSamsungFallback && samsungRaw
+    ? parseFloat(samsungRaw.stck_prpr)
+    : (naverData ? naverData.samsungPrice : 0);
+
+  const samsungVolume = !isSamsungFallback && samsungRaw
+    ? parseFloat(samsungRaw.acml_tr_pbmn)
+    : (naverData ? naverData.samsungVolume : 0);
+
+  const samsungCap = !isSamsungFallback && samsungRaw
+    ? parseFloat(samsungRaw.stck_prpr) * parseFloat(samsungRaw.lstn_stcn)
+    : (naverData ? naverData.samsungCap : 0);
+
+  const hynixPrice = !isHynixFallback && hynixRaw
+    ? parseFloat(hynixRaw.stck_prpr)
+    : (naverData ? naverData.hynixPrice : 0);
+
+  const hynixVolume = !isHynixFallback && hynixRaw
+    ? parseFloat(hynixRaw.acml_tr_pbmn)
+    : (naverData ? naverData.hynixVolume : 0);
+
+  const hynixCap = !isHynixFallback && hynixRaw
+    ? parseFloat(hynixRaw.stck_prpr) * parseFloat(hynixRaw.lstn_stcn)
+    : (naverData ? naverData.hynixCap : 0);
 
   // KOSPI 실시간 전체 시가총액 보정 계산
   const totalMarketCap = (KOSPI_BASE_CAP * kospiIndex) / KOSPI_BASE_INDEX;
@@ -261,9 +331,7 @@ export async function GET() {
   const combinedCap = samsungCap + hynixCap;
   const combinedVolume = samsungVolume + hynixVolume;
 
-  // 데이터 정합성 보정: 네이버/한투 API의 지수-종목 간 갱신 시차 및 단위 집계 오차 방지
-  // KOSPI 전체 거래대금은 이론적으로 두 개별 종목의 합산 거래대금보다 항상 커야 합니다.
-  // 불일치 발생 시, 전체 거래대금을 두 종목 합산액의 최소 1.35배 수준으로 자동 보정하여 비율 왜곡을 방지합니다.
+  // 데이터 정합성 보정: 지수-종목 간 갱신 시차 및 단위 집계 오차 방지
   const adjustedTotalVolumeAmount = Math.max(totalVolumeAmount, combinedVolume * 1.35);
 
   const result = {
@@ -293,9 +361,14 @@ export async function GET() {
       volumeAmountPercent: parseFloat(((combinedVolume / adjustedTotalVolumeAmount) * 100).toFixed(2)),
       volumeToCapRatio: parseFloat(((combinedVolume / combinedCap) * 100).toFixed(4)),
     },
-    isFallback: useFallback,
+    isFallback: isSamsungFallback || isHynixFallback,
+    isPartialFallback: (isSamsungFallback || isHynixFallback || isKospiFallback) && !(isSamsungFallback && isHynixFallback && isKospiFallback),
     updatedAt: new Date().toISOString(),
   };
+
+  // 결과값을 인메모리에 1시간 캐싱 등록
+  cachedStockData = result;
+  stockDataExpiry = now + DATA_CACHE_DURATION;
 
   return NextResponse.json(result);
 }
