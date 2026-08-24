@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 // KIS Open API 서버의 호스트명 인증서 Altname 불일치 우회 설정
+// 중복 구형 KIS API 설정 제거 반영 완료
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 export const dynamic = 'force-dynamic';
