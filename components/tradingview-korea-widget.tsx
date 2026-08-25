@@ -19,19 +19,26 @@ interface TickerData {
 
 interface KoreaMarketData {
   KOSPI?: TickerData
+  KOSPI200?: TickerData
   KOSDAQ?: TickerData
+  NQ_F?: TickerData
   SAMSUNG?: TickerData
   HYNIX?: TickerData
+  DOOSAN?: TickerData
   GOLD?: TickerData
   EXCHANGE?: TickerData
+  JPY?: TickerData
 }
 
-type TabType = "KOSPI" | "KOSDAQ" | "SAMSUNG" | "HYNIX" | "GOLD" | "EXCHANGE"
+type TabType = "KOSPI" | "KOSPI200" | "KOSDAQ" | "NQ_F" | "SAMSUNG" | "HYNIX" | "DOOSAN" | "GOLD" | "EXCHANGE" | "JPY"
 
 function formatNumber(val: number, tab: TabType, currency: string = "KRW") {
   if (val === undefined || val === null) return "-"
-  if (tab === "KOSPI" || tab === "KOSDAQ") {
+  if (tab === "KOSPI" || tab === "KOSPI200" || tab === "KOSDAQ") {
     return new Intl.NumberFormat("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val)
+  }
+  if (tab === "NQ_F") {
+    return new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + " pt"
   }
   if (tab === "GOLD") {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(val)
@@ -39,14 +46,20 @@ function formatNumber(val: number, tab: TabType, currency: string = "KRW") {
   if (tab === "EXCHANGE") {
     return new Intl.NumberFormat("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + "원"
   }
-  // Stocks (SAMSUNG, HYNIX) are in KRW (no decimals)
+  if (tab === "JPY") {
+    return new Intl.NumberFormat("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + "원 (100엔)"
+  }
+  // Stocks (SAMSUNG, HYNIX, DOOSAN) are in KRW (no decimals)
   return new Intl.NumberFormat("ko-KR", { style: "currency", currency: "KRW", maximumFractionDigits: 0 }).format(val)
 }
 
 function getTooltipLabel(tab: TabType) {
   if (tab === "GOLD") return "금 시세"
-  if (tab === "EXCHANGE") return "환율"
-  if (tab === "SAMSUNG" || tab === "HYNIX") return "주가"
+  if (tab === "EXCHANGE") return "원/달러 환율"
+  if (tab === "JPY") return "100엔 환율"
+  if (tab === "SAMSUNG" || tab === "HYNIX" || tab === "DOOSAN") return "주가"
+  if (tab === "KOSPI200") return "코스피200"
+  if (tab === "NQ_F") return "나스닥100 선물"
   return "지수"
 }
 
@@ -101,22 +114,25 @@ export function TradingViewKoreaWidget() {
 
   const selectedData = data?.[activeTab]
   const isUp = (selectedData?.change ?? 0) >= 0
-  const isCompany = activeTab === "SAMSUNG" || activeTab === "HYNIX"
 
   const tabLabels: Record<TabType, string> = {
     KOSPI: "코스피 (KOSPI)",
+    KOSPI200: "코스피200 (선물/지수)",
     KOSDAQ: "코스닥 (KOSDAQ)",
+    NQ_F: "나스닥 100 선물 (NQ)",
     SAMSUNG: "삼성전자",
     HYNIX: "SK하이닉스",
+    DOOSAN: "두산에너빌리티",
     GOLD: "금 (GOLD)",
-    EXCHANGE: "원/달러 환율"
+    EXCHANGE: "원/달러 환율",
+    JPY: "엔/원 환율 (100엔)"
   }
 
   return (
     <div className="w-full flex flex-col h-[520px] bg-card border border-border overflow-hidden transition-colors duration-300 hover:bg-neutral-50/50">
       {/* Header */}
       <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
-        <span className="text-[11px] font-bold text-black dark:text-white tracking-wider flex items-center gap-1.5 font-sans">
+        <span className="text-[11px] font-bold text-black dark:text-white tracking-wider flex items-center gap-1.5 font-sans select-text cursor-text">
           <TrendingUp className="w-3.5 h-3.5 text-black dark:text-white" /> 국내 시장 및 주요 지표 요약
         </span>
         <button onClick={fetchData} disabled={loading} className="p-1 hover:bg-secondary rounded transition-colors" title="새로고침">
@@ -126,7 +142,7 @@ export function TradingViewKoreaWidget() {
 
       {/* Tabs */}
       <div className="flex overflow-x-auto bg-secondary/20 border-b border-border/60 p-1 gap-1 shrink-0 scrollbar-none select-none">
-        {(["KOSPI", "KOSDAQ", "SAMSUNG", "HYNIX", "GOLD", "EXCHANGE"] as TabType[]).map((tab) => (
+        {(["KOSPI", "KOSPI200", "KOSDAQ", "NQ_F", "SAMSUNG", "HYNIX", "DOOSAN", "GOLD", "EXCHANGE", "JPY"] as TabType[]).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}

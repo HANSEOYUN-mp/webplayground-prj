@@ -5,11 +5,15 @@ export const revalidate = 300; // Cache for 5 minutes
 
 const TICKERS: Record<string, string> = {
   KOSPI: '^KS11',
+  KOSPI200: '^KS200',
   KOSDAQ: '^KQ11',
+  NQ_F: 'NQ=F',
   SAMSUNG: '005930.KS',
   HYNIX: '000660.KS',
+  DOOSAN: '034020.KS',
   GOLD: 'GC=F',
-  EXCHANGE: 'KRW=X'
+  EXCHANGE: 'KRW=X',
+  JPY: 'JPYKRW=X'
 };
 
 async function fetchKoreaTickerData(ticker: string) {
@@ -29,7 +33,10 @@ async function fetchKoreaTickerData(ticker: string) {
   const timestamps: number[] = result.timestamp;
   const closes: (number | null)[] = result.indicators.quote[0].close;
   
-  // Filter out null values and match with timestamps
+  // 엔화(JPYKRW=X)인 경우 100엔당 원화 단위로 100배 환산
+  const isJpy = ticker === 'JPYKRW=X';
+  const multiplier = isJpy ? 100 : 1;
+
   const history: { date: string; value: number }[] = [];
   const validCloses: number[] = [];
   
@@ -37,27 +44,35 @@ async function fetchKoreaTickerData(ticker: string) {
     const val = closes[i];
     if (val !== null && val !== undefined && !isNaN(val)) {
       const dateStr = new Date(timestamps[i] * 1000).toISOString().split('T')[0];
+      const scaledVal = val * multiplier;
       history.push({
         date: dateStr,
-        value: parseFloat(val.toFixed(2))
+        value: parseFloat(scaledVal.toFixed(2))
       });
-      validCloses.push(val);
+      validCloses.push(scaledVal);
     }
   }
 
   if (validCloses.length === 0) throw new Error(`No valid close prices for ${ticker}`);
 
-  const currentPrice = validCloses[validCloses.length - 1];
-  const prevClose = validCloses.length > 1 ? validCloses[validCloses.length - 2] : (result.meta?.chartPreviousClose || currentPrice);
+  const rawCurrent = result.meta?.regularMarketPrice !== undefined 
+    ? result.meta.regularMarketPrice * multiplier 
+    : validCloses[validCloses.length - 1];
+  const rawPrev = result.meta?.previousClose !== undefined 
+    ? result.meta.previousClose * multiplier 
+    : (validCloses.length > 1 ? validCloses[validCloses.length - 2] : (result.meta?.chartPreviousClose ? result.meta.chartPreviousClose * multiplier : rawCurrent));
+
+  const currentPrice = rawCurrent;
+  const prevClose = rawPrev;
   const change = currentPrice - prevClose;
-  const changePercent = (change / prevClose) * 100;
+  const changePercent = prevClose !== 0 ? (change / prevClose) * 100 : 0;
   
   const high52w = Math.max(...validCloses);
   const low52w = Math.min(...validCloses);
 
   return {
     symbol: ticker,
-    currency: result.meta?.currency || 'KRW',
+    currency: isJpy ? 'KRW (100엔)' : (result.meta?.currency || 'KRW'),
     currentPrice: parseFloat(currentPrice.toFixed(2)),
     prevClose: parseFloat(prevClose.toFixed(2)),
     change: parseFloat(change.toFixed(2)),
@@ -76,7 +91,6 @@ export async function GET() {
         data[key] = await fetchKoreaTickerData(ticker);
       } catch (err: any) {
         console.error(`Failed to fetch Korean stock data for ${key}:`, err.message);
-        // Put empty/error placeholder
         data[key] = { error: err.message || "Failed to load" };
       }
     }

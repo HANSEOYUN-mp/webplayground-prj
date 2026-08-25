@@ -91,7 +91,7 @@ export function KoreaRatioWidget() {
     <div className="w-full bg-card border border-border overflow-hidden transition-all duration-300 hover:bg-neutral-50/50 flex flex-col h-[360px]">
       {/* 위젯 헤더 */}
       <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
-        <span className="text-[11px] font-bold text-black dark:text-white tracking-wider flex items-center gap-1.5 font-sans">
+        <span className="text-[11px] font-bold text-black dark:text-white tracking-wider flex items-center gap-1.5 font-sans select-text cursor-text">
           <Cpu className="w-3.5 h-3.5 text-black dark:text-white" /> KOSPI 반도체 투톱 지분율 분석
         </span>
         <button 
