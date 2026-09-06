@@ -61,12 +61,17 @@ function formatAmount(amt: number) {
   return `${man.toLocaleString()}만`;
 }
 
-/** 억 단위만 표시 (만 단위 생략) */
+/** 억/조 단위 표시 (1조 이상은 X.X조, 억 단위는 #,###억) */
 function formatAmountEok(amt: number) {
-  const eok = Math.floor(amt / 100000000);
-  if (eok > 0) return `${eok}억`;
-  const man = Math.floor(amt / 10000);
-  return `${man}만`;
+  if (!amt || isNaN(amt)) return "-";
+  const jo = amt / 1e12;
+  if (jo >= 1) {
+    return `${jo.toFixed(1)}조`;
+  }
+  const eok = Math.floor(amt / 1e8);
+  if (eok > 0) return `${eok.toLocaleString()}억`;
+  const man = Math.floor(amt / 1e4);
+  return `${man.toLocaleString()}만`;
 }
 
 function formatTime(ts: number) {
@@ -134,6 +139,12 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
   const [trendsTab, setTrendsTab] = useState<"kr" | "us">("kr")
   const [stockDate, setStockDate] = useState<string>("로딩중...")
   const [isTop20Expanded, setIsTop20Expanded] = useState(true)
+  const [topMarketTab, setTopMarketTab] = useState<"all" | "kospi" | "kosdaq">("all")
+  const [topStocksData, setTopStocksData] = useState<{ all: StockRow[]; kospi: StockRow[]; kosdaq: StockRow[] }>({
+    all: [],
+    kospi: [],
+    kosdaq: []
+  })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -157,7 +168,17 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
 
       if (!stockRes.ok || !polyRes.ok || !trendsRes.ok) throw new Error("데이터 조회 실패")
 
-      let fetchedStocks = stockJson.items?.slice(0, 20) || []
+      const allList: StockRow[] = stockJson.all || stockJson.items || []
+      const kospiList: StockRow[] = stockJson.kospi || []
+      const kosdaqList: StockRow[] = stockJson.kosdaq || []
+
+      setTopStocksData({
+        all: allList.slice(0, 20),
+        kospi: kospiList.slice(0, 20),
+        kosdaq: kosdaqList.slice(0, 20)
+      })
+
+      let fetchedStocks = allList.slice(0, 20)
       if (fetchedStocks.length === 0) {
         fetchedStocks = FALLBACK_STOCKS
         setStockDate("현재(Fallback)")
@@ -360,112 +381,145 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
               </div>
 
               {/* 거래대금 TOP 20 — 1~10위 왼쪽, 11~20위 오른쪽 */}
-              <div className={`md:col-span-2 w-full flex flex-col bg-card border border-border overflow-hidden transition-all duration-300 hover:bg-neutral-50/50 ${isTop20Expanded ? 'h-auto md:h-[520px]' : 'h-[37px]'}`}>
-                <div className={`flex items-center justify-between bg-secondary/50 px-4 py-2 ${isTop20Expanded ? 'border-b border-border' : ''} shrink-0`}>
-                  <span className="text-[11px] font-bold text-black dark:text-white tracking-wider flex items-center gap-1 font-sans">
-                    <TrendingUp className="w-3.5 h-3.5 text-black dark:text-white" /> 거래대금 TOP 20
-                  </span>
-                  
-                  <div className="flex items-center gap-3">
-                    {isTop20Expanded && stockDate && (
-                      <span className="stamp-red text-[9px] font-bold rounded-sm border-primary/30 text-primary bg-primary/5 px-1.5 py-0.5 select-none">
-                        기준일: {stockDate}
+              {(() => {
+                const activeStocks = topStocksData[topMarketTab]?.length > 0 ? topStocksData[topMarketTab] : stocks;
+                return (
+                  <div className={`md:col-span-2 w-full flex flex-col bg-card border border-border overflow-hidden transition-all duration-300 hover:bg-neutral-50/50 ${isTop20Expanded ? 'h-auto md:h-[520px]' : 'h-[37px]'}`}>
+                    <div className={`flex items-center justify-between bg-secondary/50 px-4 py-2 ${isTop20Expanded ? 'border-b border-border' : ''} shrink-0`}>
+                      <span className="text-[11px] font-bold text-black dark:text-white tracking-wider flex items-center gap-1 font-sans select-text cursor-text">
+                        <TrendingUp className="w-3.5 h-3.5 text-black dark:text-white" /> 거래대금 TOP 20
                       </span>
-                    )}
-
-                    <button
-                      onClick={() => setIsTop20Expanded(!isTop20Expanded)}
-                      className="px-2 py-0.5 text-[8.5px] font-extrabold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-none transition-colors select-none mr-1"
-                    >
-                      {isTop20Expanded ? "접기 ▲" : "펼치기 ▼"}
-                    </button>
-                  </div>
-                </div>
-
-                {isTop20Expanded && (
-                  <>
-                    {/* 컨럼 레이블 헤더 */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 divide-x divide-border/10 shrink-0 border-b border-border/10 bg-secondary/30">
-                      {[0, 1].map((col) => (
-                        <div key={col} className={`flex items-center gap-1.5 px-3 py-1.5 ${col === 1 ? 'hidden md:flex' : ''}`}>
-                          <span className="w-5 shrink-0" />
-                          <span className="flex-1 text-[9px] font-bold text-muted-foreground/60 tracking-wider">종목</span>
-                          <span className="w-[46px] text-right text-[9px] font-bold text-muted-foreground/60 shrink-0">등락</span>
-                          <span className="w-[66px] text-right text-[9px] font-bold text-muted-foreground/60 shrink-0">주가</span>
-                          <span className="w-[44px] text-right text-[9px] font-bold text-muted-foreground/60 shrink-0">거래대금</span>
-                          <span className="w-[40px] text-right text-[9px] font-bold text-muted-foreground/60 shrink-0">%/시총</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="flex-1 overflow-hidden">
-                      <div className="grid grid-cols-1 md:grid-cols-2 divide-x divide-border/10 h-full">
-                        {/* 1~10위 */}
-                        <div className="flex flex-col h-full divide-y divide-border/5">
-                          {stocks.slice(0, 10).map((stock, i) => {
-                            const isUp = Number(stock.fltRt) >= 0
-                            const fltColor = isUp ? "text-red-600" : "text-blue-600"
-                            const trColor = isUp ? "text-red-500" : "text-blue-500"
-                            const rowBg = isUp ? "hover:bg-red-50/50" : "hover:bg-blue-50/50"
-                            const ratio = Number(stock.mrktTotAmt) > 0
-                              ? ((Number(stock.trPrc) / Number(stock.mrktTotAmt)) * 100).toFixed(1)
-                              : "-"
-                            return (
-                              <div key={i} className={`flex-1 flex items-center gap-1.5 px-3 transition-colors ${rowBg}`}>
-                                <span className="text-[10px] font-extrabold font-mono text-muted-foreground/40 w-5 shrink-0 text-right">{stock.rank}</span>
-                                <span className="flex-1 font-bold text-foreground text-[13px] truncate font-sans min-w-0" title={stock.itmsNm}>{stock.itmsNm}</span>
-                                <span className={`text-[11px] font-extrabold font-mono w-[46px] text-right shrink-0 ${fltColor}`}>
-                                  {Number(stock.fltRt) > 0 ? "+" : ""}{stock.fltRt}%
-                                </span>
-                                <span className="text-[11px] font-bold font-mono text-foreground w-[66px] text-right shrink-0">
-                                  {Number(stock.clpr).toLocaleString()}
-                                </span>
-                                <span className={`text-[10.5px] font-bold font-mono w-[44px] text-right shrink-0 ${trColor}`}>
-                                  {formatAmountEok(Number(stock.trPrc))}
-                                </span>
-                                <span className="text-[10px] font-mono text-muted-foreground/70 w-[40px] text-right shrink-0">
-                                  {ratio}%
-                                </span>
-                              </div>
-                            )
-                          })}
+                      
+                      <div className="flex items-center gap-2 select-none">
+                        {/* 코스피/코스닥/전체 탭 버튼 */}
+                        <div className="flex bg-secondary/80 border border-border/60 p-0.5 rounded-none">
+                          <button
+                            onClick={() => setTopMarketTab("all")}
+                            className={`px-2 py-0.5 text-[9px] font-bold transition-all ${
+                              topMarketTab === "all" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            전체 (통합)
+                          </button>
+                          <button
+                            onClick={() => setTopMarketTab("kospi")}
+                            className={`px-2 py-0.5 text-[9px] font-bold transition-all ${
+                              topMarketTab === "kospi" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            코스피 (KOSPI)
+                          </button>
+                          <button
+                            onClick={() => setTopMarketTab("kosdaq")}
+                            className={`px-2 py-0.5 text-[9px] font-bold transition-all ${
+                              topMarketTab === "kosdaq" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            코스닥 (KOSDAQ)
+                          </button>
                         </div>
 
-                        {/* 11~20위 */}
-                        <div className="flex flex-col h-full divide-y divide-border/5">
-                          {stocks.slice(10, 20).map((stock, i) => {
-                            const isUp = Number(stock.fltRt) >= 0
-                            const fltColor = isUp ? "text-red-600" : "text-blue-600"
-                            const trColor = isUp ? "text-red-500" : "text-blue-500"
-                            const rowBg = isUp ? "hover:bg-red-50/50" : "hover:bg-blue-50/50"
-                            const ratio = Number(stock.mrktTotAmt) > 0
-                              ? ((Number(stock.trPrc) / Number(stock.mrktTotAmt)) * 100).toFixed(1)
-                              : "-"
-                            return (
-                              <div key={i} className={`flex-1 flex items-center gap-1.5 px-3 transition-colors ${rowBg}`}>
-                                <span className="text-[10px] font-extrabold font-mono text-muted-foreground/40 w-5 shrink-0 text-right">{stock.rank}</span>
-                                <span className="flex-1 font-bold text-foreground text-[13px] truncate font-sans min-w-0" title={stock.itmsNm}>{stock.itmsNm}</span>
-                                <span className={`text-[11px] font-extrabold font-mono w-[46px] text-right shrink-0 ${fltColor}`}>
-                                  {Number(stock.fltRt) > 0 ? "+" : ""}{stock.fltRt}%
-                                </span>
-                                <span className="text-[11px] font-bold font-mono text-foreground w-[66px] text-right shrink-0">
-                                  {Number(stock.clpr).toLocaleString()}
-                                </span>
-                                <span className={`text-[10.5px] font-bold font-mono w-[44px] text-right shrink-0 ${trColor}`}>
-                                  {formatAmountEok(Number(stock.trPrc))}
-                                </span>
-                                <span className="text-[10px] font-mono text-muted-foreground/70 w-[40px] text-right shrink-0">
-                                  {ratio}%
-                                </span>
-                              </div>
-                            )
-                          })}
-                        </div>
+                        {isTop20Expanded && stockDate && (
+                          <span className="stamp-red text-[8.5px] font-bold rounded-sm border-primary/30 text-primary bg-primary/5 px-1.5 py-0.5 select-none hidden sm:inline-block">
+                            {stockDate}
+                          </span>
+                        )}
+
+                        <button
+                          onClick={() => setIsTop20Expanded(!isTop20Expanded)}
+                          className="px-2 py-0.5 text-[8.5px] font-extrabold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-none transition-colors select-none mr-1"
+                        >
+                          {isTop20Expanded ? "접기 ▲" : "펼치기 ▼"}
+                        </button>
                       </div>
                     </div>
-                  </>
-                )}
-              </div>
+
+                    {isTop20Expanded && (
+                      <>
+                        {/* 컨럼 레이블 헤더 */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 divide-x divide-border/10 shrink-0 border-b border-border/10 bg-secondary/30">
+                          {[0, 1].map((col) => (
+                            <div key={col} className={`flex items-center gap-1.5 px-3 py-1.5 ${col === 1 ? 'hidden md:flex' : ''}`}>
+                              <span className="w-5 shrink-0" />
+                              <span className="flex-1 text-[9px] font-bold text-muted-foreground/60 tracking-wider">종목</span>
+                              <span className="w-[46px] text-right text-[9px] font-bold text-muted-foreground/60 shrink-0">등락</span>
+                              <span className="w-[66px] text-right text-[9px] font-bold text-muted-foreground/60 shrink-0">주가</span>
+                              <span className="w-[44px] text-right text-[9px] font-bold text-muted-foreground/60 shrink-0">거래대금</span>
+                              <span className="w-[40px] text-right text-[9px] font-bold text-muted-foreground/60 shrink-0">%/시총</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="flex-1 overflow-hidden">
+                          <div className="grid grid-cols-1 md:grid-cols-2 divide-x divide-border/10 h-full">
+                            {/* 1~10위 */}
+                            <div className="flex flex-col h-full divide-y divide-border/5">
+                              {activeStocks.slice(0, 10).map((stock, i) => {
+                                const isUp = Number(stock.fltRt) >= 0
+                                const fltColor = isUp ? "text-red-600" : "text-blue-600"
+                                const trColor = isUp ? "text-red-500" : "text-blue-500"
+                                const rowBg = isUp ? "hover:bg-red-50/50" : "hover:bg-blue-50/50"
+                                const ratio = Number(stock.mrktTotAmt) > 0
+                                  ? ((Number(stock.trPrc) / Number(stock.mrktTotAmt)) * 100).toFixed(1)
+                                  : "-"
+                                return (
+                                  <div key={i} className={`flex-1 flex items-center gap-1.5 px-3 transition-colors ${rowBg}`}>
+                                    <span className="text-[10px] font-extrabold font-mono text-muted-foreground/40 w-5 shrink-0 text-right">{stock.rank}</span>
+                                    <span className="flex-1 font-bold text-foreground text-[13px] truncate font-sans min-w-0" title={stock.itmsNm}>{stock.itmsNm}</span>
+                                    <span className={`text-[11px] font-extrabold font-mono w-[46px] text-right shrink-0 ${fltColor}`}>
+                                      {Number(stock.fltRt) > 0 ? "+" : ""}{stock.fltRt}%
+                                    </span>
+                                    <span className="text-[11px] font-bold font-mono text-foreground w-[66px] text-right shrink-0">
+                                      {Number(stock.clpr).toLocaleString()}
+                                    </span>
+                                    <span className={`text-[10.5px] font-bold font-mono w-[44px] text-right shrink-0 ${trColor}`}>
+                                      {formatAmountEok(Number(stock.trPrc))}
+                                    </span>
+                                    <span className="text-[10px] font-mono text-muted-foreground/70 w-[40px] text-right shrink-0">
+                                      {ratio}%
+                                    </span>
+                                  </div>
+                                )
+                              })}
+                            </div>
+
+                            {/* 11~20위 */}
+                            <div className="flex flex-col h-full divide-y divide-border/5">
+                              {activeStocks.slice(10, 20).map((stock, i) => {
+                                const isUp = Number(stock.fltRt) >= 0
+                                const fltColor = isUp ? "text-red-600" : "text-blue-600"
+                                const trColor = isUp ? "text-red-500" : "text-blue-500"
+                                const rowBg = isUp ? "hover:bg-red-50/50" : "hover:bg-blue-50/50"
+                                const ratio = Number(stock.mrktTotAmt) > 0
+                                  ? ((Number(stock.trPrc) / Number(stock.mrktTotAmt)) * 100).toFixed(1)
+                                  : "-"
+                                return (
+                                  <div key={i} className={`flex-1 flex items-center gap-1.5 px-3 transition-colors ${rowBg}`}>
+                                    <span className="text-[10px] font-extrabold font-mono text-muted-foreground/40 w-5 shrink-0 text-right">{stock.rank}</span>
+                                    <span className="flex-1 font-bold text-foreground text-[13px] truncate font-sans min-w-0" title={stock.itmsNm}>{stock.itmsNm}</span>
+                                    <span className={`text-[11px] font-extrabold font-mono w-[46px] text-right shrink-0 ${fltColor}`}>
+                                      {Number(stock.fltRt) > 0 ? "+" : ""}{stock.fltRt}%
+                                    </span>
+                                    <span className="text-[11px] font-bold font-mono text-foreground w-[66px] text-right shrink-0">
+                                      {Number(stock.clpr).toLocaleString()}
+                                    </span>
+                                    <span className={`text-[10.5px] font-bold font-mono w-[44px] text-right shrink-0 ${trColor}`}>
+                                      {formatAmountEok(Number(stock.trPrc))}
+                                    </span>
+                                    <span className="text-[10px] font-mono text-muted-foreground/70 w-[40px] text-right shrink-0">
+                                      {ratio}%
+                                    </span>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* 빈 슬롯들 */}
               <EmptySlot index={3} title="KOREA MARKET" subtitle="추가 분석 모델 준비 중" />
