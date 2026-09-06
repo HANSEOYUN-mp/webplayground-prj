@@ -16,9 +16,8 @@ import { CnnBeforeTheBellWidget } from "@/components/cnn-before-the-bell-widget"
 import { TechVsNasdaqWidget } from "@/components/tech-vs-nasdaq-widget"
 import { AssetsCompareWidget } from "@/components/assets-compare-widget"
 import { Ush2EventsWidget } from "@/components/ush2-events-widget"
-import { EtfPerformanceWidget } from "@/components/etf-performance-widget"
-import { KoreaRatioWidget } from "@/components/korea-ratio-widget"
 import KoreaSectorFlowWidget from "@/components/korea-sector-flow-widget"
+import { AssetsValuationWidget } from "@/components/assets-valuation-widget"
 
 interface StockRow {
   rank: number
@@ -350,13 +349,13 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
                 <TradingViewKoreaWidget />
               </div>
 
-              {/* 반도체 투톱(삼성전자 & SK하이닉스) KOSPI 지분율 분석 슬롯 */}
-              <div className="w-full">
-                <KoreaRatioWidget />
+              {/* 주요 자산 3년 평균가 & BUY Zone 밸류에이션 슬롯 */}
+              <div className="md:col-span-2 w-full">
+                <AssetsValuationWidget />
               </div>
 
-              {/* 주요 섹터별 거래대금 흐름 분석 슬롯 */}
-              <div className="w-full">
+              {/* KOSPI 주요 섹터 흐름 슬롯 (네이버 실시간 급상승 업종) */}
+              <div className="md:col-span-2 w-full">
                 <KoreaSectorFlowWidget />
               </div>
 
