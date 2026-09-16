@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
-export const revalidate = 300; // 5분 캐시
+export const revalidate = 1800; // 30분 캐시
 
 interface StockItem {
   rank: number;
@@ -18,80 +18,55 @@ interface StockItem {
 
 let cachedData: any = null;
 let cacheTime = 0;
-const CACHE_DURATION = 5 * 60 * 1000; // 5분
+const CACHE_DURATION = 30 * 60 * 1000; // 30분
 
-/** 네이버 금융 특정 시장(sosok=0: 코스피, sosok=1: 코스닥) 1~3페이지 스크랩 */
-async function scrapeMarketTop(sosok: "0" | "1"): Promise<StockItem[]> {
-  const items: any[] = [];
-  const promises: Promise<void>[] = [];
-
-  for (const page of [1, 2, 3]) {
-    const p = (async () => {
+/** 네이버 공식 모바일 API로 시장별(KOSPI / KOSDAQ) 상위 300종목 가져와 거래대금 순 Top 20 추출 */
+async function fetchMarketTop(market: "KOSPI" | "KOSDAQ"): Promise<StockItem[]> {
+  try {
+    const pages = [1, 2, 3];
+    const promises = pages.map(async (page) => {
       try {
-        const res = await fetch(`https://finance.naver.com/sise/sise_market_sum.naver?sosok=${sosok}&page=${page}`, {
+        const res = await fetch(`https://m.stock.naver.com/api/stocks/marketValue/${market}?page=${page}&pageSize=100`, {
           headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148"
           },
-          next: { revalidate: 300 }
+          next: { revalidate: 1800 }
         });
-        if (!res.ok) return;
-
-        const buf = await res.arrayBuffer();
-        const decoder = new TextDecoder("euc-kr");
-        const html = decoder.decode(buf);
-
-        const trRegex = /<tr[\s\S]*?<\/tr>/g;
-        let trMatch;
-
-        while ((trMatch = trRegex.exec(html)) !== null) {
-          const tr = trMatch[0];
-          const code = tr.match(/code=(\d{6})/)?.[1];
-          const name = tr.match(/class="tltle">([^<]+)<\/a>/)?.[1]?.trim();
-          if (!code || !name) continue;
-
-          const tds = (tr.match(/<td[^>]*>([\s\S]*?)<\/td>/g) || []).map(td => td.replace(/<[^>]+>/g, "").trim());
-
-          if (tds.length >= 10) {
-            const clprRaw = tds[2].replace(/,/g, "");
-            const vsRaw = tds[3].replace(/[,\s]/g, "");
-            const fltRtRaw = tds[4].replace(/[%+,\s]/g, "");
-            const mrktTotAmtRaw = tds[6].replace(/,/g, ""); // 억원
-            const trquRaw = tds[9].replace(/,/g, ""); // 주
-
-            const priceNum = parseFloat(clprRaw) || 0;
-            const volNum = parseFloat(trquRaw) || 0;
-            const fltRtNum = parseFloat(fltRtRaw) || 0;
-            const trPrc = priceNum * volNum; // 원 단위 거래대금
-
-            items.push({
-              srtnCd: code,
-              itmsNm: name,
-              mrktCtg: sosok === "0" ? "KOSPI" : "KOSDAQ",
-              clpr: String(priceNum),
-              vs: vsRaw,
-              fltRt: fltRtNum.toFixed(2),
-              mrktTotAmt: String((parseFloat(mrktTotAmtRaw) || 0) * 100000000), // 원 단위
-              trPrc: String(trPrc), // 원 단위
-              trqu: String(volNum)
-            });
-          }
-        }
-      } catch (e) {
-        console.error(`Scraping error (sosok=${sosok}, page=${page}):`, e);
+        if (!res.ok) return [];
+        const json = await res.json();
+        return (json.stocks || []) as any[];
+      } catch (err) {
+        console.error(`Error fetching ${market} page ${page}:`, err);
+        return [];
       }
-    })();
-    promises.push(p);
+    });
+
+    const results = await Promise.all(promises);
+    const allStocks = results.flat();
+
+    // 거래대금(accumulatedTradingValueRaw) 내림차순 정렬
+    const sorted = allStocks.sort((a, b) => {
+      const vA = parseFloat(a.accumulatedTradingValueRaw) || 0;
+      const vB = parseFloat(b.accumulatedTradingValueRaw) || 0;
+      return vB - vA;
+    });
+
+    return sorted.slice(0, 20).map((s, idx) => ({
+      rank: idx + 1,
+      srtnCd: s.itemCode || "",
+      itmsNm: s.stockName || "",
+      mrktCtg: market,
+      clpr: String(s.closePriceRaw ?? 0),
+      vs: String(s.compareToPreviousClosePriceRaw ?? 0),
+      fltRt: String(s.fluctuationsRatio ?? "0"),
+      mrktTotAmt: String(s.marketValueRaw ?? 0),
+      trPrc: String(s.accumulatedTradingValueRaw ?? 0),
+      trqu: String(s.accumulatedTradingVolumeRaw ?? 0)
+    }));
+  } catch (error) {
+    console.error(`fetchMarketTop error for ${market}:`, error);
+    return [];
   }
-
-  await Promise.all(promises);
-
-  // 거래대금 내림차순 정렬 후 20개 추출
-  items.sort((a, b) => parseFloat(b.trPrc) - parseFloat(a.trPrc));
-
-  return items.slice(0, 20).map((item, idx) => ({
-    rank: idx + 1,
-    ...item
-  }));
 }
 
 export async function GET(request: Request) {
@@ -106,11 +81,11 @@ export async function GET(request: Request) {
 
     // 코스피 & 코스닥 병렬 수집
     const [kospi, kosdaq] = await Promise.all([
-      scrapeMarketTop("0"),
-      scrapeMarketTop("1")
+      fetchMarketTop("KOSPI"),
+      fetchMarketTop("KOSDAQ")
     ]);
 
-    // 전체 통합 랭킹
+    // 전체 통합 랭킹 (코스피 + 코스닥 상위 거래대금 20개)
     const allCombined = [...kospi, ...kosdaq]
       .sort((a, b) => parseFloat(b.trPrc) - parseFloat(a.trPrc))
       .slice(0, 20)

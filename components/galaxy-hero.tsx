@@ -148,16 +148,55 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const [isRefreshingTop, setIsRefreshingTop] = useState(false)
+
+  const fetchTopStocksOnly = async (bypass = false) => {
+    try {
+      setIsRefreshingTop(true)
+      const url = bypass ? `/api/stocks/top?bypassCache=true&t=${Date.now()}` : `/api/stocks/top?t=${Date.now()}`
+      const stockRes = await fetch(url, { cache: "no-store" })
+      if (!stockRes.ok) return
+      const stockJson = await stockRes.json()
+      const allList: StockRow[] = stockJson.all || stockJson.items || []
+      const kospiList: StockRow[] = stockJson.kospi || []
+      const kosdaqList: StockRow[] = stockJson.kosdaq || []
+
+      setTopStocksData({
+        all: allList.slice(0, 20),
+        kospi: kospiList.slice(0, 20),
+        kosdaq: kosdaqList.slice(0, 20)
+      })
+
+      let fetchedStocks = allList.slice(0, 20)
+      if (fetchedStocks.length === 0) {
+        fetchedStocks = FALLBACK_STOCKS
+        setStockDate("현재(Fallback)")
+      } else {
+        const bd = stockJson.basDt
+        if (bd && bd !== "N/A" && bd.length === 8) {
+          setStockDate(`${bd.slice(0,4)}.${bd.slice(4,6)}.${bd.slice(6,8)}`)
+        } else {
+          setStockDate("최신영업일")
+        }
+      }
+      setStocks(fetchedStocks)
+    } catch (e) {
+      console.error("Top stocks refresh error:", e)
+    } finally {
+      setIsRefreshingTop(false)
+    }
+  }
+
   const fetchData = async () => {
     setLoading(true)
     setError(null)
     try {
       const [stockRes, polyRes, financeRes, trendsRes, usTrendsRes] = await Promise.all([
-        fetch("/api/stocks/top"),
-        fetch("/api/polymarket/top"),
-        fetch("/api/polymarket/finance"),
-        fetch("/api/trends/top"),
-        fetch("/api/trends/us"),
+        fetch(`/api/stocks/top?t=${Date.now()}`, { cache: "no-store" }),
+        fetch("/api/polymarket/top", { cache: "no-store" }),
+        fetch("/api/polymarket/finance", { cache: "no-store" }),
+        fetch("/api/trends/top", { cache: "no-store" }),
+        fetch("/api/trends/us", { cache: "no-store" }),
       ])
       
       const stockJson = await stockRes.json()
@@ -424,6 +463,15 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
                             {stockDate}
                           </span>
                         )}
+
+                        <button
+                          onClick={() => fetchTopStocksOnly(true)}
+                          disabled={isRefreshingTop}
+                          className={`p-1 text-muted-foreground hover:text-black dark:hover:text-white transition-colors duration-200 ${isRefreshingTop ? 'animate-spin' : ''}`}
+                          title="거래대금 TOP 20 새로고침"
+                        >
+                          <RefreshCw className="w-3 h-3" />
+                        </button>
 
                         <button
                           onClick={() => setIsTop20Expanded(!isTop20Expanded)}
