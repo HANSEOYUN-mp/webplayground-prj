@@ -19,7 +19,6 @@ interface TickerData {
 
 interface KoreaMarketData {
   KOSPI?: TickerData
-  KOSPI200?: TickerData
   KOSDAQ?: TickerData
   NQ_F?: TickerData
   SAMSUNG?: TickerData
@@ -30,11 +29,11 @@ interface KoreaMarketData {
   JPY?: TickerData
 }
 
-type TabType = "KOSPI" | "KOSPI200" | "KOSDAQ" | "NQ_F" | "SAMSUNG" | "HYNIX" | "DOOSAN" | "GOLD" | "EXCHANGE" | "JPY"
+type TabType = "KOSPI" | "KOSDAQ" | "NQ_F" | "SAMSUNG" | "HYNIX" | "DOOSAN" | "GOLD" | "EXCHANGE" | "JPY"
 
 function formatNumber(val: number, tab: TabType, currency: string = "KRW") {
   if (val === undefined || val === null) return "-"
-  if (tab === "KOSPI" || tab === "KOSPI200" || tab === "KOSDAQ") {
+  if (tab === "KOSPI" || tab === "KOSDAQ") {
     return new Intl.NumberFormat("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val)
   }
   if (tab === "NQ_F") {
@@ -58,7 +57,6 @@ function getTooltipLabel(tab: TabType) {
   if (tab === "EXCHANGE") return "원/달러 환율"
   if (tab === "JPY") return "100엔 환율"
   if (tab === "SAMSUNG" || tab === "HYNIX" || tab === "DOOSAN") return "주가"
-  if (tab === "KOSPI200") return "코스피200"
   if (tab === "NQ_F") return "나스닥100 선물"
   return "지수"
 }
@@ -117,7 +115,6 @@ export function TradingViewKoreaWidget() {
 
   const tabLabels: Record<TabType, string> = {
     KOSPI: "코스피 (KOSPI)",
-    KOSPI200: "코스피200 (선물/지수)",
     KOSDAQ: "코스닥 (KOSDAQ)",
     NQ_F: "나스닥 100 선물 (NQ)",
     SAMSUNG: "삼성전자",
@@ -142,7 +139,7 @@ export function TradingViewKoreaWidget() {
 
       {/* Tabs */}
       <div className="flex overflow-x-auto bg-secondary/20 border-b border-border/60 p-1 gap-1 shrink-0 scrollbar-none select-none">
-        {(["KOSPI", "KOSPI200", "KOSDAQ", "NQ_F", "SAMSUNG", "HYNIX", "DOOSAN", "GOLD", "EXCHANGE", "JPY"] as TabType[]).map((tab) => (
+        {(["KOSPI", "KOSDAQ", "NQ_F", "SAMSUNG", "HYNIX", "DOOSAN", "GOLD", "EXCHANGE", "JPY"] as TabType[]).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}

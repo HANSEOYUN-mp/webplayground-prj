@@ -15,6 +15,7 @@ import { UsTechMoversWidget } from "@/components/us-tech-movers-widget"
 import { CnnBeforeTheBellWidget } from "@/components/cnn-before-the-bell-widget"
 import { TechVsNasdaqWidget } from "@/components/tech-vs-nasdaq-widget"
 import { AssetsCompareWidget } from "@/components/assets-compare-widget"
+import { EtfPerformanceWidget } from "@/components/etf-performance-widget"
 import { Ush2EventsWidget } from "@/components/ush2-events-widget"
 import KoreaSectorFlowWidget from "@/components/korea-sector-flow-widget"
 import { AssetsValuationWidget } from "@/components/assets-valuation-widget"
@@ -352,12 +353,12 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
                             <ChevronRight className="w-3.5 h-3.5" />
                           </button>
 
-                          {/* 세번째: 미국 주식시장 거시흐름 */}
+                          {/* 세번째: 미국 자산시장 거시흐름 */}
                           <button 
                             onClick={() => setStockSubView("compare")}
                             className="w-full py-2.5 bg-primary text-primary-foreground font-bold text-[11px] hover:bg-primary/90 transition-colors flex items-center justify-between px-4 rounded-none font-sans select-none"
                           >
-                            <span className="flex items-center gap-1.5"><TrendingUp className="w-3.5 h-3.5 text-emerald-300 animate-pulse" /> 미국 주식시장 거시흐름</span>
+                            <span className="flex items-center gap-1.5"><TrendingUp className="w-3.5 h-3.5 text-emerald-300 animate-pulse" /> 미국 자산시장 거시흐름</span>
                             <ChevronRight className="w-3.5 h-3.5" />
                           </button>
                         </div>
@@ -390,7 +391,7 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
                       <FredWidget />
                     </div>
                   ) : (
-                    /* 미국 주식시장 거시흐름 상세 뷰 */
+                    /* 미국 자산시장 거시흐름 상세 뷰 */
                     <div className="md:col-span-2 w-full flex flex-col gap-6">
                       <EtfPerformanceWidget />
                       <TechVsNasdaqWidget />

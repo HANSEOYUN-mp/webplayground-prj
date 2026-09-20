@@ -5,7 +5,6 @@ export const revalidate = 300; // Cache for 5 minutes
 
 const TICKERS: Record<string, string> = {
   KOSPI: '^KS11',
-  KOSPI200: '^KS200',
   KOSDAQ: '^KQ11',
   NQ_F: 'NQ=F',
   SAMSUNG: '005930.KS',

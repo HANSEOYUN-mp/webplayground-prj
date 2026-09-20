@@ -11,7 +11,8 @@ import {
   Coins, 
   Sparkles,
   Calendar,
-  Layers
+  Layers,
+  Droplet
 } from "lucide-react";
 import { 
   ResponsiveContainer, 
@@ -63,7 +64,7 @@ function formatPrice(val: number, key: string) {
   if (key === "BTC") {
     return "$" + new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(val);
   }
-  if (key === "ETH" || key === "GOLD") {
+  if (key === "ETH" || key === "GOLD" || key === "WTI") {
     return "$" + new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val);
   }
   return val.toLocaleString();
@@ -83,7 +84,8 @@ const ASSET_ICONS: Record<string, React.ReactNode> = {
   JPYKRW: <span className="text-[11px] font-bold text-cyan-500">¥</span>,
   BTC: <Coins className="w-3.5 h-3.5 text-amber-500" />,
   ETH: <Sparkles className="w-3.5 h-3.5 text-indigo-400" />,
-  GOLD: <Layers className="w-3.5 h-3.5 text-yellow-500" />
+  GOLD: <Layers className="w-3.5 h-3.5 text-yellow-500" />,
+  WTI: <Droplet className="w-3.5 h-3.5 text-orange-500" />
 };
 
 export function AssetsValuationWidget() {
@@ -142,8 +144,8 @@ export function AssetsValuationWidget() {
         </div>
       </div>
 
-      {/* 상단 5대 자산 요약 시그널 카드 바 */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 divide-x divide-y sm:divide-y-0 divide-border/20 border-b border-border/30 bg-secondary/20 shrink-0">
+      {/* 상단 6대 자산 요약 시그널 카드 바 */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 divide-x divide-y sm:divide-y-0 divide-border/20 border-b border-border/30 bg-secondary/20 shrink-0">
         {data?.assetKeys?.map((key) => {
           const asset = data.assets[key];
           if (!asset) return null;

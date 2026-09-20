@@ -8,7 +8,8 @@ const ASSET_TICKERS: Record<string, { ticker: string; name: string; unit: string
   JPYKRW: { ticker: "JPYKRW=X", name: "엔/원 환율 (100엔)", unit: "원", isJpy: true },
   BTC: { ticker: "BTC-USD", name: "비트코인 (BTC)", unit: "$" },
   ETH: { ticker: "ETH-USD", name: "이더리움 (ETH)", unit: "$" },
-  GOLD: { ticker: "GC=F", name: "국제 금 (Gold)", unit: "$" }
+  GOLD: { ticker: "GC=F", name: "국제 금 (Gold)", unit: "$" },
+  WTI: { ticker: "CL=F", name: "WTI 원유 (Oil)", unit: "$" }
 };
 
 interface AssetHistoryPoint {
