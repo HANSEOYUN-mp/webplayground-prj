@@ -5,9 +5,12 @@ export const revalidate = 0; // 항상 최신 데이터(접속 시 실시간 호
 const FRED_API_KEY = process.env.FRED_API_KEY;
 
 const SERIES = [
+  { id: "DGS30", title: "미국채 30년물 금리", format: "percent" },
   { id: "DGS10", title: "미국채 10년물 금리", format: "percent" },
   { id: "DGS2", title: "미국채 2년물 금리", format: "percent" },
   { id: "T10Y2Y", title: "장단기 금리차 (10Y-2Y)", format: "percent" },
+  { id: "T10Y3M", title: "장단기 금리차 (10Y-3M)", format: "percent" },
+  { id: "T10YFF", title: "장단기 금리차 (10Y-기준금리)", format: "percent" },
   { id: "CPIAUCSL", title: "소비자물가지수 (CPI)", format: "index" },
   { id: "PPIFIS", title: "생산자물가지수 (PPI)", format: "index" },
   { id: "UNRATE", title: "실업률", format: "percent" },

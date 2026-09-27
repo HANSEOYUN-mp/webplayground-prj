@@ -56,7 +56,7 @@ export function Header({ onNewPost, searchQuery, onSearchChange, activeTab, onTa
           {[
             { id: "stock", label: "US Stock" },
             { id: "kr-stock", label: "Korea Stock" },
-            { id: "news", label: "News & Trends" },
+            { id: "news", label: "Betting & Odds" },
             { id: "post", label: "Post" },
           ].map((tab) => (
             <button
@@ -146,7 +146,7 @@ export function Header({ onNewPost, searchQuery, onSearchChange, activeTab, onTa
             {[
               { id: "stock", label: "🇺🇸 US Stock" },
               { id: "kr-stock", label: "🇰🇷 Korea Stock" },
-              { id: "news", label: "🔥 News" },
+              { id: "news", label: "🎲 Betting & Odds" },
               { id: "post", label: "✏️ Post" },
             ].find((t) => t.id === activeTab)?.label ?? "메뉴"}
           </span>
@@ -160,7 +160,7 @@ export function Header({ onNewPost, searchQuery, onSearchChange, activeTab, onTa
             {[
               { id: "stock", label: "US Stock" },
               { id: "kr-stock", label: "Korea Stock" },
-              { id: "news", label: "News & Trends" },
+              { id: "news", label: "Betting & Odds" },
               { id: "post", label: "Post" },
             ].map((tab) => (
               <button
