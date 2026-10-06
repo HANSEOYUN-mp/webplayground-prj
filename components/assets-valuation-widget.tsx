@@ -9,10 +9,10 @@ import {
   TrendingUp, 
   CheckCircle2, 
   Coins, 
-  Sparkles,
   Calendar,
   Layers,
-  Droplet
+  Droplet,
+  Landmark
 } from "lucide-react";
 import { 
   ResponsiveContainer, 
@@ -64,7 +64,7 @@ function formatPrice(val: number, key: string) {
   if (key === "BTC") {
     return "$" + new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(val);
   }
-  if (key === "ETH" || key === "GOLD" || key === "WTI") {
+  if (key === "TLT" || key === "GOLD" || key === "WTI") {
     return "$" + new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val);
   }
   return val.toLocaleString();
@@ -83,7 +83,7 @@ const ASSET_ICONS: Record<string, React.ReactNode> = {
   USDKRW: <DollarSign className="w-3.5 h-3.5 text-emerald-500" />,
   JPYKRW: <span className="text-[11px] font-bold text-cyan-500">¥</span>,
   BTC: <Coins className="w-3.5 h-3.5 text-amber-500" />,
-  ETH: <Sparkles className="w-3.5 h-3.5 text-indigo-400" />,
+  TLT: <Landmark className="w-3.5 h-3.5 text-blue-500" />,
   GOLD: <Layers className="w-3.5 h-3.5 text-yellow-500" />,
   WTI: <Droplet className="w-3.5 h-3.5 text-orange-500" />
 };

@@ -7,7 +7,7 @@ const ASSET_TICKERS: Record<string, { ticker: string; name: string; unit: string
   USDKRW: { ticker: "KRW=X", name: "원/달러 환율", unit: "원" },
   JPYKRW: { ticker: "JPYKRW=X", name: "엔/원 환율 (100엔)", unit: "원", isJpy: true },
   BTC: { ticker: "BTC-USD", name: "비트코인 (BTC)", unit: "$" },
-  ETH: { ticker: "ETH-USD", name: "이더리움 (ETH)", unit: "$" },
+  TLT: { ticker: "TLT", name: "미국 20년 국채 (TLT)", unit: "$" },
   GOLD: { ticker: "GC=F", name: "국제 금 (Gold)", unit: "$" },
   WTI: { ticker: "CL=F", name: "WTI 원유 (Oil)", unit: "$" }
 };

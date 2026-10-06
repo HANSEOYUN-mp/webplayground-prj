@@ -10,7 +10,9 @@ const TICKERS: Record<string, string> = {
   SCHD: 'SCHD',
   JEPI: 'JEPI',
   SOXX: 'SOXX',
-  TECL: 'TECL'
+  TECL: 'TECL',
+  TLT: 'TLT',
+  TMF: 'TMF'
 };
 
 async function fetchUSTickerData(ticker: string) {

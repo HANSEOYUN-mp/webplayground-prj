@@ -25,9 +25,11 @@ interface USMarketData {
   JEPI?: TickerData
   SOXX?: TickerData
   TECL?: TickerData
+  TLT?: TickerData
+  TMF?: TickerData
 }
 
-type TabType = "SPY" | "QQQ" | "QLD" | "SCHD" | "JEPI" | "SOXX" | "TECL" | "SEARCH"
+type TabType = "SPY" | "QQQ" | "QLD" | "SCHD" | "JEPI" | "SOXX" | "TECL" | "TLT" | "TMF" | "SEARCH"
 
 function formatNumber(val: number, tab: TabType, currency: string = "USD") {
   if (val === undefined || val === null) return "-"
@@ -148,7 +150,9 @@ export function TradingViewUSWidget() {
     SCHD: "SCHD (배당성장)",
     JEPI: "JEPI (고배당)",
     SOXX: "SOXX (반도체)",
-    TECL: "TECL (기술주 3배)"
+    TECL: "TECL (기술주 3배)",
+    TLT: "TLT (20년 국채)",
+    TMF: "TMF (20년 국채 3배)"
   }
 
   return (
@@ -187,7 +191,7 @@ export function TradingViewUSWidget() {
       {isExpanded && (
         <div className="flex overflow-x-auto bg-secondary/20 border-b border-border/60 p-1 gap-1 shrink-0 scrollbar-none select-none items-center justify-between">
           <div className="flex gap-1 overflow-x-auto scrollbar-none">
-            {(["SPY", "QQQ", "QLD", "SCHD", "JEPI", "SOXX", "TECL"] as Exclude<TabType, "SEARCH">[]).map((tab) => (
+            {(["SPY", "QQQ", "QLD", "SCHD", "JEPI", "SOXX", "TECL", "TLT", "TMF"] as Exclude<TabType, "SEARCH">[]).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
