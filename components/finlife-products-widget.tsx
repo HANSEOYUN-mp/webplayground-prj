@@ -69,15 +69,22 @@ export function FinlifeProductsWidget() {
             <Landmark className="w-3.5 h-3.5" /> 최고 금리 상품
           </span>
         </div>
-        <button
-          type="button"
-          onClick={load}
-          disabled={loading}
-          className="p-1 hover:bg-secondary rounded transition-colors shrink-0"
-          title="새로고침"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${loading ? "animate-spin" : ""}`} />
-        </button>
+        <div className="flex items-center gap-1.5">
+          {monthLabel && (
+            <span className="stamp-red text-[8.5px] px-1.5 py-0.5 border border-primary/20 bg-primary/5 text-primary hidden sm:inline-block">
+              {monthLabel} 공시
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={load}
+            disabled={loading}
+            className="p-1 hover:bg-secondary rounded transition-colors shrink-0"
+            title="새로고침"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${loading ? "animate-spin" : ""}`} />
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-1 p-3 pb-1 shrink-0 select-none font-sans">

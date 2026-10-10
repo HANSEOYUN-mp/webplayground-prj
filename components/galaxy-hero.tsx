@@ -20,6 +20,7 @@ import { Ush2EventsWidget } from "@/components/ush2-events-widget"
 import KoreaSectorFlowWidget from "@/components/korea-sector-flow-widget"
 import { AssetsValuationWidget } from "@/components/assets-valuation-widget"
 import { EplFixturesWidget } from "@/components/epl-fixtures-widget"
+import { TreasuryGoldWidget } from "@/components/treasury-gold-widget"
 
 interface StockRow {
   rank: number
@@ -117,7 +118,7 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
   const [usTrends, setUsTrends] = useState<TrendItem[]>([])
   const [trendsTab, setTrendsTab] = useState<"kr" | "us">("kr")
   const [stockDate, setStockDate] = useState<string>("로딩중...")
-  const [isTop20Expanded, setIsTop20Expanded] = useState(true)
+  const [isTop20Expanded, setIsTop20Expanded] = useState(false)
   const [topMarketTab, setTopMarketTab] = useState<"all" | "kospi" | "kosdaq">("all")
   const [topStocksData, setTopStocksData] = useState<{ all: StockRow[]; kospi: StockRow[]; kosdaq: StockRow[] }>({
     all: [],
@@ -377,6 +378,11 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
 
           {activeTab === 'kr-stock' && (
             <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+              {/* 미국 국채 10·20·30Y · 기준금리 및 금(Gold) 50년 추이 슬롯 */}
+              <div className="md:col-span-2 w-full">
+                <TreasuryGoldWidget />
+              </div>
+
               {/* 국내 시장 요약 (KOSPI/KOSDAQ 차트) */}
               <div className="md:col-span-2 w-full">
                 <TradingViewKoreaWidget />
@@ -403,48 +409,52 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
                       </span>
                       
                       <div className="flex items-center gap-2 select-none">
-                        {/* 코스피/코스닥/전체 탭 버튼 */}
-                        <div className="flex bg-secondary/80 border border-border/60 p-0.5 rounded-none">
-                          <button
-                            onClick={() => setTopMarketTab("all")}
-                            className={`px-2 py-0.5 text-[9px] font-bold transition-all ${
-                              topMarketTab === "all" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"
-                            }`}
-                          >
-                            전체 (통합)
-                          </button>
-                          <button
-                            onClick={() => setTopMarketTab("kospi")}
-                            className={`px-2 py-0.5 text-[9px] font-bold transition-all ${
-                              topMarketTab === "kospi" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"
-                            }`}
-                          >
-                            코스피 (KOSPI)
-                          </button>
-                          <button
-                            onClick={() => setTopMarketTab("kosdaq")}
-                            className={`px-2 py-0.5 text-[9px] font-bold transition-all ${
-                              topMarketTab === "kosdaq" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"
-                            }`}
-                          >
-                            코스닥 (KOSDAQ)
-                          </button>
-                        </div>
+                        {isTop20Expanded && (
+                          <>
+                            {/* 코스피/코스닥/전체 탭 버튼 */}
+                            <div className="flex bg-secondary/80 border border-border/60 p-0.5 rounded-none">
+                              <button
+                                onClick={() => setTopMarketTab("all")}
+                                className={`px-2 py-0.5 text-[9px] font-bold transition-all ${
+                                  topMarketTab === "all" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"
+                                }`}
+                              >
+                                전체 (통합)
+                              </button>
+                              <button
+                                onClick={() => setTopMarketTab("kospi")}
+                                className={`px-2 py-0.5 text-[9px] font-bold transition-all ${
+                                  topMarketTab === "kospi" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"
+                                }`}
+                              >
+                                코스피 (KOSPI)
+                              </button>
+                              <button
+                                onClick={() => setTopMarketTab("kosdaq")}
+                                className={`px-2 py-0.5 text-[9px] font-bold transition-all ${
+                                  topMarketTab === "kosdaq" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"
+                                }`}
+                              >
+                                코스닥 (KOSDAQ)
+                              </button>
+                            </div>
 
-                        {isTop20Expanded && stockDate && (
-                          <span className="stamp-red text-[8.5px] font-bold rounded-sm border-primary/30 text-primary bg-primary/5 px-1.5 py-0.5 select-none hidden sm:inline-block">
-                            {stockDate}
-                          </span>
+                            {stockDate && (
+                              <span className="stamp-red text-[8.5px] font-bold rounded-sm border-primary/30 text-primary bg-primary/5 px-1.5 py-0.5 select-none hidden sm:inline-block">
+                                {stockDate}
+                              </span>
+                            )}
+
+                            <button
+                              onClick={() => fetchTopStocksOnly(true)}
+                              disabled={isRefreshingTop}
+                              className={`p-1 text-muted-foreground hover:text-black dark:hover:text-white transition-colors duration-200 ${isRefreshingTop ? 'animate-spin' : ''}`}
+                              title="거래대금 TOP 20 새로고침"
+                            >
+                              <RefreshCw className="w-3 h-3" />
+                            </button>
+                          </>
                         )}
-
-                        <button
-                          onClick={() => fetchTopStocksOnly(true)}
-                          disabled={isRefreshingTop}
-                          className={`p-1 text-muted-foreground hover:text-black dark:hover:text-white transition-colors duration-200 ${isRefreshingTop ? 'animate-spin' : ''}`}
-                          title="거래대금 TOP 20 새로고침"
-                        >
-                          <RefreshCw className="w-3 h-3" />
-                        </button>
 
                         <button
                           onClick={() => setIsTop20Expanded(!isTop20Expanded)}

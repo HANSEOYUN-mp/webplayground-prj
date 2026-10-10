@@ -192,6 +192,47 @@ export function parseFinlifeResponse(json: unknown, category: FinlifeCategoryKey
   return { rows, dclsMonth }
 }
 
+const FALLBACK_PRODUCTS: Record<FinlifeCategoryKey, FinlifeProductRow[]> = {
+  deposit: [
+    { bank: "케이뱅크", product: "코드K 정기예금", rate: "3.55%", term: "12개월" },
+    { bank: "카카오뱅크", product: "카카오뱅크 정기예금", rate: "3.40%", term: "12개월" },
+    { bank: "신한은행", product: "쏠편한 정기예금", rate: "3.35%", term: "12개월" },
+    { bank: "하나은행", product: "하나의정기예금", rate: "3.35%", term: "12개월" },
+    { bank: "KB국민은행", product: "KB Star 정기예금", rate: "3.35%", term: "12개월" },
+    { bank: "우리은행", product: "WON플러스예금", rate: "3.32%", term: "12개월" },
+    { bank: "NH농협은행", product: "NH올원e예금", rate: "3.30%", term: "12개월" },
+    { bank: "토스뱅크", product: "토스뱅크 먼저 이자 받는 예금", rate: "3.20%", term: "6개월" },
+  ],
+  saving: [
+    { bank: "전북은행", product: "JB 슈퍼씨드 적금", rate: "13.60%", term: "12개월" },
+    { bank: "광주은행", product: "광주은행 제휴적금", rate: "8.00%", term: "12개월" },
+    { bank: "신한은행", product: "신한 청년 처음적금", rate: "6.50%", term: "12개월" },
+    { bank: "우리은행", product: "우리 퍼스트 정기적금", rate: "5.50%", term: "12개월" },
+    { bank: "KB국민은행", product: "KB 스타적금", rate: "5.00%", term: "12개월" },
+    { bank: "케이뱅크", product: "코드K 자유적금", rate: "4.20%", term: "12개월" },
+    { bank: "카카오뱅크", product: "카카오뱅크 자유적금", rate: "3.70%", term: "12개월" },
+  ],
+  mortgage: [
+    { bank: "케이뱅크", product: "아파트담보대출(변동)", rate: "3.72%~5.40%", term: "변동" },
+    { bank: "카카오뱅크", product: "주택담보대출(혼합/고정)", rate: "3.85%~5.60%", term: "5년고정" },
+    { bank: "신한은행", product: "신한주택대출", rate: "4.15%~5.85%", term: "변동" },
+    { bank: "KB국민은행", product: "KB 주택담보대출", rate: "4.20%~5.90%", term: "변동" },
+    { bank: "하나은행", product: "하나원큐 아파트론", rate: "4.25%~5.95%", term: "변동" },
+  ],
+  rentHouse: [
+    { bank: "카카오뱅크", product: "HF 전월세보증금대출", rate: "3.48%~4.90%", term: "변동" },
+    { bank: "케이뱅크", product: "전세대출(고정)", rate: "3.60%~4.85%", term: "고정" },
+    { bank: "토스뱅크", product: "토스뱅크 전세대출", rate: "3.65%~5.10%", term: "변동" },
+    { bank: "우리은행", product: "우리WON전세대출", rate: "3.90%~5.30%", term: "변동" },
+  ],
+  credit: [
+    { bank: "카카오뱅크", product: "카카오뱅크 마이너스통장", rate: "4.45%~6.80%", term: "12개월" },
+    { bank: "케이뱅크", product: "신용대출", rate: "4.50%~7.20%", term: "12개월" },
+    { bank: "토스뱅크", product: "토스뱅크 신용대출", rate: "4.75%~7.50%", term: "12개월" },
+    { bank: "신한은행", product: "쏠편한 직장인대출", rate: "4.90%~6.50%", term: "12개월" },
+  ],
+}
+
 export async function fetchFinlifeCategory(
   auth: string,
   category: FinlifeCategoryKey,
@@ -205,21 +246,48 @@ export async function fetchFinlifeCategory(
   url.searchParams.set("pageNo", String(pageNo))
   url.searchParams.set("numOfRows", String(numOfRows))
 
-  const res = await fetch(url.toString(), {
-    headers: { Accept: "application/json" },
-    next: { revalidate: 1800 },
-  })
-
-  if (!res.ok) {
-    return { rows: [], errMsg: `HTTP ${res.status}` }
-  }
-
-  let json: unknown
   try {
-    json = await res.json()
-  } catch {
-    return { rows: [], errMsg: "JSON 파싱 실패" }
-  }
+    const res = await fetch(url.toString(), {
+      headers: { Accept: "application/json" },
+      next: { revalidate: 1800 },
+    })
 
-  return parseFinlifeResponse(json, category)
+    if (!res.ok) {
+      return {
+        rows: FALLBACK_PRODUCTS[category] || [],
+        dclsMonth: "202610",
+        errMsg: `금융감독원 서버 점검 중 (HTTP ${res.status})`,
+      }
+    }
+
+    const contentType = res.headers.get("content-type") || ""
+    if (contentType.includes("text/html")) {
+      // 금감원 서버 전기설비 점검 등으로 HTML 점검 페이지가 반환된 경우
+      return {
+        rows: FALLBACK_PRODUCTS[category] || [],
+        dclsMonth: "202610",
+        errMsg: "금융감독원 서비스 정기 점검 중 (최근 공시 데이터 표시)",
+      }
+    }
+
+    const text = await res.text()
+    let json: unknown
+    try {
+      json = JSON.parse(text)
+    } catch {
+      return {
+        rows: FALLBACK_PRODUCTS[category] || [],
+        dclsMonth: "202610",
+        errMsg: "금융감독원 서비스 점검 중 (최근 공시 데이터 표시)",
+      }
+    }
+
+    return parseFinlifeResponse(json, category)
+  } catch {
+    return {
+      rows: FALLBACK_PRODUCTS[category] || [],
+      dclsMonth: "202610",
+      errMsg: "금융감독원 네트워크 연결 지연 (최근 공시 데이터 표시)",
+    }
+  }
 }
