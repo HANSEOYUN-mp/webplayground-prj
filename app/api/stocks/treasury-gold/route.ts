@@ -12,6 +12,8 @@ interface MacroDataPoint {
   dgs20?: number;
   dgs30?: number;
   fedfunds?: number;
+  kr10y?: number;
+  krbase?: number;
   gold?: number;
 }
 
@@ -30,6 +32,8 @@ interface ApiResponse {
     dgs20: IndicatorSummary;
     dgs30: IndicatorSummary;
     fedfunds: IndicatorSummary;
+    kr10y: IndicatorSummary;
+    krbase: IndicatorSummary;
     gold: IndicatorSummary;
   };
   history: MacroDataPoint[];
@@ -39,6 +43,15 @@ interface ApiResponse {
 let cachedResponse: ApiResponse | null = null;
 let cacheTime = 0;
 const CACHE_DURATION = 6 * 60 * 60 * 1000; // 6시간
+
+const SERIES_KEY_MAP: Record<string, "dgs10" | "dgs20" | "dgs30" | "fedfunds" | "kr10y" | "krbase"> = {
+  DGS10: "dgs10",
+  DGS20: "dgs20",
+  DGS30: "dgs30",
+  FEDFUNDS: "fedfunds",
+  IRLTLT01KRM156N: "kr10y",
+  IRSTCI01KRM156N: "krbase"
+};
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -50,7 +63,7 @@ export async function GET(req: Request) {
   }
 
   try {
-    const fredSeries = ["DGS10", "DGS20", "DGS30", "FEDFUNDS"];
+    const fredSeries = ["DGS10", "DGS20", "DGS30", "FEDFUNDS", "IRLTLT01KRM156N", "IRSTCI01KRM156N"];
     const [fredResults, yahooRes] = await Promise.all([
       Promise.all(
         fredSeries.map(async (id) => {
@@ -63,7 +76,7 @@ export async function GET(req: Request) {
         })
       ),
       // 2000년 이후 실시간 금 선물 (GC=F)
-      fetch("https://query1.finance.yahoo.com/v8/finance/chart/GC=F?period1=967766400&period2=1791590400&interval=1mo", {
+      fetch(`https://query1.finance.yahoo.com/v8/finance/chart/GC=F?period1=967766400&period2=${Math.floor(now / 1000)}&interval=1mo`, {
         headers: {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         },
@@ -81,9 +94,10 @@ export async function GET(req: Request) {
       dateMap[ym] = { date: ym, gold: val };
     }
 
-    // 2. FRED 국채 & 기준금리 50년치 데이터 병합
+    // 2. FRED 국채 & 기준금리(미국·한국) 50년치 데이터 병합
     for (const item of fredResults) {
-      const key = item.id.toLowerCase() as "dgs10" | "dgs20" | "dgs30" | "fedfunds";
+      const key = SERIES_KEY_MAP[item.id];
+      if (!key) continue;
       for (const o of item.obs) {
         if (!o.value || o.value === ".") continue;
         const ym = o.date.slice(0, 7);
@@ -120,7 +134,7 @@ export async function GET(req: Request) {
       }
     }
 
-    // 최신 요약 데이터 계산 도우미
+    // 최신 요약 데이터 계산 도우미 (실제 발표된 관측치 기준)
     const calcSummary = (
       key: keyof Omit<MacroDataPoint, "date">,
       name: string,
@@ -137,14 +151,41 @@ export async function GET(req: Request) {
       return { name, current: cur, prev, change, changePercent, unit };
     };
 
+    const summary = {
+      dgs10: calcSummary("dgs10", "미국채 10년물", "%"),
+      dgs20: calcSummary("dgs20", "미국채 20년물", "%"),
+      dgs30: calcSummary("dgs30", "미국채 30년물", "%"),
+      fedfunds: calcSummary("fedfunds", "미국 기준금리", "%"),
+      kr10y: calcSummary("kr10y", "한국 국고채 10년물", "%"),
+      krbase: calcSummary("krbase", "한국 기준금리", "%"),
+      gold: calcSummary("gold", "국제 금 (Gold)", "$")
+    };
+
+    // 진행 중인 당월(마지막 월)에 FRED 월평균이 아직 미집계된 경우 직전 월 금리로 차트 끝단 연속성 유지
+    const rateKeys: ("dgs10" | "dgs20" | "dgs30" | "fedfunds" | "kr10y" | "krbase")[] = [
+      "dgs10",
+      "dgs20",
+      "dgs30",
+      "fedfunds",
+      "kr10y",
+      "krbase"
+    ];
+    for (const rk of rateKeys) {
+      let firstIdx = history.findIndex((p) => typeof p[rk] === "number" && !isNaN(p[rk] as number));
+      if (firstIdx !== -1) {
+        let lastVal = history[firstIdx][rk];
+        for (let i = firstIdx; i < history.length; i++) {
+          if (typeof history[i][rk] === "number" && !isNaN(history[i][rk]!)) {
+            lastVal = history[i][rk];
+          } else if (lastVal !== undefined) {
+            history[i][rk] = lastVal;
+          }
+        }
+      }
+    }
+
     const responseData: ApiResponse = {
-      summary: {
-        dgs10: calcSummary("dgs10", "미국채 10년물", "%"),
-        dgs20: calcSummary("dgs20", "미국채 20년물", "%"),
-        dgs30: calcSummary("dgs30", "미국채 30년물", "%"),
-        fedfunds: calcSummary("fedfunds", "미국 기준금리", "%"),
-        gold: calcSummary("gold", "국제 금 (Gold)", "$")
-      },
+      summary,
       history,
       updatedAt: new Date().toISOString()
     };
