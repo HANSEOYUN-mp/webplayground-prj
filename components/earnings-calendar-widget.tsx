@@ -51,6 +51,7 @@ interface EarningsRowProps {
 function EarningsRow({ item, idx, renderSessionBadge, renderSurpriseBadge }: EarningsRowProps) {
   const [details, setDetails] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
 
   // 현지 시간 기준 어제/오늘/내일 판단
   const now = new Date()
@@ -70,6 +71,7 @@ function EarningsRow({ item, idx, renderSessionBadge, renderSurpriseBadge }: Ear
 
   useEffect(() => {
     let active = true
+    setFetchError(false)
     const fetchDetails = async () => {
       try {
         const res = await fetch(`/api/finnhub/earnings/details?symbol=${item.symbol}`)
@@ -80,6 +82,9 @@ function EarningsRow({ item, idx, renderSessionBadge, renderSurpriseBadge }: Ear
         }
       } catch (err) {
         console.error(`Error loading details for ${item.symbol}:`, err)
+        if (active) {
+          setFetchError(true)
+        }
       } finally {
         if (active) setLoading(false)
       }
@@ -117,10 +122,12 @@ function EarningsRow({ item, idx, renderSessionBadge, renderSurpriseBadge }: Ear
       <td className="px-4 py-2.5 text-right font-mono font-medium">
         {loading ? (
           <span className="w-8 h-3.5 bg-neutral-100 animate-pulse inline-block" />
+        ) : fetchError || details?.peError ? (
+          <span className="text-primary text-[9.5px] font-mono">error</span>
         ) : details?.pe !== null && details?.pe !== undefined ? (
           <span className="text-foreground">{details.pe.toFixed(1)}x</span>
         ) : (
-          <span className="text-muted-foreground/40">-</span>
+          <span className="text-muted-foreground text-[9.5px] font-sans">적자</span>
         )}
       </td>
 
@@ -129,6 +136,8 @@ function EarningsRow({ item, idx, renderSessionBadge, renderSurpriseBadge }: Ear
         <div className="flex justify-center items-center">
           {loading ? (
             <div className="w-24 h-1.5 bg-neutral-100 animate-pulse" />
+          ) : fetchError || details?.recommendationError ? (
+            <span className="text-primary text-[9.5px] font-mono">error</span>
           ) : (
             <ConsensusBar
               buy={details?.recommendation?.buy ?? 0}
@@ -159,6 +168,8 @@ function EarningsRow({ item, idx, renderSessionBadge, renderSurpriseBadge }: Ear
         <div className="flex justify-center items-center">
           {loading ? (
             <div className="w-20 h-4 bg-neutral-100 animate-pulse" />
+          ) : fetchError || details?.surpriseError ? (
+            <span className="text-primary text-[9.5px] font-mono">error</span>
           ) : details?.surprise && details.surprise.length > 0 ? (
             <div className="w-20 h-6 select-none" title="과거 4분기 EPS 추이">
               <ResponsiveContainer width="100%" height="100%">

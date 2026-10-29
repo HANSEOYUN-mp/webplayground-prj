@@ -25,33 +25,50 @@ export async function GET(request: Request) {
 
     // 1. 서프라이즈 데이터 파싱
     let surpriseItems: any[] = [];
+    let surpriseError = false;
     if (surpriseRes.ok) {
       const surpriseData = await surpriseRes.json();
-      surpriseItems = (Array.isArray(surpriseData) ? surpriseData : [])
-        .slice(0, 4)
-        .map((item: any) => ({
-          period: item.period || '',
-          quarter: item.quarter || 0,
-          year: item.year || 0,
-          actual: item.actual ?? 0,
-          estimate: item.estimate ?? 0,
-          surprisePercent: item.surprisePercent ?? 0,
-        }))
-        .reverse();
+      if (surpriseData?.error || !Array.isArray(surpriseData)) {
+        surpriseError = true;
+      } else {
+        surpriseItems = surpriseData
+          .slice(0, 4)
+          .map((item: any) => ({
+            period: item.period || '',
+            quarter: item.quarter || 0,
+            year: item.year || 0,
+            actual: item.actual ?? 0,
+            estimate: item.estimate ?? 0,
+            surprisePercent: item.surprisePercent ?? 0,
+          }))
+          .reverse();
+      }
+    } else {
+      surpriseError = true;
     }
 
     // 2. PER 메트릭 파싱
     let pe: number | null = null;
+    let peError = false;
     if (metricRes.ok) {
       const metricData = await metricRes.json();
-      pe = metricData?.metric?.peTTM ?? metricData?.metric?.peBasicExclExtraTTM ?? null;
+      if (metricData?.error || !metricData?.metric) {
+        peError = true;
+      } else {
+        pe = metricData.metric.peTTM ?? metricData.metric.peBasicExclExtraTTM ?? null;
+      }
+    } else {
+      peError = true;
     }
 
     // 3. 투자의견 컨센서스 파싱
     let recommendation = { buy: 0, hold: 0, sell: 0 };
+    let recommendationError = false;
     if (recommendationRes.ok) {
       const recData = await recommendationRes.json();
-      if (Array.isArray(recData) && recData.length > 0) {
+      if (recData?.error || !Array.isArray(recData)) {
+        recommendationError = true;
+      } else if (recData.length > 0) {
         const latest = recData[0]; // 가장 최근 분기 컨센서스
         const strongBuy = latest.strongBuy ?? 0;
         const buy = latest.buy ?? 0;
@@ -65,13 +82,18 @@ export async function GET(request: Request) {
           sell: sell + strongSell,
         };
       }
+    } else {
+      recommendationError = true;
     }
 
     return NextResponse.json({
       symbol: symbolUpper,
       surprise: surpriseItems,
+      surpriseError,
       pe,
+      peError,
       recommendation,
+      recommendationError,
     });
   } catch (error: any) {
     console.error(`Finnhub Details API Error for ${symbol}:`, error);

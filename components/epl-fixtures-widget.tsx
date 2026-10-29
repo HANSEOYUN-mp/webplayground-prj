@@ -383,7 +383,7 @@ export function EplFixturesWidget() {
       <div className="px-4 py-2 bg-secondary/30 border-t border-border/20 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[8.5px] font-mono text-muted-foreground shrink-0 select-none">
         <span>프리미어리그 20개 팀 단일 라운드(10경기) 전 경기 편성</span>
         <span>
-          데이터 출처: 네이버 스포츠 (일정/순위) · The Odds API (24시간 캐시 적용, 쿼터 잔여 {data?.oddsQuota?.remaining ?? 474}/500회)
+          데이터 출처: The Odds API (실시간 일정/배당, 24시간 캐시 적용, 쿼터 잔여 {data?.oddsQuota?.remaining ?? 474}/500회) · ESPN (순위)
         </span>
       </div>
     </div>
