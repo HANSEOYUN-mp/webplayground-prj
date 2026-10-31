@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react"
 import { TrendingUp, RefreshCw, AlertCircle, HelpCircle } from "lucide-react"
 import { BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts"
+import { reportAndCheckNewData, type NewStatusResult } from "@/lib/new-data-tracker"
+import { NewDataBadge } from "@/components/new-data-badge"
 
 interface EtfData {
   ytdYield: number
@@ -109,6 +111,7 @@ export function EtfPerformanceWidget() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
+  const [newStatus, setNewStatus] = useState<NewStatusResult | null>(null)
 
   const fetchData = async () => {
     setLoading(true)
@@ -123,6 +126,9 @@ export function EtfPerformanceWidget() {
       }
       if (json.error) throw new Error(String(json.error))
       setData(json)
+      if (json.latestDate) {
+        setNewStatus(reportAndCheckNewData("compare:etf", "compare", json.latestDate))
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "알 수 없는 오류")
     } finally {
@@ -175,6 +181,13 @@ export function EtfPerformanceWidget() {
       <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
         <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1.5 select-none">
           <TrendingUp className="w-3.5 h-3.5 text-primary" /> 미국 3대 대표 ETF 성과 및 시장 흐름
+          <NewDataBadge
+            isNew={newStatus?.isNew}
+            trackerKey="compare:etf"
+            previousVersion={newStatus?.previousVersion}
+            latestVersion={newStatus?.latestVersion}
+            onDismiss={() => setNewStatus((prev) => (prev ? { ...prev, isNew: false } : null))}
+          />
         </span>
         <button onClick={fetchData} disabled={loading} className="p-1 hover:bg-secondary rounded transition-colors" title="새로고침">
           <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground/80 ${loading ? 'animate-spin' : ''}`} />

@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react"
 import { Activity, Flame, BarChart3, ChevronRight } from "lucide-react"
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from "recharts"
+import { reportMultipleNewData, type NewStatusResult } from "@/lib/new-data-tracker"
+import { NewDataBadge } from "@/components/new-data-badge"
 
 interface Indicator {
   name: string;
@@ -155,12 +157,39 @@ function getCircleClasses(rating: string) {
 export function MinskyWidget({ className }: { className?: string }) {
   const [data, setData] = useState<FgData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [newMap, setNewMap] = useState<Record<string, NewStatusResult>>({})
 
   useEffect(() => {
     fetch("/api/minsky")
       .then(res => res.json())
       .then((json: FgData) => {
-        if (!('error' in json)) setData(json);
+        if (!('error' in json)) {
+          setData(json);
+          const itemsToTrack: { key: string; category: "minsky"; latestVersion?: string }[] = [];
+          for (const ind of json.indicators || []) {
+            const lastPt = ind.data?.[ind.data.length - 1];
+            const parsedDate = lastPt?.x ? new Date(lastPt.x) : null;
+            const dateStr =
+              parsedDate && !isNaN(parsedDate.getTime())
+                ? parsedDate.toISOString().slice(0, 10)
+                : undefined;
+            if (dateStr) {
+              itemsToTrack.push({
+                key: `minsky:${ind.key}`,
+                category: "minsky",
+                latestVersion: dateStr,
+              });
+            }
+          }
+          if (itemsToTrack.length > 0) {
+            itemsToTrack.push({
+              key: "minsky:main",
+              category: "minsky",
+              latestVersion: itemsToTrack[0].latestVersion,
+            });
+            setNewMap(reportMultipleNewData(itemsToTrack));
+          }
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false))
@@ -201,8 +230,14 @@ export function MinskyWidget({ className }: { className?: string }) {
       
       {/* IDE Window Header */}
       <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
-        <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
+        <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1.5">
           <Activity className="w-3.5 h-3.5" /> 공포 탐욕 지수
+          <NewDataBadge
+            isNew={Object.values(newMap).some((v) => v.isNew)}
+            trackerKey="minsky:main"
+            previousVersion={newMap["minsky:main"]?.previousVersion}
+            latestVersion={newMap["minsky:main"]?.latestVersion}
+          />
         </span>
         <span className="stamp-red text-[9px] font-bold rounded-sm border-primary/30 text-primary bg-primary/5 px-1.5 py-0.5">
           시장 심리 지표
@@ -336,14 +371,31 @@ export function MinskyWidget({ className }: { className?: string }) {
                       <div>
                         {/* Title and Rating Badge */}
                         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/10 pb-2 mb-2">
-                          <a 
-                            href="https://edition.cnn.com/markets/fear-and-greed" 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="text-[14.5px] text-foreground font-extrabold font-sans hover:text-primary hover:underline transition-colors"
-                          >
-                            {ind.name}
-                          </a>
+                          <div className="flex items-center gap-2">
+                            <a 
+                              href="https://edition.cnn.com/markets/fear-and-greed" 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="text-[14.5px] text-foreground font-extrabold font-sans hover:text-primary hover:underline transition-colors"
+                            >
+                              {ind.name}
+                            </a>
+                            <NewDataBadge
+                              isNew={newMap[`minsky:${ind.key}`]?.isNew}
+                              trackerKey={`minsky:${ind.key}`}
+                              previousVersion={newMap[`minsky:${ind.key}`]?.previousVersion}
+                              latestVersion={newMap[`minsky:${ind.key}`]?.latestVersion}
+                              onDismiss={() =>
+                                setNewMap((prev) => ({
+                                  ...prev,
+                                  [`minsky:${ind.key}`]: {
+                                    ...prev[`minsky:${ind.key}`],
+                                    isNew: false,
+                                  },
+                                }))
+                              }
+                            />
+                          </div>
                           <div className={`px-4 py-1.5 border text-xs md:text-[13px] font-black tracking-widest shrink-0 font-mono uppercase ${getRatingClasses(ind.rating)}`}>
                             {ind.rating}
                           </div>

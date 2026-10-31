@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react"
 import { LineChart, RefreshCw, AlertCircle } from "lucide-react"
 import { ResponsiveContainer, LineChart as RechartsLineChart, Line, XAxis, YAxis, Tooltip as ChartTooltip } from "recharts"
+import { reportMultipleNewData, type NewStatusResult } from "@/lib/new-data-tracker"
+import { NewDataBadge } from "@/components/new-data-badge"
 
 interface FredItem {
   id: string
@@ -107,6 +109,7 @@ export function FredWidget() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
+  const [newMap, setNewMap] = useState<Record<string, NewStatusResult>>({})
 
   const fetchFred = async () => {
     setLoading(true)
@@ -120,7 +123,18 @@ export function FredWidget() {
         )
       }
       if (json.error) throw new Error(String(json.error))
-      setData(json.items || [])
+      const items: FredItem[] = json.items || []
+      setData(items)
+      if (items.length > 0) {
+        const statuses = reportMultipleNewData(
+          items.map((it) => ({
+            key: `fred:${it.id}`,
+            category: "fred",
+            latestVersion: it.latest?.date,
+          }))
+        )
+        setNewMap(statuses)
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "알 수 없는 오류")
     } finally {
@@ -137,8 +151,11 @@ export function FredWidget() {
     <div className="w-full flex flex-col h-auto bg-card border border-border overflow-hidden transition-colors duration-300 hover:bg-neutral-50/50">
       {/* IDE Window Header */}
       <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
-        <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
+        <span className="text-[11px] font-bold text-muted-foreground tracking-wider flex items-center gap-1.5">
           <LineChart className="w-3.5 h-3.5" /> 거시 경제 지표 해설 대시보드
+          <NewDataBadge
+            isNew={Object.values(newMap).some((v) => v.isNew)}
+          />
         </span>
         <button onClick={fetchFred} disabled={loading} className="p-1 hover:bg-secondary rounded transition-colors" title="새로고침">
           <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground/80 ${loading ? 'animate-spin' : ''}`} />
@@ -192,7 +209,24 @@ export function FredWidget() {
                       {/* Title & Real-time Value Header */}
                       <div className="flex justify-between items-start gap-2">
                         <div className="flex flex-col">
-                          <span className="font-bold text-foreground text-[14px] font-sans break-keep leading-tight">{item.title}</span>
+                          <span className="font-bold text-foreground text-[14px] font-sans break-keep leading-tight flex items-center gap-1.5">
+                            {item.title}
+                            <NewDataBadge
+                              isNew={newMap[`fred:${item.id}`]?.isNew}
+                              trackerKey={`fred:${item.id}`}
+                              previousVersion={newMap[`fred:${item.id}`]?.previousVersion}
+                              latestVersion={newMap[`fred:${item.id}`]?.latestVersion}
+                              onDismiss={() =>
+                                setNewMap((prev) => ({
+                                  ...prev,
+                                  [`fred:${item.id}`]: {
+                                    ...prev[`fred:${item.id}`],
+                                    isNew: false,
+                                  },
+                                }))
+                              }
+                            />
+                          </span>
                           <span className="text-[9px] text-muted-foreground mt-1">
                             최신 집계일: {formatDate(item.latest.date)}
                           </span>

@@ -19,6 +19,11 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from "recharts";
+import {
+  reportMultipleNewData,
+  type NewStatusResult,
+} from "@/lib/new-data-tracker";
+import { NewDataBadge } from "@/components/new-data-badge";
 
 interface LeiDataPoint {
   date: string; // YYYY-MM
@@ -100,6 +105,7 @@ export function LeiCompareWidget() {
     kr: true,
     jp: true,
   });
+  const [newMap, setNewMap] = useState<Record<string, NewStatusResult>>({});
 
   const fetchData = useCallback(async (bypass = false) => {
     try {
@@ -112,6 +118,14 @@ export function LeiCompareWidget() {
         throw new Error(json.error || "경기선행지수 데이터를 불러오지 못했습니다.");
       }
       setData(json);
+      if (json.summary) {
+        const statuses = reportMultipleNewData([
+          { key: "lei:us", category: "lei", latestVersion: json.summary.us?.latestDate },
+          { key: "lei:kr", category: "lei", latestVersion: json.summary.kr?.latestDate },
+          { key: "lei:jp", category: "lei", latestVersion: json.summary.jp?.latestDate },
+        ]);
+        setNewMap(statuses);
+      }
     } catch (e: any) {
       setError(e.message || "알 수 없는 오류가 발생했습니다.");
     } finally {
@@ -214,6 +228,13 @@ export function LeiCompareWidget() {
           <span className="text-[12px] font-bold text-foreground tracking-wider font-sans">
             한·미·일 경기선행지수 (OECD CLI) 월별 시계열 비교
           </span>
+          <NewDataBadge
+            isNew={
+              newMap["lei:us"]?.isNew ||
+              newMap["lei:kr"]?.isNew ||
+              newMap["lei:jp"]?.isNew
+            }
+          />
           <span className="hidden sm:inline-block text-[9.5px] font-mono text-muted-foreground bg-secondary px-1.5 py-0.5 border border-border/60">
             {isYoy
               ? "기준선 = 0.0% (전년 동월 대비 변화율 · 켄 피셔 스타일)"
@@ -344,6 +365,21 @@ export function LeiCompareWidget() {
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
+                        <NewDataBadge
+                          isNew={newMap[`lei:${card.key}`]?.isNew}
+                          trackerKey={`lei:${card.key}`}
+                          previousVersion={newMap[`lei:${card.key}`]?.previousVersion}
+                          latestVersion={newMap[`lei:${card.key}`]?.latestVersion}
+                          onDismiss={() =>
+                            setNewMap((prev) => ({
+                              ...prev,
+                              [`lei:${card.key}`]: {
+                                ...prev[`lei:${card.key}`],
+                                isNew: false,
+                              },
+                            }))
+                          }
+                        />
                         <span className="text-[9px] font-mono text-muted-foreground">
                           {formatYmKorean(item.latestDate)}
                         </span>
@@ -659,13 +695,21 @@ export function LeiCompareWidget() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/20">
-                      {recent12Months.map((row) => (
+                      {recent12Months.map((row, idx) => (
                         <tr
                           key={row.date}
                           className="hover:bg-secondary/40 transition-colors"
                         >
                           <td className="py-1.5 px-2 font-bold text-foreground">
-                            {row.date}
+                            <span className="inline-flex items-center gap-1.5">
+                              {row.date}
+                              {idx === 0 &&
+                                (newMap["lei:us"]?.isNew ||
+                                  newMap["lei:kr"]?.isNew ||
+                                  newMap["lei:jp"]?.isNew) && (
+                                  <NewDataBadge isNew={true} />
+                                )}
+                            </span>
                           </td>
                           <td className="py-1.5 px-2 text-right text-foreground">
                             {isYoy ? (
@@ -758,57 +802,95 @@ export function LeiCompareWidget() {
                   <Info className="w-3.5 h-3.5 text-primary" />
                   <span className="text-[11px] font-bold text-foreground font-sans">
                     {isYoy
-                      ? "켄 피셔 역발상 투자: 전년대비 변화율(YoY %) 해석법"
-                      : "OECD 경기선행지수(CLI) 경기 순환 4국면 해석법"}
+                      ? "켄 피셔 역발상 투자: 전년대비 변화율(YoY %, 기준선 0%) 해석법"
+                      : "OECD 경기선행지수(CLI, 기준선 100) 경기 순환 4국면 해석법"}
                   </span>
                 </div>
                 <p className="text-[10px] text-muted-foreground leading-relaxed font-sans">
                   {isYoy ? (
                     <>
-                      <strong>전년 대비 변화율(YoY %)</strong>은 12개월 전 동월 대비 선행지수의 상승·하락 속도를 보여주며,{" "}
-                      <strong>0.0% 기준선</strong>을 중심으로 경기 모멘텀 전환과 역발상 매수/매도 타이밍을 포착합니다.
+                      그래프의 <strong>① 현재 위치(0% 위 vs 아래)</strong>와{" "}
+                      <strong>② 기울기 방향(전월 대비 상승 ↗ vs 하락 ↘)</strong> 두 가지를 조합해 4단계로 해석합니다.
                     </>
                   ) : (
                     <>
-                      OECD CLI(진폭조정)는 실물 경기(GDP)의 전환점을 약 6~9개월 선행하며,{" "}
-                      <strong>장기 추세선(100)</strong> 위치와 <strong>전월 대비 증감 방향</strong>을 조합해 4단계 국면으로 해석합니다.
+                      그래프의 <strong>① 현재 위치(기준선 100 위 vs 아래)</strong>와{" "}
+                      <strong>② 기울기 방향(전월 대비 상승 ↗ vs 하락 ↘)</strong> 두 가지를 조합해 4단계로 해석합니다.
                     </>
                   )}
                 </p>
-                <div className="grid grid-cols-2 gap-2 text-[9.5px] font-sans">
-                  <div className="p-2 border border-red-500/20 bg-red-500/5">
-                    <div className="font-bold text-red-600 dark:text-red-400 mb-0.5">
-                      ① 확장 국면 (100↑ / YoY +)
+
+                {isYoy ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[9.5px] font-sans">
+                    <div className="p-2 border border-red-500/25 bg-red-500/5">
+                      <div className="font-bold text-red-600 dark:text-red-400 mb-0.5">
+                        ① 확장 가속 (0% 위 · 그래프 상승 ↗)
+                      </div>
+                      <div className="text-muted-foreground leading-snug">
+                        전년 대비 플러스(+) 상태에서 그래프가 계속 올라가며 경기 확장 속도가 빨라지는 호황 구간
+                      </div>
                     </div>
-                    <div className="text-muted-foreground leading-snug">
-                      잠재성장률 이상에서 성장 모멘텀이 강화되는 호황 구간
+                    <div className="p-2 border border-amber-500/25 bg-amber-500/5">
+                      <div className="font-bold text-amber-600 dark:text-amber-400 mb-0.5">
+                        ② 상승 둔화 (0% 위 · 그래프 하락 ↘)
+                      </div>
+                      <div className="text-muted-foreground leading-snug">
+                        아직 0% 위(+)이지만, <strong>YoY 그래프가 꼭대기(고점)를 찍고 내려오며</strong> 성장 탄력이 둔화되는 구간
+                      </div>
+                    </div>
+                    <div className="p-2 border border-emerald-500/25 bg-emerald-500/5">
+                      <div className="font-bold text-emerald-600 dark:text-emerald-400 mb-0.5">
+                        ③ 회복 전환 (0% 아래 · 그래프 상승 ↗) ⭐매수 적기
+                      </div>
+                      <div className="text-muted-foreground leading-snug">
+                        아직 0% 아래(-)라 뉴스는 비관적이지만, <strong>YoY 그래프가 바닥을 찍고 위로 꺾여 올라오는</strong> 역발상 매수 구간
+                      </div>
+                    </div>
+                    <div className="p-2 border border-blue-500/25 bg-blue-500/5">
+                      <div className="font-bold text-blue-600 dark:text-blue-400 mb-0.5">
+                        ④ 수축 심화 (0% 아래 · 그래프 하락 ↘)
+                      </div>
+                      <div className="text-muted-foreground leading-snug">
+                        0% 아래(-)에서 그래프가 계속 아래로 내려가며 경기 침체 폭이 깊어지는 방어 구간
+                      </div>
                     </div>
                   </div>
-                  <div className="p-2 border border-amber-500/20 bg-amber-500/5">
-                    <div className="font-bold text-amber-600 dark:text-amber-400 mb-0.5">
-                      ② 둔화 국면 (100↑ / 고점 하락)
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[9.5px] font-sans">
+                    <div className="p-2 border border-red-500/25 bg-red-500/5">
+                      <div className="font-bold text-red-600 dark:text-red-400 mb-0.5">
+                        ① 확장 국면 (100 위 · 전월비 상승 ↗)
+                      </div>
+                      <div className="text-muted-foreground leading-snug">
+                        지수가 장기추세선(100) 위에 있으면서 지난달보다 계속 올라가는 경기 호황 구간
+                      </div>
                     </div>
-                    <div className="text-muted-foreground leading-snug">
-                      경기는 추세선 위이나 상승률이 둔화되며 변곡점을 지나는 구간
+                    <div className="p-2 border border-amber-500/25 bg-amber-500/5">
+                      <div className="font-bold text-amber-600 dark:text-amber-400 mb-0.5">
+                        ② 둔화 국면 (100 위 · 전월비 하락 ↘)
+                      </div>
+                      <div className="text-muted-foreground leading-snug">
+                        지수는 아직 100 위지만, <strong>선행지수 그래프가 고점을 찍고 지난달보다 내려오기 시작한</strong> 경기 둔화 진입 구간
+                      </div>
+                    </div>
+                    <div className="p-2 border border-emerald-500/25 bg-emerald-500/5">
+                      <div className="font-bold text-emerald-600 dark:text-emerald-400 mb-0.5">
+                        ③ 회복 국면 (100 아래 · 전월비 상승 ↗) ⭐매수 적기
+                      </div>
+                      <div className="text-muted-foreground leading-snug">
+                        지수는 아직 100 아래지만, <strong>선행지수 그래프가 바닥(저점)을 찍고 지난달보다 올라오기 시작한</strong> 회복 전환 구간
+                      </div>
+                    </div>
+                    <div className="p-2 border border-blue-500/25 bg-blue-500/5">
+                      <div className="font-bold text-blue-600 dark:text-blue-400 mb-0.5">
+                        ④ 수축 국면 (100 아래 · 전월비 하락 ↘)
+                      </div>
+                      <div className="text-muted-foreground leading-snug">
+                        지수가 장기추세선(100) 아래로 떨어진 상태에서 지난달보다 계속 내려가는 경기 침체 구간
+                      </div>
                     </div>
                   </div>
-                  <div className="p-2 border border-emerald-500/20 bg-emerald-500/5">
-                    <div className="font-bold text-emerald-600 dark:text-emerald-400 mb-0.5">
-                      ③ 회복 국면 (YoY 0%↓ 반등)
-                    </div>
-                    <div className="text-muted-foreground leading-snug">
-                      전년비 큰 폭의 마이너스(-)에서 바닥을 찍고 반등하는 역발상 매수 적기
-                    </div>
-                  </div>
-                  <div className="p-2 border border-blue-500/20 bg-blue-500/5">
-                    <div className="font-bold text-blue-600 dark:text-blue-400 mb-0.5">
-                      ④ 수축 국면 (100↓ / YoY -)
-                    </div>
-                    <div className="text-muted-foreground leading-snug">
-                      전년 대비 마이너스(-) 하락폭이 확대되는 경기 침체·방어 구간
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           </>

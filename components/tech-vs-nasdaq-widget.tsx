@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react"
 import { TrendingUp, RefreshCw, AlertCircle, Sparkles } from "lucide-react"
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts"
+import { reportAndCheckNewData, type NewStatusResult } from "@/lib/new-data-tracker"
+import { NewDataBadge } from "@/components/new-data-badge"
 
 interface ComparisonDataPoint {
   date: string
@@ -44,6 +46,7 @@ export function TechVsNasdaqWidget() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
+  const [newStatus, setNewStatus] = useState<NewStatusResult | null>(null)
 
   const fetchData = async () => {
     setLoading(true)
@@ -58,6 +61,9 @@ export function TechVsNasdaqWidget() {
       }
       if (json.error) throw new Error(String(json.error))
       setData(json)
+      if (json.latest?.date) {
+        setNewStatus(reportAndCheckNewData("compare:mags", "compare", json.latest.date))
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "알 수 없는 오류")
     } finally {
@@ -80,6 +86,13 @@ export function TechVsNasdaqWidget() {
       <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
         <span className="text-[11px] font-bold text-black dark:text-white tracking-wider flex items-center gap-1.5 select-none font-sans">
           <TrendingUp className="w-3.5 h-3.5 text-black dark:text-white" /> MAGS vs 나스닥 올해(YTD) 수익률 추이
+          <NewDataBadge
+            isNew={newStatus?.isNew}
+            trackerKey="compare:mags"
+            previousVersion={newStatus?.previousVersion}
+            latestVersion={newStatus?.latestVersion}
+            onDismiss={() => setNewStatus((prev) => (prev ? { ...prev, isNew: false } : null))}
+          />
         </span>
         <button onClick={fetchData} disabled={loading} className="p-1 hover:bg-secondary rounded transition-colors" title="새로고침">
           <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground/80 ${loading ? 'animate-spin' : ''}`} />

@@ -5,6 +5,7 @@ import { TrendingUp, BarChart3, ChevronLeft, ChevronRight, Calendar, RefreshCw, 
 import { MinskyWidget } from "@/components/minsky-widget"
 import { FredWidget } from "@/components/fred-widget"
 import { LeiCompareWidget } from "@/components/lei-compare-widget"
+import { YieldSpreadWidget } from "@/components/yield-spread-widget"
 import { TradingViewHeatmapWidget } from "@/components/tradingview-heatmap-widget"
 import { CustomHeatmapWidget } from "@/components/custom-heatmap-widget"
 import { FinlifeProductsWidget } from "@/components/finlife-products-widget"
@@ -22,6 +23,13 @@ import KoreaSectorFlowWidget from "@/components/korea-sector-flow-widget"
 import { AssetsValuationWidget } from "@/components/assets-valuation-widget"
 import { EplFixturesWidget } from "@/components/epl-fixtures-widget"
 import { TreasuryGoldWidget } from "@/components/treasury-gold-widget"
+import {
+  getCategoryNewStatus,
+  reportMultipleNewData,
+  subscribeMacroDataUpdates,
+  type MacroCategory,
+} from "@/lib/new-data-tracker"
+import { NewDataBadge } from "@/components/new-data-badge"
 
 interface StockRow {
   rank: number
@@ -130,6 +138,12 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
   const [error, setError] = useState<string | null>(null)
 
   const [isRefreshingTop, setIsRefreshingTop] = useState(false)
+  const [macroNewStatus, setMacroNewStatus] = useState<Record<MacroCategory, boolean>>({
+    minsky: false,
+    fred: false,
+    compare: false,
+    lei: false,
+  })
 
   const fetchTopStocksOnly = async (bypass = false) => {
     try {
@@ -221,6 +235,81 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
   }, [])
 
   useEffect(() => {
+    setMacroNewStatus(getCategoryNewStatus())
+    const unsub = subscribeMacroDataUpdates(() => {
+      setMacroNewStatus(getCategoryNewStatus())
+    })
+
+    // 백그라운드에서 글로벌 거시 경제 지표 4대 슬롯의 최신 기준일을 점검하여 신규 데이터 유입 시 NEW 표시
+    ;(async () => {
+      try {
+        const [minskyRes, fredRes, etfRes, leiRes, yieldRes] = await Promise.all([
+          fetch("/api/minsky").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+          fetch("/api/fred").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+          fetch("/api/stocks/compare-etf").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+          fetch("/api/fred/lei").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+          fetch("/api/fred/yield-spread").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+        ])
+
+        const itemsToTrack: { key: string; category: MacroCategory; latestVersion?: string | null }[] = []
+
+        if (minskyRes?.indicators?.length) {
+          for (const ind of minskyRes.indicators) {
+            const lastPt = ind.data?.[ind.data.length - 1]
+            const parsedDate = lastPt?.x ? new Date(lastPt.x) : null
+            const dStr =
+              parsedDate && !isNaN(parsedDate.getTime())
+                ? parsedDate.toISOString().slice(0, 10)
+                : undefined
+            if (dStr) {
+              itemsToTrack.push({ key: `minsky:${ind.key}`, category: "minsky", latestVersion: dStr })
+            }
+          }
+        }
+
+        if (fredRes?.items?.length) {
+          for (const it of fredRes.items) {
+            if (it?.id && it?.latest?.date) {
+              itemsToTrack.push({ key: `fred:${it.id}`, category: "fred", latestVersion: it.latest.date })
+            }
+          }
+        }
+
+        if (etfRes?.latestDate) {
+          itemsToTrack.push({ key: "compare:etf", category: "compare", latestVersion: etfRes.latestDate })
+        }
+
+        if (leiRes?.summary) {
+          itemsToTrack.push(
+            { key: "lei:us", category: "lei", latestVersion: leiRes.summary.us?.latestDate },
+            { key: "lei:kr", category: "lei", latestVersion: leiRes.summary.kr?.latestDate },
+            { key: "lei:jp", category: "lei", latestVersion: leiRes.summary.jp?.latestDate }
+          )
+        }
+
+        if (yieldRes?.summary) {
+          itemsToTrack.push(
+            { key: "yield:y10", category: "lei", latestVersion: yieldRes.summary.y10?.latestDate },
+            { key: "yield:y2", category: "lei", latestVersion: yieldRes.summary.y2?.latestDate },
+            { key: "yield:m3", category: "lei", latestVersion: yieldRes.summary.m3?.latestDate },
+            { key: "yield:spread10y2y", category: "lei", latestVersion: yieldRes.summary.spread10y2y?.latestDate },
+            { key: "yield:spread10y3m", category: "lei", latestVersion: yieldRes.summary.spread10y3m?.latestDate }
+          )
+        }
+
+        if (itemsToTrack.length > 0) {
+          reportMultipleNewData(itemsToTrack)
+          setMacroNewStatus(getCategoryNewStatus())
+        }
+      } catch {
+        // ignore background check error
+      }
+    })()
+
+    return unsub
+  }, [])
+
+  useEffect(() => {
     setStockSubView("main")
   }, [activeTab])
 
@@ -297,6 +386,14 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
                       <div className="flex items-center justify-between bg-secondary/50 px-4 py-2 border-b border-border shrink-0">
                         <span className="text-[11px] font-bold text-black dark:text-white tracking-wider flex items-center gap-1.5 font-sans">
                           <BarChart3 className="w-3.5 h-3.5 text-black dark:text-white" /> 글로벌 거시 경제 지표
+                          <NewDataBadge
+                            isNew={
+                              macroNewStatus.minsky ||
+                              macroNewStatus.fred ||
+                              macroNewStatus.compare ||
+                              macroNewStatus.lei
+                            }
+                          />
                         </span>
                       </div>
                       {/* 본문 콘텐츠 */}
@@ -314,7 +411,10 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
                             onClick={() => setStockSubView("minsky")}
                             className="w-full py-2 bg-primary text-primary-foreground font-bold text-[11px] hover:bg-primary/90 transition-colors flex items-center justify-between px-4 rounded-none font-sans select-none"
                           >
-                            <span className="flex items-center gap-1.5"><Flame className="w-3.5 h-3.5 animate-pulse text-amber-300" /> 공포 탐욕 지수 (CNN)</span>
+                            <span className="flex items-center gap-1.5">
+                              <Flame className="w-3.5 h-3.5 animate-pulse text-amber-300" /> 공포 탐욕 지수 (CNN)
+                              <NewDataBadge isNew={macroNewStatus.minsky} />
+                            </span>
                             <ChevronRight className="w-3.5 h-3.5" />
                           </button>
 
@@ -323,7 +423,10 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
                             onClick={() => setStockSubView("fred")}
                             className="w-full py-2 bg-primary text-primary-foreground font-bold text-[11px] hover:bg-primary/90 transition-colors flex items-center justify-between px-4 rounded-none font-sans select-none"
                           >
-                            <span className="flex items-center gap-1.5"><BarChart3 className="w-3.5 h-3.5 text-indigo-300" /> 미국 거시경제 지표 (FRED)</span>
+                            <span className="flex items-center gap-1.5">
+                              <BarChart3 className="w-3.5 h-3.5 text-indigo-300" /> 미국 거시경제 지표 (FRED)
+                              <NewDataBadge isNew={macroNewStatus.fred} />
+                            </span>
                             <ChevronRight className="w-3.5 h-3.5" />
                           </button>
 
@@ -332,16 +435,22 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
                             onClick={() => setStockSubView("compare")}
                             className="w-full py-2 bg-primary text-primary-foreground font-bold text-[11px] hover:bg-primary/90 transition-colors flex items-center justify-between px-4 rounded-none font-sans select-none"
                           >
-                            <span className="flex items-center gap-1.5"><TrendingUp className="w-3.5 h-3.5 text-emerald-300 animate-pulse" /> 미국 자산시장 거시흐름</span>
+                            <span className="flex items-center gap-1.5">
+                              <TrendingUp className="w-3.5 h-3.5 text-emerald-300 animate-pulse" /> 미국 자산시장 거시흐름
+                              <NewDataBadge isNew={macroNewStatus.compare} />
+                            </span>
                             <ChevronRight className="w-3.5 h-3.5" />
                           </button>
 
-                          {/* 네번째: 한·미·일 경기선행지수 비교 */}
+                          {/* 네번째: 경기선행지수 및 장단기 금리차 */}
                           <button 
                             onClick={() => setStockSubView("lei")}
                             className="w-full py-2 bg-primary text-primary-foreground font-bold text-[11px] hover:bg-primary/90 transition-colors flex items-center justify-between px-4 rounded-none font-sans select-none"
                           >
-                            <span className="flex items-center gap-1.5"><Activity className="w-3.5 h-3.5 text-sky-300" /> 한·미·일 경기선행지수 비교 (LEI)</span>
+                            <span className="flex items-center gap-1.5">
+                              <Activity className="w-3.5 h-3.5 text-sky-300" /> 경기선행지수 및 장단기 금리차
+                              <NewDataBadge isNew={macroNewStatus.lei} />
+                            </span>
                             <ChevronRight className="w-3.5 h-3.5" />
                           </button>
                         </div>
@@ -374,9 +483,10 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
                       <FredWidget />
                     </div>
                   ) : stockSubView === "lei" ? (
-                    /* 한·미 경기선행지수 비교 상세 뷰 */
-                    <div className="md:col-span-2 w-full flex flex-col">
+                    /* 한·미·일 경기선행지수 비교 및 미국채 장단기 금리차 상세 뷰 */
+                    <div className="md:col-span-2 w-full flex flex-col gap-6">
                       <LeiCompareWidget />
+                      <YieldSpreadWidget />
                     </div>
                   ) : (
                     /* 미국 자산시장 거시흐름 상세 뷰 */
