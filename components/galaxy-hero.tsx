@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { TrendingUp, BarChart3, ChevronLeft, ChevronRight, Calendar, RefreshCw, AlertCircle, MessageSquareText, Flame, Plus } from "lucide-react"
+import { TrendingUp, BarChart3, ChevronLeft, ChevronRight, Calendar, RefreshCw, AlertCircle, MessageSquareText, Flame, Plus, Activity } from "lucide-react"
 import { MinskyWidget } from "@/components/minsky-widget"
 import { FredWidget } from "@/components/fred-widget"
+import { LeiCompareWidget } from "@/components/lei-compare-widget"
 import { TradingViewHeatmapWidget } from "@/components/tradingview-heatmap-widget"
 import { CustomHeatmapWidget } from "@/components/custom-heatmap-widget"
 import { FinlifeProductsWidget } from "@/components/finlife-products-widget"
@@ -112,7 +113,7 @@ const FALLBACK_STOCKS: StockRow[] = [
 
 export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "news" }) {
   const [stocks, setStocks] = useState<StockRow[]>([])
-  const [stockSubView, setStockSubView] = useState<"main" | "minsky" | "fred" | "compare">("main")
+  const [stockSubView, setStockSubView] = useState<"main" | "minsky" | "fred" | "compare" | "lei">("main")
 
   const [trends, setTrends] = useState<TrendItem[]>([])
   const [usTrends, setUsTrends] = useState<TrendItem[]>([])
@@ -301,17 +302,17 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
                       {/* 본문 콘텐츠 */}
                       <div className="flex-1 p-5 flex flex-col justify-between">
                         <div>
-                          <p className="text-[11.5px] text-muted-foreground leading-relaxed font-sans mb-4">
+                          <p className="text-[11.5px] text-muted-foreground leading-relaxed font-sans mb-3">
                             글로벌 시장 및 거시 경제의 주요 지표 대시보드를 선택해 이동할 수 있습니다.
                           </p>
                         </div>
 
-                        {/* 3개 버튼 배치 */}
-                        <div className="flex flex-col gap-3 flex-1 justify-center">
+                        {/* 4개 버튼 배치 */}
+                        <div className="flex flex-col gap-2.5 flex-1 justify-center">
                           {/* 첫번째: 공포 탐욕지수 */}
                           <button 
                             onClick={() => setStockSubView("minsky")}
-                            className="w-full py-2.5 bg-primary text-primary-foreground font-bold text-[11px] hover:bg-primary/90 transition-colors flex items-center justify-between px-4 rounded-none font-sans select-none"
+                            className="w-full py-2 bg-primary text-primary-foreground font-bold text-[11px] hover:bg-primary/90 transition-colors flex items-center justify-between px-4 rounded-none font-sans select-none"
                           >
                             <span className="flex items-center gap-1.5"><Flame className="w-3.5 h-3.5 animate-pulse text-amber-300" /> 공포 탐욕 지수 (CNN)</span>
                             <ChevronRight className="w-3.5 h-3.5" />
@@ -320,7 +321,7 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
                           {/* 두번째: 거시경제 지표 */}
                           <button 
                             onClick={() => setStockSubView("fred")}
-                            className="w-full py-2.5 bg-primary text-primary-foreground font-bold text-[11px] hover:bg-primary/90 transition-colors flex items-center justify-between px-4 rounded-none font-sans select-none"
+                            className="w-full py-2 bg-primary text-primary-foreground font-bold text-[11px] hover:bg-primary/90 transition-colors flex items-center justify-between px-4 rounded-none font-sans select-none"
                           >
                             <span className="flex items-center gap-1.5"><BarChart3 className="w-3.5 h-3.5 text-indigo-300" /> 미국 거시경제 지표 (FRED)</span>
                             <ChevronRight className="w-3.5 h-3.5" />
@@ -329,9 +330,18 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
                           {/* 세번째: 미국 자산시장 거시흐름 */}
                           <button 
                             onClick={() => setStockSubView("compare")}
-                            className="w-full py-2.5 bg-primary text-primary-foreground font-bold text-[11px] hover:bg-primary/90 transition-colors flex items-center justify-between px-4 rounded-none font-sans select-none"
+                            className="w-full py-2 bg-primary text-primary-foreground font-bold text-[11px] hover:bg-primary/90 transition-colors flex items-center justify-between px-4 rounded-none font-sans select-none"
                           >
                             <span className="flex items-center gap-1.5"><TrendingUp className="w-3.5 h-3.5 text-emerald-300 animate-pulse" /> 미국 자산시장 거시흐름</span>
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* 네번째: 한·미 경기선행지수 비교 */}
+                          <button 
+                            onClick={() => setStockSubView("lei")}
+                            className="w-full py-2 bg-primary text-primary-foreground font-bold text-[11px] hover:bg-primary/90 transition-colors flex items-center justify-between px-4 rounded-none font-sans select-none"
+                          >
+                            <span className="flex items-center gap-1.5"><Activity className="w-3.5 h-3.5 text-sky-300" /> 한·미 경기선행지수 비교 (LEI)</span>
                             <ChevronRight className="w-3.5 h-3.5" />
                           </button>
                         </div>
@@ -362,6 +372,11 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
                     /* 거시경제 지표 상세 뷰 */
                     <div className="md:col-span-2 w-full flex flex-col">
                       <FredWidget />
+                    </div>
+                  ) : stockSubView === "lei" ? (
+                    /* 한·미 경기선행지수 비교 상세 뷰 */
+                    <div className="md:col-span-2 w-full flex flex-col">
+                      <LeiCompareWidget />
                     </div>
                   ) : (
                     /* 미국 자산시장 거시흐름 상세 뷰 */
