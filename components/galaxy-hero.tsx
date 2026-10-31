@@ -336,12 +336,12 @@ export function GalaxyHero({ activeTab }: { activeTab: "stock" | "kr-stock" | "n
                             <ChevronRight className="w-3.5 h-3.5" />
                           </button>
 
-                          {/* 네번째: 한·미 경기선행지수 비교 */}
+                          {/* 네번째: 한·미·일 경기선행지수 비교 */}
                           <button 
                             onClick={() => setStockSubView("lei")}
                             className="w-full py-2 bg-primary text-primary-foreground font-bold text-[11px] hover:bg-primary/90 transition-colors flex items-center justify-between px-4 rounded-none font-sans select-none"
                           >
-                            <span className="flex items-center gap-1.5"><Activity className="w-3.5 h-3.5 text-sky-300" /> 한·미 경기선행지수 비교 (LEI)</span>
+                            <span className="flex items-center gap-1.5"><Activity className="w-3.5 h-3.5 text-sky-300" /> 한·미·일 경기선행지수 비교 (LEI)</span>
                             <ChevronRight className="w-3.5 h-3.5" />
                           </button>
                         </div>
